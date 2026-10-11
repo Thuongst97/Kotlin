@@ -1,0 +1,560 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Jetpack Compose UI — Kotlin Academy</title>
+  <meta name="description" content="Jetpack Compose in depth: composable functions, state and recomposition, state hoisting, modifiers, layouts, lazy lists, Material 3 components and theming, side effects, previews and accessibility.">
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <meta name="color-scheme" content="dark light">
+  <link rel="stylesheet" href="assets/css/main.css?v=__BUILD__">
+  <script>try{var t=localStorage.getItem("ka-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body data-page="compose">
+  <div id="site-header"></div>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="content">
+      <div class="content-inner">
+
+        <header class="page-hero">
+          <nav class="crumbs"><a href="index.html">Home</a><span>/</span><span>Android with Kotlin</span><span>/</span><span>Lesson 17</span></nav>
+          <div class="eyebrow">Lesson 17 · Android with Kotlin</div>
+          <h1>Jetpack Compose UI</h1>
+          <p class="lead">Compose is Android's modern toolkit for building UI — entirely in Kotlin. You describe <em>what</em> the screen should look like for the current state, and Compose updates it whenever that state changes. No XML layouts, no <code>findViewById</code>, no manual view updates.</p>
+          <div class="page-meta"><span>⏱ 75 min</span><span>🎯 Intermediate</span><span>📦 Compose BOM 2025.06</span></div>
+          <div class="objectives">
+            <h4>You will be able to</h4>
+            <ul>
+              <li>Write and preview composable functions</li>
+              <li>Hold state with <code>remember</code> / <code>mutableStateOf</code></li>
+              <li>Hoist state for reusable, testable components</li>
+              <li>Lay out UI with modifiers, Row, Column, Box</li>
+              <li>Show long lists efficiently with LazyColumn</li>
+              <li>Theme with Material 3 and run side effects safely</li>
+            </ul>
+          </div>
+        </header>
+
+        <section class="doc-section" id="mindset" data-title="The declarative mindset">
+          <div class="sec-head"><h2><span class="sec-num">17.1</span>The declarative mindset</h2></div>
+          <div class="flow" aria-label="UI = f(state)">
+            <div class="fbox">State<small>data at this moment</small></div><span class="farrow">→</span>
+            <div class="fbox">Composable functions<small>UI = f(state)</small></div><span class="farrow">→</span>
+            <div class="fbox">UI on screen</div><span class="farrow">→</span>
+            <div class="fbox">Events<small>clicks, typing</small></div><span class="farrow">↺</span>
+            <div class="fbox">update State</div>
+          </div>
+          <p>In the old View system you created widgets once and then <em>mutated</em> them (<code>textView.text = "…"</code>). In Compose you write functions that <b>emit UI for a given state</b>. When state changes, Compose calls the affected functions again — this is <b>recomposition</b> — and updates only what changed.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Greeting.kt">
+            @Composable                                       // marks a function that emits UI
+            fun Greeting(name: String, modifier: Modifier = Modifier) {
+                Text(
+                    text = "Hello, $name!",
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = modifier.padding(16.dp),
+                )
+            }
+
+            @Preview(showBackground = true)                  // rendered in Android Studio's design pane
+            @Composable
+            private fun GreetingPreview() {
+                MaterialTheme { Greeting("Compose") }
+            }
+          </script>
+          <div class="callout note">
+            <div class="ci">📏</div>
+            <div><span class="ct">Rules of composables</span>
+              <ul>
+                <li>Names are <b>PascalCase nouns</b> (they describe UI, not actions): <code>TaskItem</code>, not <code>showTask</code>.</li>
+                <li>They return <code>Unit</code> and emit UI by calling other composables.</li>
+                <li>They can run often, in any order, and may be skipped — so <b>no side effects</b> in the body (no network calls, no writes to variables outside).</li>
+                <li>Accept a <code>modifier: Modifier = Modifier</code> parameter and apply it to the root element.</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="state" data-title="State & recomposition">
+          <div class="sec-head"><h2><span class="sec-num">17.2</span>State &amp; recomposition</h2></div>
+          <p>Compose only redraws when it observes a change in <b>State</b> objects. <code>mutableStateOf(x)</code> creates an observable value; <code>remember</code> keeps it across recompositions (otherwise it would reset every time the function runs).</p>
+          <script type="text/plain" data-code="kotlin" data-file="Counter.kt" data-numbered>
+            @Composable
+            fun Counter() {
+                var count by remember { mutableIntStateOf(0) }     // `by` = property delegate (lesson 12)
+                // var count = 0                                   // ❌ resets on every recomposition, UI never updates
+
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("Clicked $count times", style = MaterialTheme.typography.titleLarge)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(onClick = { count++ }) { Text("+1") }    // writing state schedules recomposition
+                        OutlinedButton(onClick = { count = 0 }, enabled = count > 0) { Text("Reset") }
+                    }
+                }
+            }
+          </script>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>API</th><th>Keeps value across</th></tr></thead>
+              <tbody>
+                <tr><td><code>remember { mutableStateOf(…) }</code></td><td>Recompositions</td></tr>
+                <tr><td><code>rememberSaveable { mutableStateOf(…) }</code></td><td>Recompositions + configuration changes + process death (Bundle-able values)</td></tr>
+                <tr><td>ViewModel + <code>StateFlow</code></td><td>Configuration changes; holds business logic (lesson 18)</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Collect a <code>Flow</code>/<code>StateFlow</code> from a ViewModel as Compose state with <code>collectAsStateWithLifecycle()</code> — it stops collecting while the app is in the background:</p>
+          <script type="text/plain" data-code="kotlin" data-file="Collecting.kt">
+            val state by viewModel.uiState.collectAsStateWithLifecycle()
+          </script>
+        </section>
+
+        <section class="doc-section" id="hoisting" data-title="State hoisting">
+          <div class="sec-head"><h2><span class="sec-num">17.3</span>State hoisting: stateless components</h2></div>
+          <p><b>State hoisting</b> means moving state <em>up</em> to the caller: the component receives the <b>value</b> and an <b>event callback</b> instead of owning the state. Stateless composables are reusable, previewable and testable. Rule: state goes down, events go up.</p>
+          <div class="compare">
+            <div><div class="cmp-label c-red">Stateful (hard to reuse)</div>
+              <script type="text/plain" data-code="kotlin" data-file="Stateful.kt">
+                @Composable
+                fun SearchBox() {
+                    var query by remember { mutableStateOf("") }
+                    OutlinedTextField(
+                        value = query,
+                        onValueChange = { query = it },
+                    )
+                    // Nobody outside can read
+                    // or reset `query`…
+                }
+              </script>
+            </div>
+            <div><div class="cmp-label c-green">Hoisted (reusable)</div>
+              <script type="text/plain" data-code="kotlin" data-file="Stateless.kt">
+                @Composable
+                fun SearchBox(
+                    query: String,                     // state down
+                    onQueryChange: (String) -> Unit,   // events up
+                    modifier: Modifier = Modifier,
+                ) {
+                    OutlinedTextField(
+                        value = query,
+                        onValueChange = onQueryChange,
+                        modifier = modifier,
+                    )
+                }
+              </script>
+            </div>
+          </div>
+          <p class="mt">TaskFlow uses this pattern at screen level: <code>TasksScreen</code> (stateful: gets the ViewModel) calls <code>TasksContent</code> (stateless: only parameters). Tests and previews use <code>TasksContent</code> directly.</p>
+        </section>
+
+        <section class="doc-section" id="layouts" data-title="Layouts & modifiers">
+          <div class="sec-head"><h2><span class="sec-num">17.4</span>Layouts &amp; modifiers</h2></div>
+          <div class="grid grid-3">
+            <div class="glass card"><h4><code>Column</code></h4><p class="small">Children stacked vertically. <code>verticalArrangement</code>, <code>horizontalAlignment</code>.</p></div>
+            <div class="glass card"><h4><code>Row</code></h4><p class="small">Children side by side. <code>Modifier.weight(1f)</code> shares remaining space.</p></div>
+            <div class="glass card"><h4><code>Box</code></h4><p class="small">Children on top of each other. <code>contentAlignment</code>, <code>Modifier.align</code>.</p></div>
+          </div>
+          <p class="mt"><b>Modifiers</b> decorate or configure an element: size, padding, background, click handling, semantics. They're applied <b>in order</b>, so order matters:</p>
+          <script type="text/plain" data-code="kotlin" data-file="ProfileCard.kt" data-numbered>
+            @Composable
+            fun ProfileCard(name: String, role: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+                Row(
+                    modifier = modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .clickable(onClick = onClick)          // after clip → the ripple is rounded too
+                        .padding(16.dp),                       // padding INSIDE the background
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .background(MaterialTheme.colorScheme.primary, CircleShape),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(name.take(1), color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
+                    }
+                    Spacer(Modifier.width(16.dp))
+                    Column(Modifier.weight(1f)) {              // takes all remaining width
+                        Text(name, style = MaterialTheme.typography.titleMedium)
+                        Text(role, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
+                }
+            }
+          </script>
+          <div class="callout tip">
+            <div class="ci">🧭</div>
+            <div><span class="ct">Modifier order in one sentence</span>
+              <p><code>.padding(16.dp).background(Red)</code> → transparent margin, then red; <code>.background(Red).padding(16.dp)</code> → red area with content inset. Read modifiers top to bottom as “wrap the element in…”.</p>
+            </div>
+          </div>
+          <h3>Units</h3>
+          <p>Use <code>dp</code> (density-independent pixels) for sizes and spacing and <code>sp</code> (scales with the user's font size setting) for text. Material 3 typography styles already use <code>sp</code>.</p>
+        </section>
+
+        <section class="doc-section" id="lists" data-title="Lazy lists">
+          <div class="sec-head"><h2><span class="sec-num">17.5</span>Lists with <code>LazyColumn</code></h2></div>
+          <p>A <code>Column</code> composes all its children. <code>LazyColumn</code> composes only the visible items (like <code>RecyclerView</code>, without adapters). Always provide a stable <b>key</b> so Compose can track items when the list changes.</p>
+          <script type="text/plain" data-code="kotlin" data-file="ContactList.kt">
+            data class Contact(val id: Long, val name: String, val initial: Char = name.first())
+
+            @Composable
+            fun ContactList(contacts: List<Contact>, onContactClick: (Contact) -> Unit) {
+                val grouped = remember(contacts) { contacts.sortedBy { it.name }.groupBy { it.initial } }  // recomputed only when contacts change
+                LazyColumn(contentPadding = PaddingValues(vertical = 8.dp)) {
+                    grouped.forEach { (letter, group) ->
+                        stickyHeader(key = "header-$letter") {
+                            Text(
+                                letter.toString(),
+                                modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface).padding(16.dp, 4.dp),
+                                style = MaterialTheme.typography.labelLarge,
+                            )
+                        }
+                        items(group, key = { it.id }) { contact ->
+                            ListItem(
+                                headlineContent = { Text(contact.name) },
+                                modifier = Modifier.clickable { onContactClick(contact) }.animateItem(),
+                            )
+                        }
+                    }
+                }
+            }
+          </script>
+          <p class="small muted"><code>LazyRow</code> scrolls horizontally; <code>LazyVerticalGrid</code> and <code>LazyVerticalStaggeredGrid</code> build grids. <code>stickyHeader</code> may require <code>@OptIn(ExperimentalFoundationApi::class)</code> depending on your Compose version.</p>
+        </section>
+
+        <section class="doc-section" id="material" data-title="Material 3 & theming">
+          <div class="sec-head"><h2><span class="sec-num">17.6</span>Material 3 components &amp; theming</h2></div>
+          <p>Material 3 provides ready-made components that follow Google's design system: <code>Scaffold</code>, <code>TopAppBar</code>, <code>FloatingActionButton</code>, <code>Card</code>, <code>ListItem</code>, <code>FilterChip</code>, <code>Switch</code>, <code>Snackbar</code>, dialogs, date pickers and more. <code>Scaffold</code> arranges the standard screen slots:</p>
+          <script type="text/plain" data-code="kotlin" data-file="ScaffoldExample.kt">
+            @OptIn(ExperimentalMaterial3Api::class)
+            @Composable
+            fun NotesScreen(notes: List<String>, onAdd: () -> Unit) {
+                Scaffold(
+                    topBar = { TopAppBar(title = { Text("Notes") }) },
+                    floatingActionButton = {
+                        FloatingActionButton(onClick = onAdd) { Icon(Icons.Filled.Add, contentDescription = "Add note") }
+                    },
+                ) { innerPadding ->                                    // space taken by the bars
+                    LazyColumn(contentPadding = innerPadding) {
+                        items(notes) { note -> ListItem(headlineContent = { Text(note) }) }
+                    }
+                }
+            }
+          </script>
+          <p>The theme provides <b>color scheme</b>, <b>typography</b> and <b>shapes</b> to every component through <code>MaterialTheme</code>. On Android 12+ you can use <b>dynamic color</b> derived from the user's wallpaper. Here is TaskFlow's theme:</p>
+          <script type="text/plain" data-code="kotlin" data-file="ui/theme/Theme.kt">
+            @Composable
+            fun TaskFlowTheme(
+                themeMode: ThemeMode = ThemeMode.SYSTEM,
+                dynamicColor: Boolean = true,
+                content: @Composable () -> Unit,
+            ) {
+                val darkTheme = when (themeMode) {
+                    ThemeMode.SYSTEM -> isSystemInDarkTheme()
+                    ThemeMode.LIGHT -> false
+                    ThemeMode.DARK -> true
+                }
+                val colorScheme = when {
+                    dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+                        val context = LocalContext.current
+                        if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+                    }
+                    darkTheme -> DarkColors
+                    else -> LightColors
+                }
+                MaterialTheme(colorScheme = colorScheme, typography = Typography(), content = content)
+            }
+          </script>
+          <div class="callout tip">
+            <div class="ci">🎨</div>
+            <div><span class="ct">Use theme tokens, not hard-coded colors</span>
+              <p>Write <code>MaterialTheme.colorScheme.primary</code> and <code>MaterialTheme.typography.titleMedium</code>, never <code>Color(0xFF6200EE)</code> in screens. Dark mode and dynamic color then work automatically. Generate a full palette with the <a href="https://material-foundation.github.io/material-theme-builder/" target="_blank" rel="noopener">Material Theme Builder</a>.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="forms" data-title="Text input & forms">
+          <div class="sec-head"><h2><span class="sec-num">17.7</span>Text input &amp; forms</h2></div>
+          <script type="text/plain" data-code="kotlin" data-file="LoginForm.kt" data-numbered>
+            @Composable
+            fun LoginForm(onSubmit: (email: String, password: String) -> Unit) {
+                var email by rememberSaveable { mutableStateOf("") }
+                var password by rememberSaveable { mutableStateOf("") }
+                var showPassword by remember { mutableStateOf(false) }
+                val emailError = email.isNotEmpty() && !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+                val canSubmit = email.isNotBlank() && password.length >= 8 && !emailError
+
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = { email = it.trim() },
+                        label = { Text("Email") },
+                        isError = emailError,
+                        supportingText = { if (emailError) Text("Invalid email address") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text("Password (8+ characters)") },
+                        visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                        trailingIcon = {
+                            TextButton(onClick = { showPassword = !showPassword }) { Text(if (showPassword) "Hide" else "Show") }
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = { if (canSubmit) onSubmit(email, password) }),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Button(onClick = { onSubmit(email, password) }, enabled = canSubmit, modifier = Modifier.fillMaxWidth()) {
+                        Text("Sign in")
+                    }
+                }
+            }
+          </script>
+        </section>
+
+        <section class="doc-section" id="side-effects" data-title="Side effects">
+          <div class="sec-head"><h2><span class="sec-num">17.8</span>Side effects</h2></div>
+          <p>Sometimes a composable must do something <em>outside</em> of drawing: collect events, show a snackbar, start an animation, register a listener. Use the effect APIs, which tie the work to the composable's lifecycle:</p>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>API</th><th>Use when</th></tr></thead>
+              <tbody>
+                <tr><td><code>LaunchedEffect(key) { }</code></td><td>Run suspend code when the composable enters, and restart when <code>key</code> changes (collect one-off events, show a snackbar)</td></tr>
+                <tr><td><code>rememberCoroutineScope()</code></td><td>Launch coroutines from event callbacks (e.g. scroll to top on button click)</td></tr>
+                <tr><td><code>DisposableEffect(key) { onDispose { } }</code></td><td>Register/unregister non-Compose listeners</td></tr>
+                <tr><td><code>derivedStateOf { }</code></td><td>Compute state from other state, recomposing only when the result changes</td></tr>
+                <tr><td><code>SideEffect { }</code></td><td>Publish Compose state to non-Compose code after every successful recomposition</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <script type="text/plain" data-code="kotlin" data-file="ScrollToTop.kt">
+            @Composable
+            fun LongList(items: List<String>) {
+                val listState = rememberLazyListState()
+                val scope = rememberCoroutineScope()
+                val showButton by remember { derivedStateOf { listState.firstVisibleItemIndex > 5 } }
+
+                Box {
+                    LazyColumn(state = listState) { items(items) { Text(it, Modifier.padding(16.dp)) } }
+                    if (showButton) {
+                        SmallFloatingActionButton(
+                            onClick = { scope.launch { listState.animateScrollToItem(0) } },
+                            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
+                        ) { Icon(Icons.Filled.KeyboardArrowUp, contentDescription = "Scroll to top") }
+                    }
+                }
+            }
+          </script>
+        </section>
+
+        <section class="doc-section" id="animation" data-title="Animation">
+          <div class="sec-head"><h2><span class="sec-num">17.9</span>Animation in one line</h2></div>
+          <script type="text/plain" data-code="kotlin" data-file="Animations.kt">
+            @Composable
+            fun ExpandableCard(title: String, body: String) {
+                var expanded by remember { mutableStateOf(false) }
+                val rotation by animateFloatAsState(if (expanded) 180f else 0f, label = "arrow")
+
+                Card(Modifier.fillMaxWidth().clickable { expanded = !expanded }.animateContentSize()) {
+                    Column(Modifier.padding(16.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(title, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
+                            Icon(Icons.Filled.KeyboardArrowDown, contentDescription = null, Modifier.rotate(rotation))
+                        }
+                        AnimatedVisibility(visible = expanded) {
+                            Text(body, Modifier.padding(top = 8.dp))
+                        }
+                    }
+                }
+            }
+          </script>
+        </section>
+
+        <section class="doc-section" id="accessibility" data-title="Accessibility & performance">
+          <div class="sec-head"><h2><span class="sec-num">17.10</span>Accessibility &amp; performance</h2></div>
+          <div class="grid grid-2">
+            <div class="glass card">
+              <h4>♿ Accessibility</h4>
+              <ul class="small">
+                <li>Give meaningful icons a <code>contentDescription</code>; use <code>null</code> for decorative ones.</li>
+                <li>Touch targets ≥ 48dp (Material components handle this).</li>
+                <li>Use <code>Modifier.selectable(role = Role.RadioButton)</code> / <code>toggleable</code> so whole rows are clickable and announced correctly.</li>
+                <li>Test with TalkBack and with the largest font size.</li>
+              </ul>
+            </div>
+            <div class="glass card">
+              <h4>⚡ Performance</h4>
+              <ul class="small">
+                <li>Keys in lazy lists; <code>remember</code> expensive calculations.</li>
+                <li>Pass immutable data (data classes with <code>val</code>, <code>List</code>) so Compose can skip unchanged composables.</li>
+                <li>Read rapidly changing state (scroll offset) as late as possible, e.g. in lambdas or <code>derivedStateOf</code>.</li>
+                <li>Measure release builds, not debug: debug Compose is much slower.</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="exercises" data-title="Exercises">
+          <div class="sec-head"><h2><span class="sec-num">17.11</span>Exercises</h2></div>
+          <details class="exercise">
+            <summary>Exercise 1 — Tip calculator <span class="badge green">Easy</span></summary>
+            <div class="ex-body">
+              <p>Build a screen with a bill amount field, tip percentage chips (10/15/20%), a “round up” switch and the computed tip and total. All state in the composable with <code>rememberSaveable</code>.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution">
+                @Composable
+                fun TipCalculator() {
+                    var amountText by rememberSaveable { mutableStateOf("") }
+                    var percent by rememberSaveable { mutableIntStateOf(15) }
+                    var roundUp by rememberSaveable { mutableStateOf(false) }
+
+                    val amount = amountText.toDoubleOrNull() ?: 0.0
+                    var tip = amount * percent / 100
+                    if (roundUp) tip = kotlin.math.ceil(tip)
+
+                    Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        Text("Tip calculator", style = MaterialTheme.typography.headlineSmall)
+                        OutlinedTextField(
+                            value = amountText,
+                            onValueChange = { amountText = it },
+                            label = { Text("Bill amount") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            singleLine = true,
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            listOf(10, 15, 20).forEach { p ->
+                                FilterChip(selected = percent == p, onClick = { percent = p }, label = { Text("$p%") })
+                            }
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("Round up tip", Modifier.weight(1f))
+                            Switch(checked = roundUp, onCheckedChange = { roundUp = it })
+                        }
+                        Text("Tip: %.2f".format(tip), style = MaterialTheme.typography.titleMedium)
+                        Text("Total: %.2f".format(amount + tip), style = MaterialTheme.typography.titleLarge)
+                    }
+                }
+              </script>
+            </div>
+          </details>
+          <details class="exercise">
+            <summary>Exercise 2 — Hoist it <span class="badge blue">Medium</span></summary>
+            <div class="ex-body">
+              <p>Refactor the tip calculator into a stateless <code>TipCalculatorContent(state: TipState, onAmountChange, onPercentChange, onRoundUpChange)</code> plus a small stateful wrapper. Add two <code>@Preview</code>s: empty and filled-in.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution">
+                @Parcelize                                     // plugin: id("kotlin-parcelize")
+                data class TipState(val amountText: String = "", val percent: Int = 15, val roundUp: Boolean = false) : Parcelable {
+                    val amount: Double get() = amountText.toDoubleOrNull() ?: 0.0
+                    val tip: Double get() {
+                        val raw = amount * percent / 100
+                        return if (roundUp) kotlin.math.ceil(raw) else raw
+                    }
+                }
+
+                @Composable
+                fun TipCalculator() {
+                    var state by rememberSaveable { mutableStateOf(TipState()) }   // Parcelable → saveable
+                    TipCalculatorContent(
+                        state = state,
+                        onAmountChange = { state = state.copy(amountText = it) },
+                        onPercentChange = { state = state.copy(percent = it) },
+                        onRoundUpChange = { state = state.copy(roundUp = it) },
+                    )
+                }
+
+                @Composable
+                fun TipCalculatorContent(
+                    state: TipState,
+                    onAmountChange: (String) -> Unit,
+                    onPercentChange: (Int) -> Unit,
+                    onRoundUpChange: (Boolean) -> Unit,
+                ) { /* same UI as exercise 1, reading from `state` and calling the callbacks */ }
+
+                @Preview @Composable private fun EmptyPreview() = MaterialTheme { TipCalculatorContent(TipState(), {}, {}, {}) }
+                @Preview @Composable private fun FilledPreview() = MaterialTheme { TipCalculatorContent(TipState("42.50", 20, true), {}, {}, {}) }
+              </script>
+              <p class="small muted"><code>rememberSaveable</code> can store a custom class if it is <code>@Parcelize</code> (as here) or if you write a <code>Saver</code>. Or move the state into a ViewModel — the topic of lesson 18.</p>
+            </div>
+          </details>
+          <details class="exercise">
+            <summary>Exercise 3 — Photo gallery grid <span class="badge amber">Challenge</span></summary>
+            <div class="ex-body">
+              <p>Show 60 colored tiles in a <code>LazyVerticalGrid(GridCells.Adaptive(96.dp))</code>. Tapping a tile marks it selected (checkmark overlay). Show “n selected” in the top bar with a “Clear” action. Make sure selection survives rotation.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution">
+                @OptIn(ExperimentalMaterial3Api::class)
+                @Composable
+                fun Gallery() {
+                    var selected by rememberSaveable { mutableStateOf(setOf<Int>()) }
+                    Scaffold(topBar = {
+                        TopAppBar(
+                            title = { Text(if (selected.isEmpty()) "Gallery" else "${selected.size} selected") },
+                            actions = { if (selected.isNotEmpty()) TextButton(onClick = { selected = emptySet() }) { Text("Clear") } },
+                        )
+                    }) { padding ->
+                        LazyVerticalGrid(
+                            columns = GridCells.Adaptive(96.dp),
+                            contentPadding = padding,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            items(60, key = { it }) { i ->
+                                val isSelected = i in selected
+                                Box(
+                                    Modifier
+                                        .aspectRatio(1f)
+                                        .background(Color.hsv(i * 6f % 360, 0.5f, 0.9f))
+                                        .clickable { selected = if (isSelected) selected - i else selected + i },
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    if (isSelected) Icon(Icons.Filled.CheckCircle, contentDescription = "Selected", tint = Color.White)
+                                }
+                            }
+                        }
+                    }
+                }
+              </script>
+            </div>
+          </details>
+        </section>
+
+        <section class="doc-section" id="quiz" data-title="Quiz">
+          <div class="sec-head"><h2><span class="sec-num">17.12</span>Quiz</h2></div>
+          <script type="application/json" data-quiz>
+          [
+            {"q": "Why doesn't `var count = 0` inside a composable work as a counter?", "options": ["Compose forbids var", "It is reset on every recomposition and isn't observable state", "It needs `lateinit`", "It works fine"], "answer": 1, "explain": "Use `remember { mutableStateOf(0) }` (or mutableIntStateOf) so the value survives and changes trigger recomposition."},
+            {"q": "What does state hoisting mean?", "options": ["Storing state in a database", "Moving state to a composable's caller and passing value + callback down", "Using global variables", "Caching images"], "answer": 1, "explain": "State down, events up → stateless, reusable components."},
+            {"q": "`Modifier.padding(16.dp).background(Color.Red)` produces…", "options": ["A red box with content inset by 16dp", "A transparent 16dp margin around a red area", "An error", "Both are identical"], "answer": 1, "explain": "Modifiers apply in order; background after padding only covers the inner area."},
+            {"q": "Why give `items(list, key = { it.id })` a key?", "options": ["It's required to compile", "So Compose can track items across changes: preserving state and animating moves correctly", "To sort the list", "To enable sticky headers"], "answer": 1, "explain": "Without keys, items are tracked by position, which breaks when items are inserted or removed."},
+            {"q": "Where should you collect one-off ViewModel events to show a Snackbar?", "options": ["Directly in the composable body", "In `LaunchedEffect`", "In `remember`", "In a Preview"], "answer": 1, "explain": "LaunchedEffect runs suspend code tied to the composable's lifecycle; the body must be free of side effects."},
+            {"q": "Which API keeps a value across rotation AND process death?", "options": ["remember", "rememberSaveable", "derivedStateOf", "SideEffect"], "answer": 1, "explain": "rememberSaveable stores Bundle-compatible values in the saved instance state."}
+          ]
+          </script>
+        </section>
+
+        <section class="doc-section" id="references" data-title="Further reading">
+          <div class="sec-head"><h2><span class="sec-num">17.13</span>Further reading</h2></div>
+          <ul>
+            <li><a href="https://developer.android.com/develop/ui/compose/mental-model" target="_blank" rel="noopener">Thinking in Compose</a> · <a href="https://developer.android.com/develop/ui/compose/state" target="_blank" rel="noopener">State and Jetpack Compose</a></li>
+            <li><a href="https://developer.android.com/develop/ui/compose/modifiers" target="_blank" rel="noopener">Modifiers</a> · <a href="https://developer.android.com/develop/ui/compose/lists" target="_blank" rel="noopener">Lists and grids</a></li>
+            <li><a href="https://developer.android.com/develop/ui/compose/designsystems/material3" target="_blank" rel="noopener">Material Design 3 in Compose</a> · <a href="https://developer.android.com/develop/ui/compose/side-effects" target="_blank" rel="noopener">Side-effects</a></li>
+            <li><a href="https://developer.android.com/courses/jetpack-compose/course" target="_blank" rel="noopener">Official Jetpack Compose course</a></li>
+          </ul>
+        </section>
+
+        <div id="pager"></div>
+      </div>
+    </main>
+  </div>
+  <div id="site-footer"></div>
+  <script src="assets/js/core.js?v=__BUILD__"></script>
+</body>
+</html>

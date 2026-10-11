@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>App Architecture: MVVM, Hilt & Navigation — Kotlin Academy</title>
+  <meta name="description" content="Modern Android app architecture: UI, domain and data layers, ViewModel and unidirectional data flow, UI state and events, repositories, dependency injection with Hilt, and type-safe Navigation Compose.">
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <meta name="color-scheme" content="dark light">
+  <link rel="stylesheet" href="assets/css/main.css?v=__BUILD__">
+  <script>try{var t=localStorage.getItem("ka-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body data-page="architecture">
+  <div id="site-header"></div>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="content">
+      <div class="content-inner">
+
+        <header class="page-hero">
+          <nav class="crumbs"><a href="index.html">Home</a><span>/</span><span>Android with Kotlin</span><span>/</span><span>Lesson 18</span></nav>
+          <div class="eyebrow">Lesson 18 · Android with Kotlin</div>
+          <h1>App Architecture: MVVM, Hilt &amp; Navigation</h1>
+          <p class="lead">A screen that works is the beginning. An app that keeps working as it grows needs <b>architecture</b>: clear layers, one source of truth, state that flows in one direction, and dependencies that are injected rather than created. This is Google's recommended architecture — and exactly how TaskFlow is built.</p>
+          <div class="page-meta"><span>⏱ 70 min</span><span>🎯 Advanced</span><span>🏗 Uses TaskFlow's real code</span></div>
+          <div class="objectives">
+            <h4>You will be able to</h4>
+            <ul>
+              <li>Separate UI, domain and data layers</li>
+              <li>Write ViewModels exposing <code>StateFlow</code> UI state</li>
+              <li>Apply unidirectional data flow (UDF)</li>
+              <li>Model one-off events correctly</li>
+              <li>Inject dependencies with Hilt</li>
+              <li>Navigate type-safely between screens with arguments</li>
+            </ul>
+          </div>
+        </header>
+
+        <section class="doc-section" id="layers" data-title="Layers">
+          <div class="sec-head"><h2><span class="sec-num">18.1</span>The layers of an app</h2></div>
+          <figure class="diagram">
+            <svg viewBox="0 0 700 300" width="700" role="img" aria-label="UI layer, domain layer and data layer">
+              <defs><marker id="aa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#9a98a8"/></marker></defs>
+              <g font-family="Inter, sans-serif" font-size="13" text-anchor="middle">
+                <rect x="10" y="10" width="680" height="80" rx="14" fill="rgba(108,184,255,.08)" stroke="#6cb8ff"/>
+                <text x="60" y="34" fill="#6cb8ff" font-weight="800" text-anchor="middle">UI LAYER</text>
+                <rect x="180" y="30" width="200" height="46" rx="10" fill="rgba(108,184,255,.15)" stroke="#6cb8ff"/><text x="280" y="58" fill="currentColor" font-weight="700">Composables (screens)</text>
+                <rect x="440" y="30" width="200" height="46" rx="10" fill="rgba(108,184,255,.15)" stroke="#6cb8ff"/><text x="540" y="58" fill="currentColor" font-weight="700">ViewModels</text>
+                <rect x="10" y="110" width="680" height="60" rx="14" fill="rgba(169,139,255,.07)" stroke="#a98bff" stroke-dasharray="6 4"/>
+                <text x="100" y="134" fill="#a98bff" font-weight="800">DOMAIN (optional)</text>
+                <rect x="440" y="120" width="200" height="40" rx="10" fill="rgba(169,139,255,.15)" stroke="#a98bff"/><text x="540" y="145" fill="currentColor" font-weight="700">Models · use cases</text>
+                <rect x="10" y="190" width="680" height="100" rx="14" fill="rgba(61,220,132,.07)" stroke="#3ddc84"/>
+                <text x="74" y="214" fill="#3ddc84" font-weight="800">DATA LAYER</text>
+                <rect x="440" y="200" width="200" height="38" rx="10" fill="rgba(61,220,132,.15)" stroke="#3ddc84"/><text x="540" y="224" fill="currentColor" font-weight="700">Repositories</text>
+                <rect x="180" y="246" width="140" height="34" rx="8" fill="rgba(61,220,132,.1)" stroke="#3ddc84"/><text x="250" y="268" fill="currentColor">Room (local)</text>
+                <rect x="340" y="246" width="140" height="34" rx="8" fill="rgba(61,220,132,.1)" stroke="#3ddc84"/><text x="410" y="268" fill="currentColor">Retrofit (remote)</text>
+                <rect x="500" y="246" width="170" height="34" rx="8" fill="rgba(61,220,132,.1)" stroke="#3ddc84"/><text x="585" y="268" fill="currentColor">DataStore · WorkManager</text>
+                <path d="M380 53H436" stroke="#9a98a8" stroke-width="2" marker-end="url(#aa)"/>
+                <path d="M540 76V196" stroke="#9a98a8" stroke-width="2" marker-end="url(#aa)"/>
+                <path d="M540 238L260 244M540 238L410 244M540 238L585 244" stroke="#9a98a8" stroke-width="1.5"/>
+              </g>
+            </svg>
+            <figcaption>Dependencies point downward only. The data layer knows nothing about the UI.</figcaption>
+          </figure>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>Layer</th><th>Responsibility</th><th>In TaskFlow</th></tr></thead>
+              <tbody>
+                <tr><td>UI</td><td>Draw state, forward user actions. No business logic.</td><td><code>TasksScreen</code>, <code>TasksContent</code>, <code>TaskItem</code></td></tr>
+                <tr><td>ViewModel (UI logic)</td><td>Turn data into UI state; handle user actions; survive configuration changes.</td><td><code>TasksViewModel</code>, <code>EditTaskViewModel</code></td></tr>
+                <tr><td>Domain</td><td>Plain Kotlin models and reusable business rules.</td><td><code>Task</code>, <code>SortOrder</code>, <code>TaskFilter</code></td></tr>
+                <tr><td>Data</td><td>Own the data: where it's stored, fetched, cached; expose it as Flows.</td><td><code>OfflineFirstTaskRepository</code>, <code>TaskDao</code>, <code>TodoApi</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="filetree"><span class="d">com.kotlinacademy.taskflow/</span>
+├── <span class="d">domain/</span>         Task.kt · UserSettings.kt
+├── <span class="d">data/</span>           TaskRepository.kt · OfflineFirstTaskRepository.kt · TaskMappers.kt
+│   ├── <span class="d">local/</span>      TaskEntity.kt · TaskDao.kt · TaskDatabase.kt
+│   ├── <span class="d">remote/</span>     TodoApi.kt
+│   └── <span class="d">settings/</span>   SettingsRepository.kt
+├── <span class="d">reminders/</span>      ReminderScheduler.kt · ReminderWorker.kt · ReminderNotifier.kt
+├── <span class="d">di/</span>             AppModule.kt · BindingsModule.kt
+└── <span class="d">ui/</span>
+    ├── <span class="d">tasks/</span>      TasksScreen.kt · TasksViewModel.kt · TaskItem.kt
+    ├── <span class="d">edit/</span>       EditTaskScreen.kt · EditTaskViewModel.kt
+    ├── <span class="d">settings/</span>   SettingsScreen.kt · SettingsViewModel.kt
+    ├── <span class="d">navigation/</span> TaskFlowNavHost.kt
+    └── <span class="d">theme/</span>      Color.kt · Theme.kt</div>
+        </section>
+
+        <section class="doc-section" id="viewmodel" data-title="ViewModel & UDF">
+          <div class="sec-head"><h2><span class="sec-num">18.2</span>ViewModel &amp; unidirectional data flow</h2></div>
+          <p>A <code>ViewModel</code> survives configuration changes and owns <code>viewModelScope</code>, which is cancelled when the screen is gone for good. It exposes <b>one immutable UI state</b> as a <code>StateFlow</code>, and public functions for user actions:</p>
+          <div class="flow">
+            <div class="fbox">Repository Flows<small>tasks, settings</small></div><span class="farrow">→</span>
+            <div class="fbox">ViewModel<small>combine → TasksUiState</small></div><span class="farrow">→</span>
+            <div class="fbox">Screen<small>renders state</small></div><span class="farrow">→</span>
+            <div class="fbox">User action<small>viewModel.toggleDone(task)</small></div><span class="farrow">↺</span>
+          </div>
+          <script type="text/plain" data-code="kotlin" data-file="ui/tasks/TasksViewModel.kt" data-numbered>
+            data class TasksUiState(
+                val isLoading: Boolean = true,
+                val tasks: List<Task> = emptyList(),
+                val filter: TaskFilter = TaskFilter.ALL,
+                val query: String = "",
+                val totalCount: Int = 0,
+                val activeCount: Int = 0,
+                val doneCount: Int = 0,
+                val isImporting: Boolean = false,
+            )
+
+            @HiltViewModel
+            class TasksViewModel @Inject constructor(
+                private val repository: TaskRepository,
+                settingsRepository: SettingsRepository,
+            ) : ViewModel() {
+
+                private val filter = MutableStateFlow(TaskFilter.ALL)       // UI inputs as state
+                private val query = MutableStateFlow("")
+                private val isImporting = MutableStateFlow(false)
+
+                val uiState: StateFlow<TasksUiState> = combine(
+                    repository.observeTasks(), settingsRepository.settings, filter, query, isImporting,
+                ) { tasks, settings, filter, query, importing ->
+                    val visible = tasks
+                        .filter(filter::matches)
+                        .filter { query.isBlank() || it.title.contains(query, ignoreCase = true) || it.notes.contains(query, ignoreCase = true) }
+                        .sortedWith(settings.sortOrder.comparator)
+                    TasksUiState(
+                        isLoading = false, tasks = visible, filter = filter, query = query,
+                        totalCount = tasks.size, activeCount = tasks.count { !it.isDone }, doneCount = tasks.count { it.isDone },
+                        isImporting = importing,
+                    )
+                }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TasksUiState())
+
+                fun setFilter(newFilter: TaskFilter) { filter.value = newFilter }
+                fun setQuery(text: String) { query.value = text }
+                fun toggleDone(task: Task) {
+                    viewModelScope.launch { repository.setDone(task.id, !task.isDone) }
+                }
+            }
+          </script>
+          <div class="callout tip">
+            <div class="ci">✅</div>
+            <div><span class="ct">Why this design works</span>
+              <ul>
+                <li><b>Single source of truth:</b> tasks come only from the database Flow. Toggling a task writes to the database; the new list flows back automatically. No “remember to refresh the UI”.</li>
+                <li><b>Derived state:</b> counts, filtering and sorting are computed, never stored separately — so they can't get out of sync.</li>
+                <li><b>Testable:</b> the ViewModel depends on interfaces; tests pass fakes (see <code>TasksViewModelTest</code> in the final project).</li>
+              </ul>
+            </div>
+          </div>
+          <div class="callout danger">
+            <div class="ci">🚫</div>
+            <div><span class="ct">Never put these in a ViewModel</span>
+              <p>References to <code>Activity</code>, <code>Context</code> (except via <code>AndroidViewModel</code>/application context), <code>View</code>s or composables. The ViewModel outlives them — that's a memory leak.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="events" data-title="One-off events">
+          <div class="sec-head"><h2><span class="sec-num">18.3</span>State vs one-off events</h2></div>
+          <p>Most things are <b>state</b> (what's on screen). Some are <b>events</b> that should happen once: show a snackbar, navigate after saving. Two good patterns:</p>
+          <div class="grid grid-2">
+            <div class="glass card"><h4>Model it as state</h4><p class="small">The edit screen sets <code>isSaved = true</code> in its UI state; the screen reacts with <code>LaunchedEffect(state.isSaved) { if (it) onDone() }</code>. Survives rotation, easy to test. Google's preferred approach.</p></div>
+            <div class="glass card"><h4>A <code>Channel</code> of events</h4><p class="small">For fire-and-forget messages like “Task deleted — Undo”, TaskFlow uses <code>Channel(BUFFERED).receiveAsFlow()</code>: each event is delivered to exactly one collector, and buffered if the UI isn't collecting at that moment.</p></div>
+          </div>
+          <script type="text/plain" data-code="kotlin" data-file="Events: ViewModel + Screen">
+            // ViewModel
+            sealed interface TasksEvent {
+                data class TaskDeleted(val task: Task) : TasksEvent
+                data class Imported(val count: Int) : TasksEvent
+                data object ImportFailed : TasksEvent
+            }
+            private val _events = Channel<TasksEvent>(Channel.BUFFERED)
+            val events: Flow<TasksEvent> = _events.receiveAsFlow()
+
+            fun delete(task: Task) {
+                viewModelScope.launch {
+                    repository.delete(task.id)
+                    _events.send(TasksEvent.TaskDeleted(task))
+                }
+            }
+
+            // Screen
+            LaunchedEffect(viewModel) {
+                viewModel.events.collect { event ->
+                    when (event) {
+                        is TasksEvent.TaskDeleted -> {
+                            val result = snackbarHostState.showSnackbar("Task deleted", actionLabel = "Undo")
+                            if (result == SnackbarResult.ActionPerformed) viewModel.undoDelete(event.task)
+                        }
+                        is TasksEvent.Imported -> snackbarHostState.showSnackbar("Imported ${event.count} tasks")
+                        TasksEvent.ImportFailed -> snackbarHostState.showSnackbar("Couldn't import tasks")
+                    }
+                }
+            }
+          </script>
+        </section>
+
+        <section class="doc-section" id="repository" data-title="Repositories">
+          <div class="sec-head"><h2><span class="sec-num">18.4</span>Repositories: the single source of truth</h2></div>
+          <p>A repository hides <em>where</em> data comes from. ViewModels see an interface with Flows and suspend functions; the implementation coordinates Room, the network, WorkManager… Swap the implementation for a fake in tests, or for a different backend later, without touching the UI.</p>
+          <script type="text/plain" data-code="kotlin" data-file="data/TaskRepository.kt">
+            interface TaskRepository {
+                fun observeTasks(): Flow<List<Task>>
+                suspend fun getTask(id: Long): Task?
+                suspend fun upsert(task: Task): Long
+                suspend fun setDone(id: Long, done: Boolean)
+                suspend fun delete(id: Long)
+                suspend fun importSampleTasks(): Result<Int>
+            }
+          </script>
+          <p>The implementation is shown in full in lesson 19. Note the mapping: Room's <code>TaskEntity</code> and the network's <code>TodoDto</code> never leave the data layer — the rest of the app only sees the domain <code>Task</code>.</p>
+        </section>
+
+        <section class="doc-section" id="hilt" data-title="Dependency injection with Hilt">
+          <div class="sec-head"><h2><span class="sec-num">18.5</span>Dependency injection with Hilt</h2></div>
+          <p>Without DI, every class creates its own collaborators: <code>TasksViewModel</code> would build a repository, which builds a database and a Retrofit client… Hard to test and wasteful. With <b>Hilt</b> (built on Dagger), you declare what each class needs in its constructor and Hilt builds and delivers the whole object graph at compile time.</p>
+          <ol class="steps">
+            <li><b>Add the plugin &amp; dependencies</b>
+              <script type="text/plain" data-code="kts" data-file="app/build.gradle.kts">
+                plugins {
+                    alias(libs.plugins.ksp)
+                    alias(libs.plugins.hilt)                         // com.google.dagger.hilt.android
+                }
+                dependencies {
+                    implementation(libs.hilt.android)
+                    ksp(libs.hilt.compiler)
+                    implementation(libs.androidx.hilt.navigation.compose)   // hiltViewModel()
+                }
+              </script>
+            </li>
+            <li><b>Annotate the Application and Activity</b>
+              <script type="text/plain" data-code="kotlin" data-file="TaskFlowApp.kt / MainActivity.kt">
+                @HiltAndroidApp                       // generates the app-wide container
+                class TaskFlowApp : Application()
+
+                @AndroidEntryPoint                    // lets Hilt inject into this Activity and its composables' ViewModels
+                class MainActivity : ComponentActivity() { /* … */ }
+              </script>
+            </li>
+            <li><b>Constructor injection for your own classes</b>
+              <script type="text/plain" data-code="kotlin" data-file="data/OfflineFirstTaskRepository.kt">
+                @Singleton                            // one instance for the whole app
+                class OfflineFirstTaskRepository @Inject constructor(
+                    private val dao: TaskDao,
+                    private val api: TodoApi,
+                    private val reminders: ReminderScheduler,
+                ) : TaskRepository { /* … */ }
+              </script>
+            </li>
+            <li><b>Modules for things you can't annotate</b> (third-party classes, interfaces)
+              <script type="text/plain" data-code="kotlin" data-file="di/AppModule.kt + di/BindingsModule.kt">
+                @Module
+                @InstallIn(SingletonComponent::class)
+                object DataModule {
+                    @Provides @Singleton
+                    fun provideDatabase(@ApplicationContext context: Context): TaskDatabase =
+                        Room.databaseBuilder(context, TaskDatabase::class.java, "taskflow.db").build()
+
+                    @Provides
+                    fun provideTaskDao(database: TaskDatabase): TaskDao = database.taskDao()
+                }
+
+                @Module
+                @InstallIn(SingletonComponent::class)
+                abstract class BindingsModule {
+                    @Binds                                // "when someone asks for TaskRepository, give OfflineFirstTaskRepository"
+                    abstract fun bindTaskRepository(impl: OfflineFirstTaskRepository): TaskRepository
+                }
+              </script>
+            </li>
+            <li><b>Get a ViewModel in a composable</b>
+              <script type="text/plain" data-code="kotlin" data-file="ui/tasks/TasksScreen.kt">
+                @Composable
+                fun TasksScreen(
+                    onAddTask: () -> Unit,
+                    viewModel: TasksViewModel = hiltViewModel(),   // scoped to the navigation destination
+                ) { /* … */ }
+              </script>
+            </li>
+          </ol>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>Component</th><th>Lives as long as</th><th>Scope annotation</th></tr></thead>
+              <tbody>
+                <tr><td><code>SingletonComponent</code></td><td>The application</td><td><code>@Singleton</code></td></tr>
+                <tr><td><code>ActivityRetainedComponent</code></td><td>Activity, across rotations</td><td><code>@ActivityRetainedScoped</code></td></tr>
+                <tr><td><code>ViewModelComponent</code></td><td>A ViewModel</td><td><code>@ViewModelScoped</code></td></tr>
+                <tr><td><code>ActivityComponent</code></td><td>An Activity instance</td><td><code>@ActivityScoped</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout note">
+            <div class="ci">ℹ️</div>
+            <div><span class="ct">Hilt errors are compile errors</span>
+              <p>If something can't be provided (“<em>[Dagger/MissingBinding] TaskRepository cannot be provided without an @Provides-annotated method</em>”), the build fails with a path through the graph. Read it bottom-up to find who needs what. That's a feature: DI mistakes never reach users.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="navigation" data-title="Type-safe navigation">
+          <div class="sec-head"><h2><span class="sec-num">18.6</span>Type-safe Navigation Compose</h2></div>
+          <p>Navigation Compose 2.8+ uses <b>Kotlin types as routes</b>. Each destination is a <code>@Serializable</code> object or data class; its properties are the arguments. No string routes, no manual argument parsing.</p>
+          <script type="text/plain" data-code="kotlin" data-file="ui/navigation/TaskFlowNavHost.kt" data-numbered>
+            @Serializable data object TasksRoute
+            @Serializable data class EditTaskRoute(val taskId: Long = NEW_TASK) {
+                companion object { const val NEW_TASK = -1L }
+            }
+            @Serializable data object SettingsRoute
+
+            @Composable
+            fun TaskFlowNavHost(navController: NavHostController = rememberNavController()) {
+                NavHost(navController = navController, startDestination = TasksRoute) {
+                    composable<TasksRoute> {
+                        TasksScreen(
+                            onAddTask = { navController.navigate(EditTaskRoute()) },
+                            onOpenTask = { id -> navController.navigate(EditTaskRoute(id)) },  // typed argument
+                            onOpenSettings = { navController.navigate(SettingsRoute) },
+                        )
+                    }
+                    composable<EditTaskRoute> {
+                        EditTaskScreen(onDone = { navController.popBackStack() })
+                    }
+                    composable<SettingsRoute> {
+                        SettingsScreen(onBack = { navController.popBackStack() })
+                    }
+                }
+            }
+          </script>
+          <p>The destination's ViewModel reads its arguments from <code>SavedStateHandle</code> — which also survives process death:</p>
+          <script type="text/plain" data-code="kotlin" data-file="ui/edit/EditTaskViewModel.kt">
+            @HiltViewModel
+            class EditTaskViewModel @Inject constructor(
+                savedStateHandle: SavedStateHandle,
+                private val repository: TaskRepository,
+            ) : ViewModel() {
+                private val taskId: Long = savedStateHandle.toRoute<EditTaskRoute>().taskId
+                // …load the task if taskId != NEW_TASK
+            }
+          </script>
+          <div class="callout tip">
+            <div class="ci">🧭</div>
+            <div><span class="ct">Navigation guidelines</span>
+              <ul>
+                <li>Pass <b>IDs</b>, not whole objects. The next screen loads the data from the repository (single source of truth).</li>
+                <li>Screens don't receive the <code>NavController</code>; they expose callbacks (<code>onOpenTask</code>). Navigation stays in one place and screens stay testable.</li>
+                <li>Add the kotlinx.serialization plugin: <code>alias(libs.plugins.kotlin.serialization)</code>.</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="checklist" data-title="Architecture checklist">
+          <div class="sec-head"><h2><span class="sec-num">18.7</span>Architecture checklist</h2></div>
+          <ul class="checklist">
+            <li>Each screen has a ViewModel exposing a single <code>StateFlow&lt;UiState&gt;</code> built from repository Flows.</li>
+            <li>UI state is an immutable data class (or sealed interface); updates use <code>copy</code> / <code>update { }</code>.</li>
+            <li>Composables are split into a stateful entry point and stateless content.</li>
+            <li>The data layer exposes domain models; entities/DTOs stay inside it.</li>
+            <li>All dependencies arrive through constructors; Hilt wires them.</li>
+            <li>Suspend functions are main-safe; no <code>GlobalScope</code>, no <code>runBlocking</code> in app code.</li>
+            <li>Navigation uses typed routes and passes IDs.</li>
+            <li>ViewModels have unit tests using fakes.</li>
+          </ul>
+        </section>
+
+        <section class="doc-section" id="exercises" data-title="Exercises">
+          <div class="sec-head"><h2><span class="sec-num">18.8</span>Exercises</h2></div>
+          <details class="exercise">
+            <summary>Exercise 1 — Counter ViewModel <span class="badge green">Easy</span></summary>
+            <div class="ex-body">
+              <p>Move the Counter from lesson 17 into a <code>CounterViewModel</code> with <code>StateFlow&lt;Int&gt;</code> and <code>increment()</code>/<code>reset()</code>. Verify that the count now survives rotation (it didn't with plain <code>remember</code>).</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution">
+                class CounterViewModel : ViewModel() {
+                    private val _count = MutableStateFlow(0)
+                    val count: StateFlow<Int> = _count.asStateFlow()
+                    fun increment() = _count.update { it + 1 }
+                    fun reset() { _count.value = 0 }
+                }
+
+                @Composable
+                fun CounterScreen(viewModel: CounterViewModel = viewModel()) {     // lifecycle-viewmodel-compose
+                    val count by viewModel.count.collectAsStateWithLifecycle()
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("Clicked $count times")
+                        Button(onClick = viewModel::increment) { Text("+1") }
+                        TextButton(onClick = viewModel::reset) { Text("Reset") }
+                    }
+                }
+              </script>
+            </div>
+          </details>
+          <details class="exercise">
+            <summary>Exercise 2 — Add a “Statistics” screen to TaskFlow <span class="badge blue">Medium</span></summary>
+            <div class="ex-body">
+              <p>Add <code>StatsRoute</code>, a <code>StatsViewModel</code> (injected <code>TaskRepository</code>) exposing tasks per priority and completion percentage, and a <code>StatsScreen</code>. Link it from the Tasks top bar.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution (core)">
+                data class StatsUiState(val total: Int = 0, val done: Int = 0, val byPriority: Map<Priority, Int> = emptyMap()) {
+                    val percentDone: Int get() = if (total == 0) 0 else done * 100 / total
+                }
+
+                @HiltViewModel
+                class StatsViewModel @Inject constructor(repository: TaskRepository) : ViewModel() {
+                    val state: StateFlow<StatsUiState> = repository.observeTasks()
+                        .map { tasks ->
+                            StatsUiState(
+                                total = tasks.size,
+                                done = tasks.count { it.isDone },
+                                byPriority = tasks.groupingBy { it.priority }.eachCount(),
+                            )
+                        }
+                        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), StatsUiState())
+                }
+
+                // NavHost: composable<StatsRoute> { StatsScreen(onBack = { navController.popBackStack() }) }
+              </script>
+            </div>
+          </details>
+          <details class="exercise">
+            <summary>Exercise 3 — Test the edit ViewModel's validation <span class="badge amber">Challenge</span></summary>
+            <div class="ex-body">
+              <p>Extract the validation logic of <code>EditTaskViewModel.save()</code> into a pure function <code>validateTask(title): TaskValidation</code> and unit test it. Then think: why is it harder to unit test the ViewModel itself? (Hint: <code>toRoute()</code> needs Android's <code>Bundle</code>; options are Robolectric, or injecting the task id separately.)</p>
+            </div>
+          </details>
+        </section>
+
+        <section class="doc-section" id="quiz" data-title="Quiz">
+          <div class="sec-head"><h2><span class="sec-num">18.9</span>Quiz</h2></div>
+          <script type="application/json" data-quiz>
+          [
+            {"q": "In unidirectional data flow, how does the UI change the data?", "options": ["It modifies the state object directly", "It calls a ViewModel function; new state flows back down", "It writes to the database from the composable", "It recreates the ViewModel"], "answer": 1, "explain": "State flows down, events flow up."},
+            {"q": "Why should a ViewModel never hold a reference to an Activity?", "options": ["Activities are immutable", "The ViewModel outlives the Activity across rotation, leaking it", "Hilt forbids it", "It slows down Compose"], "answer": 1, "explain": "A destroyed Activity referenced by a living ViewModel can't be garbage-collected."},
+            {"q": "What does `@Binds abstract fun bind(impl: OfflineFirstTaskRepository): TaskRepository` do?", "options": ["Creates a new class", "Tells Hilt to provide OfflineFirstTaskRepository whenever TaskRepository is requested", "Binds a view", "Registers a Room DAO"], "answer": 1, "explain": "@Binds maps an interface to its implementation."},
+            {"q": "With type-safe navigation, how should the edit screen get the task to edit?", "options": ["Pass the whole Task object in the route", "Pass the task's id; the ViewModel loads the task from the repository", "Use a global variable", "Read it from the previous screen's ViewModel"], "answer": 1, "explain": "IDs keep routes small and make the repository the single source of truth."},
+            {"q": "Which is the best place to compute `activeCount`?", "options": ["Store it in the database and update it manually", "Derive it inside the ViewModel's combine from the task list", "Compute it in the composable on every recomposition", "Keep a separate MutableStateFlow and increment it"], "answer": 1, "explain": "Derived state can't get out of sync with its source."},
+            {"q": "What happens if Hilt can't satisfy a dependency?", "options": ["The app crashes at runtime", "The build fails with a MissingBinding error", "Hilt injects null", "It falls back to reflection"], "answer": 1, "explain": "Dagger/Hilt validate the graph at compile time."}
+          ]
+          </script>
+        </section>
+
+        <section class="doc-section" id="references" data-title="Further reading">
+          <div class="sec-head"><h2><span class="sec-num">18.10</span>Further reading</h2></div>
+          <ul>
+            <li><a href="https://developer.android.com/topic/architecture" target="_blank" rel="noopener">Guide to app architecture</a> · <a href="https://developer.android.com/topic/architecture/recommendations" target="_blank" rel="noopener">Recommendations</a></li>
+            <li><a href="https://developer.android.com/topic/libraries/architecture/viewmodel" target="_blank" rel="noopener">ViewModel overview</a> · <a href="https://developer.android.com/topic/architecture/ui-layer/events" target="_blank" rel="noopener">UI events</a></li>
+            <li><a href="https://developer.android.com/training/dependency-injection/hilt-android" target="_blank" rel="noopener">Dependency injection with Hilt</a></li>
+            <li><a href="https://developer.android.com/guide/navigation/design/type-safety" target="_blank" rel="noopener">Type safety in Navigation Compose</a></li>
+            <li><a href="https://github.com/android/nowinandroid" target="_blank" rel="noopener">Now in Android — Google's reference app</a></li>
+          </ul>
+        </section>
+
+        <div id="pager"></div>
+      </div>
+    </main>
+  </div>
+  <div id="site-footer"></div>
+  <script src="assets/js/core.js?v=__BUILD__"></script>
+</body>
+</html>

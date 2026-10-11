@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Testing, Debugging & Publishing — Kotlin Academy</title>
+  <meta name="description" content="Ship Android apps with confidence: the testing pyramid, ViewModel unit tests with fakes, Room and Compose UI tests, debugging and profiling tools, R8, signing, Android App Bundles, Google Play release tracks and CI with GitHub Actions.">
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <meta name="color-scheme" content="dark light">
+  <link rel="stylesheet" href="assets/css/main.css?v=__BUILD__">
+  <script>try{var t=localStorage.getItem("ka-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body data-page="release">
+  <div id="site-header"></div>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="content">
+      <div class="content-inner">
+
+        <header class="page-hero">
+          <nav class="crumbs"><a href="index.html">Home</a><span>/</span><span>Android with Kotlin</span><span>/</span><span>Lesson 20</span></nav>
+          <div class="eyebrow">Lesson 20 · Android with Kotlin</div>
+          <h1>Testing, Debugging &amp; Publishing</h1>
+          <p class="lead">The last mile: prove your app works, find out why when it doesn't, make it small and fast, sign it, and put it in the hands of real users on Google Play — with a CI pipeline that checks every change automatically.</p>
+          <div class="page-meta"><span>⏱ 50 min</span><span>🎯 Master</span><span>🚀 From debug build to Play Store</span></div>
+          <div class="objectives">
+            <h4>You will be able to</h4>
+            <ul>
+              <li>Plan tests with the testing pyramid</li>
+              <li>Unit-test ViewModels with fakes and test dispatchers</li>
+              <li>Write Room and Compose UI tests</li>
+              <li>Debug with breakpoints, Logcat and inspectors</li>
+              <li>Shrink, sign and bundle a release build</li>
+              <li>Publish on Google Play and automate CI</li>
+            </ul>
+          </div>
+        </header>
+
+        <section class="doc-section" id="pyramid" data-title="The testing pyramid">
+          <div class="sec-head"><h2><span class="sec-num">20.1</span>The testing pyramid</h2></div>
+          <figure class="diagram">
+            <svg viewBox="0 0 640 230" width="640" role="img" aria-label="Testing pyramid">
+              <g font-family="Inter, sans-serif" font-size="13" text-anchor="middle">
+                <path d="M320 10L410 80H230Z" fill="rgba(255,107,122,.18)" stroke="#ff6b7a"/>
+                <path d="M230 84H410L470 150H170Z" fill="rgba(251,191,36,.15)" stroke="#fbbf24"/>
+                <path d="M170 154H470L540 220H100Z" fill="rgba(61,220,151,.15)" stroke="#3ddc97"/>
+                <text x="320" y="64" fill="currentColor" font-weight="700">UI / E2E</text>
+                <text x="320" y="124" fill="currentColor" font-weight="700">Integration</text>
+                <text x="320" y="194" fill="currentColor" font-weight="700">Unit tests</text>
+                <g fill="#9a98a8" font-size="12" text-anchor="start">
+                  <text x="430" y="50">src/androidTest · slow · few</text>
+                  <text x="490" y="120">Room DAO, repository + fakes</text>
+                  <text x="555" y="190">src/test · ms each</text>
+                </g>
+              </g>
+            </svg>
+            <figcaption>Many fast unit tests at the base, fewer slow device tests at the top.</figcaption>
+          </figure>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>Folder</th><th>Runs on</th><th>Command</th><th>Test here</th></tr></thead>
+              <tbody>
+                <tr><td><code>src/test</code></td><td>Your computer's JVM</td><td><code>./gradlew testDebugUnitTest</code></td><td>ViewModels, repositories with fakes, domain logic, mappers</td></tr>
+                <tr><td><code>src/androidTest</code></td><td>Emulator / device</td><td><code>./gradlew connectedDebugAndroidTest</code></td><td>Room DAOs, Compose UI, navigation, end-to-end flows</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="doc-section" id="unit-tests" data-title="Unit-testing ViewModels">
+          <div class="sec-head"><h2><span class="sec-num">20.2</span>Unit-testing ViewModels</h2></div>
+          <p>Three ingredients make ViewModel tests fast and reliable:</p>
+          <ol>
+            <li><b>Fakes</b> for dependencies — small in-memory implementations of your interfaces.</li>
+            <li>A <b>MainDispatcherRule</b> replacing <code>Dispatchers.Main</code> (which doesn't exist on the JVM) with a test dispatcher.</li>
+            <li><b><code>runTest</code></b> for coroutines with virtual time, plus <b>Turbine</b> for Flows.</li>
+          </ol>
+          <script type="text/plain" data-code="kotlin" data-file="src/test/.../testing/MainDispatcherRule.kt">
+            @OptIn(ExperimentalCoroutinesApi::class)
+            class MainDispatcherRule(
+                val testDispatcher: TestDispatcher = UnconfinedTestDispatcher(),
+            ) : TestWatcher() {
+                override fun starting(description: Description) = Dispatchers.setMain(testDispatcher)
+                override fun finished(description: Description) = Dispatchers.resetMain()
+            }
+          </script>
+          <script type="text/plain" data-code="kotlin" data-file="src/test/.../testing/Fakes.kt">
+            class FakeTaskRepository(initial: List<Task> = emptyList()) : TaskRepository {
+                private val tasks = MutableStateFlow(initial)
+                private var nextId = (initial.maxOfOrNull { it.id } ?: 0) + 1
+                var importResult: Result<Int> = Result.success(3)
+                val current: List<Task> get() = tasks.value
+
+                override fun observeTasks(): Flow<List<Task>> = tasks
+                override suspend fun getTask(id: Long) = tasks.value.find { it.id == id }
+                override suspend fun upsert(task: Task): Long {
+                    val id = if (task.id == 0L) nextId++ else task.id
+                    tasks.update { list -> list.filterNot { it.id == id } + task.copy(id = id) }
+                    return id
+                }
+                override suspend fun setDone(id: Long, done: Boolean) =
+                    tasks.update { list -> list.map { if (it.id == id) it.copy(isDone = done) else it } }
+                override suspend fun delete(id: Long) = tasks.update { list -> list.filterNot { it.id == id } }
+                override suspend fun importSampleTasks() = importResult
+            }
+          </script>
+          <script type="text/plain" data-code="kotlin" data-file="src/test/.../ui/tasks/TasksViewModelTest.kt" data-numbered>
+            @OptIn(ExperimentalCoroutinesApi::class)
+            class TasksViewModelTest {
+
+                @get:Rule
+                val mainDispatcherRule = MainDispatcherRule()
+
+                private val sampleTasks = listOf(
+                    Task(id = 1, title = "Buy milk", isDone = true, createdAt = 1),
+                    Task(id = 2, title = "Learn Flow", priority = Priority.HIGH, createdAt = 2),
+                    Task(id = 3, title = "Write tests", notes = "for the ViewModel", priority = Priority.LOW, createdAt = 3),
+                )
+
+                private fun createViewModel(repository: FakeTaskRepository = FakeTaskRepository(sampleTasks)) =
+                    TasksViewModel(repository, FakeSettingsRepository(UserSettings(sortOrder = SortOrder.PRIORITY)))
+
+                @Test
+                fun `filters by status and searches title and notes`() = runTest {
+                    val viewModel = createViewModel()
+                    // stateIn(WhileSubscribed) only runs while someone collects; start a collector eagerly.
+                    backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiState.collect() }
+
+                    viewModel.setFilter(TaskFilter.DONE)
+                    assertEquals(listOf("Buy milk"), viewModel.uiState.value.tasks.map { it.title })
+
+                    viewModel.setFilter(TaskFilter.ALL)
+                    viewModel.setQuery("viewmodel")
+                    assertEquals(listOf("Write tests"), viewModel.uiState.value.tasks.map { it.title })
+                }
+
+                @Test
+                fun `delete emits an event and undo restores the task`() = runTest {
+                    val repository = FakeTaskRepository(sampleTasks)
+                    val viewModel = createViewModel(repository)
+
+                    viewModel.events.test {                                    // Turbine
+                        viewModel.delete(sampleTasks[0])
+                        val event = awaitItem() as TasksEvent.TaskDeleted
+                        assertEquals(2, repository.current.size)
+
+                        viewModel.undoDelete(event.task)
+                        assertEquals(3, repository.current.size)
+                    }
+                }
+            }
+          </script>
+          <script type="text/plain" data-code="bash" data-file="Terminal">
+            $ ./gradlew testDebugUnitTest
+            BUILD SUCCESSFUL
+            # HTML report: app/build/reports/tests/testDebugUnitTest/index.html
+          </script>
+        </section>
+
+        <section class="doc-section" id="ui-tests" data-title="Room & Compose UI tests">
+          <div class="sec-head"><h2><span class="sec-num">20.3</span>Room &amp; Compose UI tests</h2></div>
+          <p>Instrumented tests run on a device with real Android classes. For Room, use an in-memory database; for Compose, <code>createComposeRule()</code> lets you set content, find nodes by text or content description, perform clicks and assert.</p>
+          <script type="text/plain" data-code="kotlin" data-file="src/androidTest/.../data/TaskDaoTest.kt">
+            @RunWith(AndroidJUnit4::class)
+            class TaskDaoTest {
+                private lateinit var database: TaskDatabase
+                private lateinit var dao: TaskDao
+
+                @Before fun createDb() {
+                    database = Room.inMemoryDatabaseBuilder(ApplicationProvider.getApplicationContext(), TaskDatabase::class.java).build()
+                    dao = database.taskDao()
+                }
+                @After fun closeDb() = database.close()
+
+                @Test fun upsertInsertsThenUpdates() = runTest {
+                    val id = dao.upsert(entity("Draft"))
+                    assertEquals(-1L, dao.upsert(entity("Final").copy(id = id)))   // update returns -1
+                    assertEquals("Final", dao.getById(id)?.title)
+                }
+            }
+          </script>
+          <script type="text/plain" data-code="kotlin" data-file="src/androidTest/.../ui/TasksContentTest.kt">
+            class TasksContentTest {
+                @get:Rule val composeRule = createComposeRule()
+
+                @Test fun showsTasksAndReportsClicks() {
+                    var toggled: Task? = null
+                    val task = Task(id = 1, title = "Write UI tests")
+                    composeRule.setContent {
+                        TaskFlowTheme(dynamicColor = false) {
+                            TasksContent(
+                                state = TasksUiState(isLoading = false, tasks = listOf(task), totalCount = 1, activeCount = 1),
+                                snackbarHostState = SnackbarHostState(),
+                                onToggleDone = { toggled = it },
+                                onQueryChange = {}, onFilterChange = {}, onDelete = {}, onImport = {},
+                                onAddTask = {}, onOpenTask = {}, onOpenSettings = {},
+                            )
+                        }
+                    }
+                    composeRule.onNodeWithText("Write UI tests").assertIsDisplayed()
+                    composeRule.onNodeWithContentDescription("Toggle Write UI tests").performClick()
+                    assertEquals(task, toggled)
+                }
+            }
+          </script>
+          <p class="small muted">Testing the <em>stateless</em> <code>TasksContent</code> needs no ViewModel, database or Hilt — another payoff of state hoisting.</p>
+        </section>
+
+        <section class="doc-section" id="debugging" data-title="Debugging">
+          <div class="sec-head"><h2><span class="sec-num">20.4</span>Debugging toolkit</h2></div>
+          <div class="grid grid-2">
+            <div class="glass card"><h4>🐞 Debugger</h4><p class="small">Click the gutter to set a breakpoint, run with <b>Debug</b> (<kbd>Shift</kbd>+<kbd>F9</kbd>) or <b>Attach Debugger to Android Process</b>. Step over/into, inspect variables, <b>Evaluate Expression</b> (<kbd>Alt</kbd>+<kbd>F8</kbd>). Right-click a breakpoint for conditions and non-suspending log points. The <b>Coroutines</b> tab shows coroutine stacks.</p></div>
+            <div class="glass card"><h4>📜 Logcat</h4><p class="small">Filter with <code>package:mine level:error</code>. Crashes show as red <code>FATAL EXCEPTION</code> — read the first “Caused by” line that points to <em>your</em> package.</p></div>
+            <div class="glass card"><h4>🧱 Layout Inspector</h4><p class="small">Inspect the live Compose tree, parameters and <b>recomposition counts</b> — spot composables that recompose too often.</p></div>
+            <div class="glass card"><h4>🗄 App Inspection</h4><p class="small">Database Inspector (live SQL against Room), Network Inspector (requests/responses), Background Task Inspector (WorkManager).</p></div>
+            <div class="glass card"><h4>📈 Profiler</h4><p class="small">CPU, memory, and energy over time. Use the <em>profileable</em> release build for realistic numbers; system traces find jank.</p></div>
+            <div class="glass card"><h4>🚨 StrictMode &amp; LeakCanary</h4><p class="small"><code>StrictMode</code> flags disk/network work on the main thread in debug builds; the LeakCanary library detects leaked Activities automatically.</p></div>
+          </div>
+          <h3>Reading a crash</h3>
+          <script type="text/plain" data-code="text" data-file="Logcat">
+            FATAL EXCEPTION: main
+            Process: com.kotlinacademy.taskflow.debug, PID: 12345
+            java.lang.IllegalStateException: Cannot access database on the main thread since it may potentially lock the UI for a long period of time.
+                at androidx.room.RoomDatabase.assertNotMainThread(RoomDatabase.kt:…)
+                at com.kotlinacademy.taskflow.data.local.TaskDao_Impl.getByIdBlocking(TaskDao_Impl.kt:…)
+                at com.kotlinacademy.taskflow.ui.edit.EditTaskViewModel.<init>(EditTaskViewModel.kt:42)   ← your code: start here
+          </script>
+          <p>The message says what happened; the first frame in your package says where. Here the fix is to make the DAO function <code>suspend</code> and call it from <code>viewModelScope.launch</code>.</p>
+        </section>
+
+        <section class="doc-section" id="r8" data-title="Release builds & R8">
+          <div class="sec-head"><h2><span class="sec-num">20.5</span>Release builds &amp; R8</h2></div>
+          <p>Release builds enable <b>R8</b>, which removes unused code (shrinking), renames classes (obfuscation), and optimizes bytecode; <code>isShrinkResources</code> also removes unused resources. Apps commonly get much smaller and faster.</p>
+          <script type="text/plain" data-code="kts" data-file="app/build.gradle.kts">
+            buildTypes {
+                debug {
+                    applicationIdSuffix = ".debug"          // install debug and release side by side
+                    versionNameSuffix = "-debug"
+                }
+                release {
+                    isMinifyEnabled = true
+                    isShrinkResources = true
+                    proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+                }
+            }
+          </script>
+          <p>R8 only removes what it can prove is unused. Code reached via reflection (some serialization, JNI) needs <b>keep rules</b>. Libraries ship their own rules; add yours only for your reflective code:</p>
+          <script type="text/plain" data-code="proguard" data-file="app/proguard-rules.pro">
+            # Keep serializers for our @Serializable network DTOs and navigation routes.
+            -keepclassmembers @kotlinx.serialization.Serializable class com.kotlinacademy.taskflow.** {
+                *** Companion;
+                kotlinx.serialization.KSerializer serializer(...);
+            }
+            # Keep line numbers so crash reports from release builds are readable after retracing.
+            -keepattributes SourceFile,LineNumberTable
+          </script>
+          <div class="callout warn">
+            <div class="ci">🧪</div>
+            <div><span class="ct">Always test the release build</span>
+              <p>R8 bugs only show up in release. Install it on a device (<code>./gradlew installRelease</code> with a signing config) and click through every screen before publishing. Upload the generated <code>mapping.txt</code> to Play Console so crash stack traces are de-obfuscated.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="signing" data-title="Signing">
+          <div class="sec-head"><h2><span class="sec-num">20.6</span>Signing your app</h2></div>
+          <p>Every APK/AAB must be signed. Debug builds use an automatic debug key; releases need <b>your upload key</b>. Create it once and keep it safe — and never commit it to git.</p>
+          <script type="text/plain" data-code="bash" data-file="Terminal">
+            $ keytool -genkeypair -v -keystore upload-keystore.jks -keyalg RSA -keysize 2048 \
+                -validity 10000 -alias upload
+            # (or Android Studio: Build → Generate Signed App Bundle / APK → Create new…)
+          </script>
+          <div class="compare">
+            <div>
+              <script type="text/plain" data-code="properties" data-file="keystore.properties (git-ignored!)">
+                storeFile=upload-keystore.jks
+                storePassword=••••••••
+                keyAlias=upload
+                keyPassword=••••••••
+              </script>
+            </div>
+            <div>
+              <script type="text/plain" data-code="kts" data-file="app/build.gradle.kts">
+                val keystoreProperties = Properties().apply {
+                    val file = rootProject.file("keystore.properties")
+                    if (file.exists()) file.inputStream().use { load(it) }
+                }
+                android {
+                    signingConfigs {
+                        create("release") {
+                            if (keystoreProperties.isNotEmpty()) {
+                                storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
+                                storePassword = keystoreProperties.getProperty("storePassword")
+                                keyAlias = keystoreProperties.getProperty("keyAlias")
+                                keyPassword = keystoreProperties.getProperty("keyPassword")
+                            }
+                        }
+                    }
+                }
+              </script>
+            </div>
+          </div>
+          <div class="callout note">
+            <div class="ci">🔑</div>
+            <div><span class="ct">Play App Signing</span>
+              <p>Google Play stores your real <em>app signing key</em> and re-signs your bundles; you only sign uploads with your <em>upload key</em>. If you lose the upload key, Google can reset it. That's why Play App Signing is mandatory for new apps — and a relief.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="play" data-title="Publishing on Google Play">
+          <div class="sec-head"><h2><span class="sec-num">20.7</span>Publishing on Google Play</h2></div>
+          <ol class="steps">
+            <li><b>Build an Android App Bundle</b><code>./gradlew bundleRelease</code> → <code>app/build/outputs/bundle/release/app-release.aab</code>. Play generates optimized APKs per device from it.</li>
+            <li><b>Create a developer account</b>At <a href="https://play.google.com/console" target="_blank" rel="noopener">play.google.com/console</a> (one-time registration fee, identity verification).</li>
+            <li><b>Create the app &amp; store listing</b>Name, short and full description, icon (512×512), feature graphic (1024×500), phone screenshots, category, contact email.</li>
+            <li><b>Complete “App content”</b>Privacy policy URL, <b>Data safety</b> form (what data you collect and why), content rating questionnaire, target audience, ads declaration.</li>
+            <li><b>Test before production</b>Upload to <b>Internal testing</b> (up to 100 testers, available in minutes), then Closed/Open testing. New personal developer accounts must run a closed test with a minimum number of testers for a period before production access — check the current requirement in Play Console.</li>
+            <li><b>Release to production</b>Use a <b>staged rollout</b> (e.g. 10% → 50% → 100%) and watch the Android vitals dashboard for crashes and ANRs before widening.</li>
+          </ol>
+          <div class="callout tip">
+            <div class="ci">📅</div>
+            <div><span class="ct">Keep your app updatable</span>
+              <p>Increase <code>versionCode</code> for every upload. Google Play requires new apps and updates to target a recent API level, so plan a <code>targetSdk</code> bump every year.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="ci" data-title="Continuous integration">
+          <div class="sec-head"><h2><span class="sec-num">20.8</span>Continuous integration with GitHub Actions</h2></div>
+          <p>A CI pipeline builds and tests every push and pull request on a clean machine — no more “works on my computer”. This is the actual workflow this course's repository uses for TaskFlow:</p>
+          <script type="text/plain" data-code="text" data-file=".github/workflows/android.yml">
+            name: TaskFlow Android CI
+
+            on:
+              push:
+                paths: ["final-project/**"]
+              pull_request:
+                paths: ["final-project/**"]
+
+            jobs:
+              build:
+                runs-on: ubuntu-latest
+                defaults:
+                  run:
+                    working-directory: final-project/TaskFlow
+                steps:
+                  - uses: actions/checkout@v4
+                  - uses: actions/setup-java@v4
+                    with:
+                      distribution: temurin
+                      java-version: 17
+                  - uses: gradle/actions/setup-gradle@v4       # caching
+                  - run: ./gradlew assembleDebug testDebugUnitTest assembleDebugAndroidTest
+                  - uses: actions/upload-artifact@v4
+                    with:
+                      name: taskflow-debug-apk
+                      path: final-project/TaskFlow/app/build/outputs/apk/debug/*.apk
+          </script>
+          <p class="small muted">Next steps for a team: add <code>./gradlew lint</code>, run instrumented tests on an emulator (or Firebase Test Lab), and publish to Play's internal track automatically on tags (e.g. with the Gradle Play Publisher plugin).</p>
+        </section>
+
+        <section class="doc-section" id="checklist" data-title="Release checklist">
+          <div class="sec-head"><h2><span class="sec-num">20.9</span>Pre-launch checklist</h2></div>
+          <ul class="checklist">
+            <li>All unit and UI tests pass in CI.</li>
+            <li>Release build tested on a real device (R8 enabled).</li>
+            <li>Survives rotation, dark mode, the largest font size, and process death.</li>
+            <li>Works offline and shows helpful errors when the network fails.</li>
+            <li>No debug logging of private data; no secrets in the APK.</li>
+            <li>Runtime permissions requested in context, with graceful denial.</li>
+            <li>TalkBack can operate every screen; touch targets ≥ 48dp.</li>
+            <li><code>versionCode</code> bumped, mapping file uploaded, staged rollout planned.</li>
+          </ul>
+        </section>
+
+        <section class="doc-section" id="exercises" data-title="Exercises">
+          <div class="sec-head"><h2><span class="sec-num">20.10</span>Exercises</h2></div>
+          <details class="exercise">
+            <summary>Exercise 1 — Break it, then catch it <span class="badge green">Easy</span></summary>
+            <div class="ex-body">
+              <p>In TaskFlow, change the <code>ACTIVE</code> branch of <code>TaskFilter.matches</code> to return <code>true</code>. Run <code>./gradlew testDebugUnitTest</code>, read which test fails and why, then revert. This is how tests protect you.</p>
+            </div>
+          </details>
+          <details class="exercise">
+            <summary>Exercise 2 — A test for import failure <span class="badge blue">Medium</span></summary>
+            <div class="ex-body">
+              <p>Add a unit test asserting that <code>isImporting</code> is <code>true</code> while an import is in progress. Hint: make the fake's <code>importSampleTasks()</code> suspend on a <code>CompletableDeferred</code> that the test completes later.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution">
+                @Test
+                fun `isImporting is true while the import runs`() = runTest {
+                    val gate = CompletableDeferred<Result<Int>>()
+                    val repository = object : TaskRepository by FakeTaskRepository() {      // class delegation, lesson 12
+                        override suspend fun importSampleTasks() = gate.await()
+                    }
+                    val viewModel = TasksViewModel(repository, FakeSettingsRepository())
+                    backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiState.collect() }
+
+                    viewModel.importSamples()
+                    assertTrue(viewModel.uiState.value.isImporting)
+
+                    gate.complete(Result.success(1))
+                    advanceUntilIdle()
+                    assertFalse(viewModel.uiState.value.isImporting)
+                }
+              </script>
+            </div>
+          </details>
+          <details class="exercise">
+            <summary>Exercise 3 — Ship to internal testing <span class="badge amber">Challenge</span></summary>
+            <div class="ex-body">
+              <p>Change TaskFlow's <code>applicationId</code> to your own (e.g. <code>com.yourname.taskflow</code>), create an upload key, build <code>bundleRelease</code>, and publish it to an Internal testing track. Install it from the Play Store link on your phone.</p>
+            </div>
+          </details>
+        </section>
+
+        <section class="doc-section" id="quiz" data-title="Quiz">
+          <div class="sec-head"><h2><span class="sec-num">20.11</span>Quiz</h2></div>
+          <script type="application/json" data-quiz>
+          [
+            {"q": "Where do fast, JVM-only ViewModel tests live?", "options": ["src/androidTest", "src/test", "src/main", "res/raw"], "answer": 1, "explain": "src/test runs on your machine's JVM in milliseconds."},
+            {"q": "Why do ViewModel tests need a MainDispatcherRule?", "options": ["To speed up Gradle", "viewModelScope uses Dispatchers.Main, which isn't available on the JVM", "To mock Room", "Compose requires it"], "answer": 1, "explain": "Dispatchers.setMain swaps in a test dispatcher."},
+            {"q": "What does R8 do in a release build?", "options": ["Signs the APK", "Shrinks, obfuscates and optimizes code", "Uploads to Play", "Runs tests"], "answer": 1, "explain": "With isShrinkResources it also removes unused resources."},
+            {"q": "Which file format do you upload to Google Play?", "options": ["Debug APK", "Android App Bundle (.aab)", "JAR", "ZIP of sources"], "answer": 1, "explain": "Play generates optimized APKs per device from the bundle."},
+            {"q": "Where should keystore passwords live?", "options": ["In build.gradle.kts committed to git", "In a git-ignored keystore.properties or CI secrets", "In strings.xml", "In the manifest"], "answer": 1, "explain": "Never commit signing secrets."},
+            {"q": "What's the safest way to roll out a new version to millions of users?", "options": ["100% at once", "A staged rollout while monitoring Android vitals", "Email the APK", "Only internal testing forever"], "answer": 1, "explain": "Staged rollouts limit the blast radius of a bad release; you can halt them."}
+          ]
+          </script>
+        </section>
+
+        <section class="doc-section" id="references" data-title="Further reading">
+          <div class="sec-head"><h2><span class="sec-num">20.12</span>Further reading</h2></div>
+          <ul>
+            <li><a href="https://developer.android.com/training/testing" target="_blank" rel="noopener">Test apps on Android</a> · <a href="https://developer.android.com/kotlin/coroutines/test" target="_blank" rel="noopener">Testing Kotlin coroutines on Android</a></li>
+            <li><a href="https://developer.android.com/develop/ui/compose/testing" target="_blank" rel="noopener">Testing your Compose layout</a></li>
+            <li><a href="https://developer.android.com/studio/debug" target="_blank" rel="noopener">Debug your app</a> · <a href="https://developer.android.com/studio/profile" target="_blank" rel="noopener">Profile your app</a></li>
+            <li><a href="https://developer.android.com/build/shrink-code" target="_blank" rel="noopener">Shrink, obfuscate, and optimize</a> · <a href="https://developer.android.com/studio/publish/app-signing" target="_blank" rel="noopener">Sign your app</a></li>
+            <li><a href="https://developer.android.com/studio/publish" target="_blank" rel="noopener">Publish your app</a> · <a href="https://support.google.com/googleplay/android-developer" target="_blank" rel="noopener">Play Console Help</a></li>
+          </ul>
+        </section>
+
+        <div id="pager"></div>
+      </div>
+    </main>
+  </div>
+  <div id="site-footer"></div>
+  <script src="assets/js/core.js?v=__BUILD__"></script>
+</body>
+</html>

@@ -38,6 +38,7 @@ jobs:
             org/jetbrains/kotlinx/kotlinx-coroutines-core-jvm/$COROUTINES/kotlinx-coroutines-core-jvm-$COROUTINES.jar \
             org/jetbrains/kotlinx/kotlinx-coroutines-test-jvm/$COROUTINES/kotlinx-coroutines-test-jvm-$COROUTINES.jar
           do
+            echo "GET $M/$path"
             curl -sSfL --retry 4 --retry-delay 5 -O "$M/$path"
           done
       - name: Compile and run every runnable example

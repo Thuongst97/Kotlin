@@ -1,6 +1,7 @@
 package com.kotlinacademy.taskflow.ui.tasks
 
 import app.cash.turbine.test
+import com.kotlinacademy.taskflow.data.TaskRepository
 import com.kotlinacademy.taskflow.domain.Priority
 import com.kotlinacademy.taskflow.domain.SortOrder
 import com.kotlinacademy.taskflow.domain.Task
@@ -10,9 +11,11 @@ import com.kotlinacademy.taskflow.testing.FakeSettingsRepository
 import com.kotlinacademy.taskflow.testing.FakeTaskRepository
 import com.kotlinacademy.taskflow.testing.MainDispatcherRule
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -105,6 +108,23 @@ class TasksViewModelTest {
             viewModel.importSamples()
             assertEquals(TasksEvent.ImportFailed, awaitItem())
         }
+        assertFalse(viewModel.uiState.value.isImporting)
+    }
+
+    @Test
+    fun `isImporting is true while the import runs`() = runTest {
+        val gate = CompletableDeferred<Result<Int>>()
+        val repository = object : TaskRepository by FakeTaskRepository() {
+            override suspend fun importSampleTasks() = gate.await()
+        }
+        val viewModel = TasksViewModel(repository, FakeSettingsRepository())
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiState.collect() }
+
+        viewModel.importSamples()
+        assertTrue(viewModel.uiState.value.isImporting)
+
+        gate.complete(Result.success(1))
+        advanceUntilIdle()
         assertFalse(viewModel.uiState.value.isImporting)
     }
 }

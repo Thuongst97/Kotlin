@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Android App Fundamentals — Kotlin Academy</title>
+  <meta name="description" content="Android fundamentals with Kotlin: project anatomy, Gradle Kotlin DSL and version catalogs, the manifest, Activity lifecycle, configuration changes, resources, intents, permissions and app components.">
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <meta name="color-scheme" content="dark light">
+  <link rel="stylesheet" href="assets/css/main.css?v=__BUILD__">
+  <script>try{var t=localStorage.getItem("ka-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body data-page="android-basics">
+  <div id="site-header"></div>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="content">
+      <div class="content-inner">
+
+        <header class="page-hero">
+          <nav class="crumbs"><a href="index.html">Home</a><span>/</span><span>Android with Kotlin</span><span>/</span><span>Lesson 16</span></nav>
+          <div class="eyebrow">Lesson 16 · Android with Kotlin</div>
+          <h1>Android App Fundamentals</h1>
+          <p class="lead">Time to apply your Kotlin to Android. Before writing UI, understand what an Android project is made of, how Gradle builds it, and how the operating system starts, pauses and kills your app.</p>
+          <div class="page-meta"><span>⏱ 60 min</span><span>🎯 Intermediate</span><span>🛠 Android Studio required</span></div>
+          <div class="objectives">
+            <h4>You will be able to</h4>
+            <ul>
+              <li>Navigate every file of an Android project</li>
+              <li>Read and edit Gradle Kotlin DSL and version catalogs</li>
+              <li>Explain the manifest and app components</li>
+              <li>Describe the Activity lifecycle and configuration changes</li>
+              <li>Use resources, qualifiers and localization</li>
+              <li>Launch intents and request runtime permissions</li>
+            </ul>
+          </div>
+        </header>
+
+        <section class="doc-section" id="anatomy" data-title="Project anatomy">
+          <div class="sec-head"><h2><span class="sec-num">16.1</span>Anatomy of an Android project</h2></div>
+          <p>Here's the final project, TaskFlow, in Android Studio's <b>Project</b> view. Every modern Android app has the same skeleton:</p>
+          <div class="filetree"><span class="d">TaskFlow/</span>
+├── <span class="d">app/</span>                             <span class="c"># the application module</span>
+│   ├── build.gradle.kts             <span class="c"># module build script: SDK levels, dependencies</span>
+│   ├── proguard-rules.pro           <span class="c"># R8 shrinking rules for release builds</span>
+│   └── <span class="d">src/</span>
+│       ├── <span class="d">main/</span>
+│       │   ├── AndroidManifest.xml  <span class="c"># app identity, components, permissions</span>
+│       │   ├── <span class="d">java/com/kotlinacademy/taskflow/</span>   <span class="c"># Kotlin code (folder is called java/ for history)</span>
+│       │   └── <span class="d">res/</span>                 <span class="c"># resources: strings, icons, themes</span>
+│       ├── <span class="d">test/</span>                    <span class="c"># JVM unit tests (fast)</span>
+│       └── <span class="d">androidTest/</span>             <span class="c"># instrumented tests (on a device)</span>
+├── <span class="d">gradle/</span>
+│   ├── libs.versions.toml           <span class="c"># version catalog: ALL dependency versions</span>
+│   └── <span class="d">wrapper/</span>                     <span class="c"># pins the Gradle version</span>
+├── build.gradle.kts                 <span class="c"># root build script: plugins for all modules</span>
+├── settings.gradle.kts              <span class="c"># repositories + list of modules</span>
+├── gradle.properties                <span class="c"># build flags (memory, AndroidX…)</span>
+├── local.properties                 <span class="c"># SDK path on THIS machine — never commit</span>
+└── gradlew / gradlew.bat            <span class="c"># Gradle wrapper scripts</span></div>
+          <p class="small muted">Android Studio's default <b>Android</b> view groups files by type rather than by folder. Switch with the dropdown above the project tree.</p>
+        </section>
+
+        <section class="doc-section" id="gradle" data-title="Gradle & version catalogs">
+          <div class="sec-head"><h2><span class="sec-num">16.2</span>Gradle, the Kotlin DSL &amp; version catalogs</h2></div>
+          <p><b>Gradle</b> compiles Kotlin, processes resources, runs annotation processors (KSP), packages everything into an APK/AAB and signs it. Build scripts are written in Kotlin (<code>.gradle.kts</code>) — the DSL techniques from lesson 15 in action.</p>
+          <h3>1. The version catalog</h3>
+          <p>All versions live in one TOML file. Modules refer to them with type-safe accessors like <code>libs.androidx.room.runtime</code>, and Android Studio suggests upgrades right in this file.</p>
+          <script type="text/plain" data-code="toml" data-file="gradle/libs.versions.toml">
+            [versions]
+            agp = "8.11.1"
+            kotlin = "2.2.21"
+            composeBom = "2025.06.00"
+            room = "2.7.2"
+
+            [libraries]
+            androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+            androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }   # version from the BOM
+            androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+            androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+
+            [plugins]
+            android-application = { id = "com.android.application", version.ref = "agp" }
+            kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+            kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+          </script>
+          <h3>2. The module build script</h3>
+          <script type="text/plain" data-code="kts" data-file="app/build.gradle.kts" data-numbered>
+            plugins {
+                alias(libs.plugins.android.application)
+                alias(libs.plugins.kotlin.android)
+                alias(libs.plugins.kotlin.compose)          // Compose compiler plugin (same version as Kotlin)
+                alias(libs.plugins.ksp)                     // Kotlin Symbol Processing: Room, Hilt code generation
+            }
+
+            android {
+                namespace = "com.kotlinacademy.taskflow"    // package of the generated R and BuildConfig classes
+                compileSdk = 36
+
+                defaultConfig {
+                    applicationId = "com.kotlinacademy.taskflow"  // unique ID on the device and on Google Play
+                    minSdk = 26
+                    targetSdk = 36
+                    versionCode = 1                         // integer; must increase with every Play upload
+                    versionName = "1.0.0"                   // shown to users
+                }
+
+                buildTypes {
+                    release {
+                        isMinifyEnabled = true              // R8: shrink + optimize + obfuscate (lesson 20)
+                        proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+                    }
+                }
+                buildFeatures { compose = true }
+            }
+
+            dependencies {
+                implementation(platform(libs.androidx.compose.bom))   // BOM aligns all Compose versions
+                implementation(libs.androidx.compose.material3)
+                implementation(libs.androidx.room.runtime)
+                ksp(libs.androidx.room.compiler)                      // runs at compile time only
+                testImplementation(libs.junit)                         // only for src/test
+            }
+          </script>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>Configuration</th><th>Meaning</th></tr></thead>
+              <tbody>
+                <tr><td><code>implementation</code></td><td>Needed to compile and run the app</td></tr>
+                <tr><td><code>ksp</code></td><td>Code generator that runs during compilation (not shipped)</td></tr>
+                <tr><td><code>debugImplementation</code></td><td>Only in debug builds (e.g. Compose UI tooling)</td></tr>
+                <tr><td><code>testImplementation</code></td><td>Only for local JVM tests</td></tr>
+                <tr><td><code>androidTestImplementation</code></td><td>Only for instrumented device tests</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <h3>3. Everyday Gradle commands</h3>
+          <script type="text/plain" data-code="bash" data-file="Terminal (project root)">
+            $ ./gradlew assembleDebug              # build a debug APK
+            $ ./gradlew installDebug               # build + install on the connected device
+            $ ./gradlew testDebugUnitTest          # run JVM unit tests
+            $ ./gradlew connectedDebugAndroidTest  # run instrumented tests on a device
+            $ ./gradlew bundleRelease              # build the Play Store bundle (.aab)
+            $ ./gradlew :app:dependencies          # print the dependency tree
+            $ ./gradlew tasks                      # list everything Gradle can do
+          </script>
+          <div class="callout tip">
+            <div class="ci">💡</div>
+            <div><span class="ct">After editing any Gradle file</span>
+              <p>Click <b>Sync Now</b> in the yellow bar (or <b>File → Sync Project with Gradle Files</b>). Until you sync, the IDE doesn't know about new dependencies and shows red errors.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="manifest" data-title="The manifest">
+          <div class="sec-head"><h2><span class="sec-num">16.3</span>The manifest &amp; app components</h2></div>
+          <p><code>AndroidManifest.xml</code> tells the operating system what your app contains and needs. Android has four kinds of <b>components</b> — entry points the system can start independently:</p>
+          <div class="grid grid-2">
+            <div class="glass card"><h4>📱 Activity</h4><p class="small">A screen the user interacts with. Modern apps often have a single Activity hosting Compose navigation.</p></div>
+            <div class="glass card"><h4>⚙️ Service</h4><p class="small">Long-running work without UI (music playback, foreground location). For deferrable background work, prefer WorkManager (lesson 19).</p></div>
+            <div class="glass card"><h4>📡 BroadcastReceiver</h4><p class="small">Reacts to system-wide events (boot completed, timezone changed, alarm fired).</p></div>
+            <div class="glass card"><h4>🗂 ContentProvider</h4><p class="small">Shares structured data with other apps (contacts, media). Also used by libraries for start-up initialization.</p></div>
+          </div>
+          <script type="text/plain" data-code="xml" data-file="app/src/main/AndroidManifest.xml">
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+                <uses-permission android:name="android.permission.INTERNET" />
+                <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+                <application
+                    android:name=".TaskFlowApp"
+                    android:icon="@mipmap/ic_launcher"
+                    android:label="@string/app_name"
+                    android:theme="@style/Theme.TaskFlow">
+
+                    <activity
+                        android:name=".MainActivity"
+                        android:exported="true">          <!-- may be started by other apps (the launcher) -->
+                        <intent-filter>
+                            <action android:name="android.intent.action.MAIN" />
+                            <category android:name="android.intent.category.LAUNCHER" />
+                        </intent-filter>
+                    </activity>
+                </application>
+            </manifest>
+          </script>
+          <p>The <code>MAIN</code>/<code>LAUNCHER</code> intent filter puts the activity's icon on the home screen. <code>android:exported</code> must be set explicitly for any component with an intent filter.</p>
+        </section>
+
+        <section class="doc-section" id="lifecycle" data-title="Activity lifecycle">
+          <div class="sec-head"><h2><span class="sec-num">16.4</span>The Activity lifecycle</h2></div>
+          <p>Your app doesn't control when it runs — the system does. As the user opens your app, switches away, rotates the phone or gets a call, the Activity moves through lifecycle states and Android calls the matching callbacks:</p>
+          <figure class="diagram">
+            <svg viewBox="0 0 720 230" width="720" role="img" aria-label="Activity lifecycle states">
+              <defs><marker id="la" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#3ddc84"/></marker></defs>
+              <g font-family="Inter, sans-serif" font-size="13" text-anchor="middle">
+                <g fill="rgba(61,220,132,.12)" stroke="#3ddc84">
+                  <rect x="10" y="90" width="110" height="46" rx="10"/><rect x="160" y="90" width="110" height="46" rx="10"/>
+                  <rect x="310" y="90" width="110" height="46" rx="10"/><rect x="460" y="90" width="110" height="46" rx="10"/>
+                  <rect x="610" y="90" width="100" height="46" rx="10"/>
+                </g>
+                <g fill="currentColor" font-weight="700">
+                  <text x="65" y="118">Initialized</text><text x="215" y="118">Created</text><text x="365" y="118">Started</text><text x="515" y="118">Resumed</text><text x="660" y="118">Destroyed</text>
+                </g>
+                <g stroke="#3ddc84" stroke-width="2" fill="none" marker-end="url(#la)">
+                  <path d="M120 105H156"/><path d="M270 105H306"/><path d="M420 105H456"/>
+                  <path d="M515 136C515 190 365 190 365 140"/><path d="M365 86C365 40 215 40 215 86"/>
+                  <path d="M270 125C420 215 600 215 650 140"/>
+                </g>
+                <g fill="#9a98a8" font-family="JetBrains Mono, monospace" font-size="11">
+                  <text x="138" y="98">onCreate</text><text x="288" y="98">onStart</text><text x="438" y="98">onResume</text>
+                  <text x="440" y="196">onPause</text><text x="290" y="34">onStop</text><text x="560" y="224">onDestroy</text>
+                </g>
+              </g>
+            </svg>
+            <figcaption>Visible = Started; in the foreground and interactive = Resumed. Going back to a stopped Activity calls onRestart → onStart.</figcaption>
+          </figure>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>Callback</th><th>When</th><th>Typical use</th></tr></thead>
+              <tbody>
+                <tr><td><code>onCreate</code></td><td>Activity created</td><td><code>setContent { }</code>, one-time setup</td></tr>
+                <tr><td><code>onStart</code> / <code>onStop</code></td><td>Becomes visible / invisible</td><td>Start/stop UI updates, location, sensors</td></tr>
+                <tr><td><code>onResume</code> / <code>onPause</code></td><td>Gains / loses focus</td><td>Camera preview, animations</td></tr>
+                <tr><td><code>onDestroy</code></td><td>Finishing or being recreated</td><td>Final cleanup (rarely needed)</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <script type="text/plain" data-code="kotlin" data-file="MainActivity.kt">
+            class MainActivity : ComponentActivity() {
+                override fun onCreate(savedInstanceState: Bundle?) {
+                    super.onCreate(savedInstanceState)
+                    Log.d("Lifecycle", "onCreate (restored=${savedInstanceState != null})")
+                    setContent { Text("Rotate me and watch Logcat") }
+                }
+                override fun onStart() { super.onStart(); Log.d("Lifecycle", "onStart") }
+                override fun onResume() { super.onResume(); Log.d("Lifecycle", "onResume") }
+                override fun onPause() { super.onPause(); Log.d("Lifecycle", "onPause") }
+                override fun onStop() { super.onStop(); Log.d("Lifecycle", "onStop") }
+                override fun onDestroy() { super.onDestroy(); Log.d("Lifecycle", "onDestroy") }
+            }
+          </script>
+          <script type="text/plain" data-output="Logcat after launching, then rotating the device">
+            D/Lifecycle: onCreate (restored=false)
+            D/Lifecycle: onStart
+            D/Lifecycle: onResume
+            D/Lifecycle: onPause
+            D/Lifecycle: onStop
+            D/Lifecycle: onDestroy
+            D/Lifecycle: onCreate (restored=true)
+            D/Lifecycle: onStart
+            D/Lifecycle: onResume
+          </script>
+          <h3>Configuration changes &amp; process death</h3>
+          <p>Rotating the screen, changing language or toggling dark mode is a <b>configuration change</b>: by default the Activity is <b>destroyed and recreated</b>. Separately, when your app is in the background, the system may <b>kill the whole process</b> to free memory, and recreate it when the user returns. Your app must survive both:</p>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>Where state lives</th><th>Survives rotation</th><th>Survives process death</th><th>Use for</th></tr></thead>
+              <tbody>
+                <tr><td><code>remember { }</code> in Compose</td><td>❌</td><td>❌</td><td>Transient UI details</td></tr>
+                <tr><td><code>rememberSaveable { }</code></td><td>✅</td><td>✅ (small, Bundle-able)</td><td>Text field contents, selected tab, dialog shown</td></tr>
+                <tr><td><code>ViewModel</code></td><td>✅</td><td>❌ (unless using <code>SavedStateHandle</code>)</td><td>Screen state, loaded data</td></tr>
+                <tr><td>Database / DataStore</td><td>✅</td><td>✅</td><td>User data, settings</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout tip">
+            <div class="ci">🧪</div>
+            <div><span class="ct">Test process death</span>
+              <p>Put your app in the background, then run <code>adb shell am kill com.kotlinacademy.taskflow.debug</code> and reopen it from Recents. Or enable <b>Developer options → Don't keep activities</b>. Many real-world bugs appear only here.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="resources" data-title="Resources">
+          <div class="sec-head"><h2><span class="sec-num">16.5</span>Resources &amp; localization</h2></div>
+          <p>Everything that isn't code lives in <code>res/</code>: strings, colors, images (prefer vector drawables), fonts. Never hard-code user-visible text — put it in <code>strings.xml</code> so it can be translated. Android picks the best match for the current device using <b>qualifiers</b> on folder names.</p>
+          <div class="grid grid-2">
+            <div>
+              <script type="text/plain" data-code="xml" data-file="res/values/strings.xml">
+                <resources>
+                    <string name="app_name">TaskFlow</string>
+                    <string name="progress_summary">%1$d of %2$d done</string>
+                    <plurals name="tasks_left">
+                        <item quantity="one">%d task left</item>
+                        <item quantity="other">%d tasks left</item>
+                    </plurals>
+                </resources>
+              </script>
+            </div>
+            <div>
+              <script type="text/plain" data-code="xml" data-file="res/values-vi/strings.xml">
+                <resources>
+                    <string name="app_name">TaskFlow</string>
+                    <string name="progress_summary">Đã xong %1$d/%2$d</string>
+                    <plurals name="tasks_left">
+                        <item quantity="other">Còn %d việc</item>
+                    </plurals>
+                </resources>
+              </script>
+            </div>
+          </div>
+          <script type="text/plain" data-code="kotlin" data-file="Using resources in Compose">
+            Text(stringResource(R.string.progress_summary, done, total))
+            Text(pluralStringResource(R.plurals.tasks_left, count, count))
+            Icon(painterResource(R.drawable.ic_notification), contentDescription = null)
+          </script>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>Qualifier</th><th>Example folder</th><th>Chosen when…</th></tr></thead>
+              <tbody>
+                <tr><td>Language / region</td><td><code>values-vi</code>, <code>values-pt-rBR</code></td><td>Device language matches</td></tr>
+                <tr><td>Night mode</td><td><code>values-night</code></td><td>Dark theme is on</td></tr>
+                <tr><td>Screen width</td><td><code>values-w600dp</code></td><td>At least 600dp wide (tablets, foldables)</td></tr>
+                <tr><td>API level</td><td><code>mipmap-anydpi-v26</code></td><td>Android 8.0+</td></tr>
+                <tr><td>Density</td><td><code>drawable-xxhdpi</code></td><td>For bitmaps only; vectors scale automatically</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="doc-section" id="intents" data-title="Intents">
+          <div class="sec-head"><h2><span class="sec-num">16.6</span>Intents: talking to other apps</h2></div>
+          <p>An <b>Intent</b> is a message asking the system to do something. <b>Explicit</b> intents name the exact component; <b>implicit</b> intents describe an action and let the user's apps volunteer.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Intents.kt">
+            // Share text with any app that accepts it (Messages, Gmail, Zalo…)
+            fun Context.shareTask(task: Task) {
+                val send = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_SUBJECT, task.title)
+                    putExtra(Intent.EXTRA_TEXT, "${task.title}\n${task.notes}")
+                }
+                startActivity(Intent.createChooser(send, "Share task"))
+            }
+
+            // Open a web page in the browser
+            fun Context.openUrl(url: String) = startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+
+            // Explicit intent: start a specific Activity of your own app
+            fun Context.openSettingsActivity() = startActivity(Intent(this, SettingsActivity::class.java))
+          </script>
+          <p>To get a <b>result</b> back (a picked photo, a permission decision), use the Activity Result API. In Compose:</p>
+          <script type="text/plain" data-code="kotlin" data-file="PickImage.kt">
+            @Composable
+            fun AvatarPicker(onPicked: (Uri) -> Unit) {
+                val launcher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+                    if (uri != null) onPicked(uri)
+                }
+                Button(onClick = { launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }) {
+                    Text("Choose photo")
+                }
+            }
+          </script>
+        </section>
+
+        <section class="doc-section" id="permissions" data-title="Runtime permissions">
+          <div class="sec-head"><h2><span class="sec-num">16.7</span>Runtime permissions</h2></div>
+          <p>Permissions protecting private data or sensitive features (“dangerous” permissions: camera, location, contacts, notifications on Android 13+) must be declared in the manifest <b>and</b> requested at runtime. Ask <b>in context</b> — when the user taps the feature that needs it — and handle refusal gracefully.</p>
+          <script type="text/plain" data-code="kotlin" data-file="From TaskFlow's EditTaskScreen.kt" data-numbered>
+            val notificationPermission = rememberLauncherForActivityResult(
+                ActivityResultContracts.RequestPermission(),
+            ) { granted -> viewModel.onRemindChange(granted) }      // the user's decision arrives here
+
+            Switch(
+                checked = state.remind,
+                onCheckedChange = { enabled ->
+                    if (enabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)   // system dialog
+                    } else {
+                        viewModel.onRemindChange(enabled)
+                    }
+                },
+            )
+          </script>
+          <div class="callout note">
+            <div class="ci">ℹ️</div>
+            <div><span class="ct">Permission etiquette</span>
+              <ul>
+                <li>Request the minimum. Many features don't need a permission at all (the photo picker above needs none).</li>
+                <li>If the user denies twice, the system stops showing the dialog; offer a button to <b>Settings</b> instead of nagging.</li>
+                <li>Always check before use: <code>ContextCompat.checkSelfPermission(context, permission) == PERMISSION_GRANTED</code>.</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="context" data-title="Context & Logcat">
+          <div class="sec-head"><h2><span class="sec-num">16.8</span><code>Context</code> &amp; Logcat</h2></div>
+          <p><code>Context</code> is your handle to the system: resources, files, databases, system services, starting activities. There are two you'll use:</p>
+          <ul>
+            <li><b>Activity context</b> — tied to a screen, carries the theme; needed for UI things like dialogs. <b>Never store it</b> in a long-lived object (singleton, ViewModel): it leaks the whole screen.</li>
+            <li><b>Application context</b> — lives as long as the app. Safe to keep; that's what Hilt injects with <code>@ApplicationContext</code>.</li>
+          </ul>
+          <p><b>Logcat</b> (bottom tool window) shows system and app logs. Filter with queries like <code>package:mine level:debug tag:Lifecycle</code>.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Logging.kt">
+            private const val TAG = "TaskRepository"
+
+            Log.v(TAG, "verbose")   // most detail
+            Log.d(TAG, "debug: loaded ${tasks.size} tasks")
+            Log.i(TAG, "info")
+            Log.w(TAG, "warning", exception)
+            Log.e(TAG, "error", exception)   // shows the stack trace in red
+          </script>
+        </section>
+
+        <section class="doc-section" id="exercises" data-title="Exercises">
+          <div class="sec-head"><h2><span class="sec-num">16.9</span>Exercises</h2></div>
+          <details class="exercise">
+            <summary>Exercise 1 — Lifecycle detective <span class="badge green">Easy</span></summary>
+            <div class="ex-body">
+              <p>Add the lifecycle logging from 16.4 to a new Empty Activity project. Predict the callbacks for each scenario, then verify in Logcat: (a) press Home, (b) return from Recents, (c) rotate, (d) press Back.</p>
+              <div class="ex-task">
+                <h4>Expected</h4>
+                <p class="small">(a) onPause → onStop · (b) onRestart → onStart → onResume · (c) onPause → onStop → onDestroy → onCreate → onStart → onResume · (d) onPause → onStop → onDestroy. Note: since Android 12, Back on the root launcher activity moves the task to the background instead of finishing it, so you may see only onPause → onStop.</p>
+              </div>
+            </div>
+          </details>
+          <details class="exercise">
+            <summary>Exercise 2 — Speak Vietnamese (or your language) <span class="badge blue">Medium</span></summary>
+            <div class="ex-body">
+              <p>Move all hard-coded strings of your Empty Activity app into <code>strings.xml</code>, then add a translation: right-click <code>strings.xml</code> → <b>Open Translations Editor</b> → 🌐 add a locale. Switch the emulator language (Settings → System → Languages) and watch the app change without code changes.</p>
+            </div>
+          </details>
+          <details class="exercise">
+            <summary>Exercise 3 — Share button <span class="badge amber">Challenge</span></summary>
+            <div class="ex-body">
+              <p>Add a Compose button that shares “I'm learning Kotlin at Kotlin Academy!” via the system share sheet, and a second button that opens <code>https://kotlinlang.org</code>. Get the context inside a composable with <code>LocalContext.current</code>.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution">
+                @Composable
+                fun ShareButtons() {
+                    val context = LocalContext.current
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(onClick = {
+                            val send = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(Intent.EXTRA_TEXT, "I'm learning Kotlin at Kotlin Academy!")
+                            }
+                            context.startActivity(Intent.createChooser(send, null))
+                        }) { Text("Share") }
+                        Button(onClick = {
+                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://kotlinlang.org")))
+                        }) { Text("Open kotlinlang.org") }
+                    }
+                }
+              </script>
+            </div>
+          </details>
+        </section>
+
+        <section class="doc-section" id="quiz" data-title="Quiz">
+          <div class="sec-head"><h2><span class="sec-num">16.10</span>Quiz</h2></div>
+          <script type="application/json" data-quiz>
+          [
+            {"q": "Where should ALL dependency versions be declared in a modern project?", "options": ["In each module's build.gradle.kts", "In gradle/libs.versions.toml (version catalog)", "In local.properties", "In the manifest"], "answer": 1, "explain": "A single catalog keeps versions consistent across modules and is understood by Android Studio's upgrade assistant."},
+            {"q": "What happens to an Activity by default when the device rotates?", "options": ["Nothing", "onPause/onResume only", "It is destroyed and recreated", "The process is killed"], "answer": 2, "explain": "That's why state belongs in ViewModels, rememberSaveable or persistent storage."},
+            {"q": "Which state survives BOTH rotation and process death?", "options": ["`remember { }`", "A ViewModel property", "`rememberSaveable { }` or the database", "A static variable"], "answer": 2, "explain": "ViewModels survive rotation but not process death (unless backed by SavedStateHandle)."},
+            {"q": "Why must you not store an Activity context in a singleton?", "options": ["It's slower", "It leaks the Activity (and its whole view tree) after it is destroyed", "Singletons can't hold objects", "It changes the theme"], "answer": 1, "explain": "Use the application context for long-lived objects."},
+            {"q": "What does `minSdk = 26` mean?", "options": ["The app compiles against API 26", "Devices below Android 8.0 can't install the app", "The app targets Android 8.0 behaviour", "Gradle version 26"], "answer": 1, "explain": "minSdk = lowest supported version; compileSdk = APIs available at compile time; targetSdk = tested behaviour."},
+            {"q": "On Android 13+, what is required to show notifications?", "options": ["Nothing", "Declaring POST_NOTIFICATIONS and requesting it at runtime", "Only the manifest declaration", "A foreground service"], "answer": 1, "explain": "POST_NOTIFICATIONS is a runtime permission since API 33."}
+          ]
+          </script>
+        </section>
+
+        <section class="doc-section" id="references" data-title="Further reading">
+          <div class="sec-head"><h2><span class="sec-num">16.11</span>Further reading</h2></div>
+          <ul>
+            <li><a href="https://developer.android.com/guide/components/fundamentals" target="_blank" rel="noopener">Application fundamentals</a> · <a href="https://developer.android.com/guide/components/activities/activity-lifecycle" target="_blank" rel="noopener">The activity lifecycle</a></li>
+            <li><a href="https://developer.android.com/build" target="_blank" rel="noopener">Configure your build</a> · <a href="https://developer.android.com/build/migrate-to-catalogs" target="_blank" rel="noopener">Version catalogs</a></li>
+            <li><a href="https://developer.android.com/guide/topics/resources/providing-resources" target="_blank" rel="noopener">App resources overview</a> · <a href="https://developer.android.com/guide/components/intents-filters" target="_blank" rel="noopener">Intents</a></li>
+            <li><a href="https://developer.android.com/training/permissions/requesting" target="_blank" rel="noopener">Request runtime permissions</a></li>
+          </ul>
+        </section>
+
+        <div id="pager"></div>
+      </div>
+    </main>
+  </div>
+  <div id="site-footer"></div>
+  <script src="assets/js/core.js?v=__BUILD__"></script>
+</body>
+</html>
