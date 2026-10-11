@@ -1,0 +1,554 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Variables, Types & Operators — Kotlin Academy</title>
+  <meta name="description" content="Kotlin val vs var, type inference, numeric types, characters, booleans, strings and templates, raw strings, conversions and operators.">
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <meta name="color-scheme" content="dark light">
+  <link rel="stylesheet" href="assets/css/main.css?v=__BUILD__">
+  <script>try{var t=localStorage.getItem("ka-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body data-page="basics">
+  <div id="site-header"></div>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="content">
+      <div class="content-inner">
+
+        <header class="page-hero">
+          <nav class="crumbs"><a href="index.html">Home</a><span>/</span><span>Kotlin Fundamentals</span><span>/</span><span>Lesson 03</span></nav>
+          <div class="eyebrow">Lesson 03 · Kotlin Fundamentals</div>
+          <h1>Variables, Types &amp; Operators</h1>
+          <p class="lead">Programs remember things in variables, and every value in Kotlin has a type. Learn the difference between <code>val</code> and <code>var</code>, the built-in types, string templates and how operators work.</p>
+          <div class="page-meta"><span>⏱ 45 min</span><span>🎯 Beginner</span><span>▶ All examples are runnable</span></div>
+          <div class="objectives">
+            <h4>You will be able to</h4>
+            <ul>
+              <li>Choose between <code>val</code>, <code>var</code> and <code>const val</code></li>
+              <li>Rely on type inference — and know when to write types</li>
+              <li>Use Int, Long, Double, Boolean, Char and String</li>
+              <li>Build strings with templates and raw strings</li>
+              <li>Convert between types explicitly</li>
+              <li>Apply arithmetic, comparison and logical operators</li>
+            </ul>
+          </div>
+        </header>
+
+        <section class="doc-section" id="val-var" data-title="val vs var">
+          <div class="sec-head"><h2><span class="sec-num">3.1</span><code>val</code> vs <code>var</code></h2></div>
+          <p>Kotlin has two keywords for declaring variables:</p>
+          <div class="grid grid-2">
+            <div class="glass card"><h4><code>val</code> — value <span class="badge green">default choice</span></h4><p class="small">Read-only: assigned once, can never be reassigned. Like <code>final</code> in Java.</p></div>
+            <div class="glass card"><h4><code>var</code> — variable</h4><p class="small">Mutable: can be reassigned later, but only with a value of the <em>same type</em>.</p></div>
+          </div>
+          <script type="text/plain" data-code="kotlin" data-file="ValVar.kt" data-run>
+            fun main() {
+                val name = "Kotlin"       // read-only
+                var score = 10            // mutable
+
+                score = score + 5         // OK: var can change
+                score += 5                // same thing, shorter
+                // name = "Java"          // ❌ error: 'val' cannot be reassigned
+                // score = "high"         // ❌ error: type mismatch (score is an Int)
+
+                println("$name score: $score")
+            }
+          </script>
+          <script type="text/plain" data-output>
+            Kotlin score: 20
+          </script>
+          <div class="callout tip">
+            <div class="ci">💡</div>
+            <div><span class="ct">Rule of thumb</span>
+              <p><b>Always start with <code>val</code></b>. Switch to <code>var</code> only when the compiler tells you that you need to reassign. Code with fewer moving parts is easier to read, test and use from multiple threads.</p>
+            </div>
+          </div>
+          <div class="callout note">
+            <div class="ci">🧠</div>
+            <div><span class="ct">Read-only ≠ immutable</span>
+              <p><code>val</code> means the <em>reference</em> can't change. If it points to a mutable object, the object itself can still change: <code>val list = mutableListOf(1)</code> then <code>list.add(2)</code> is allowed. You'll see this again in lesson 07.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="inference" data-title="Type inference">
+          <div class="sec-head"><h2><span class="sec-num">3.2</span>Type inference &amp; explicit types</h2></div>
+          <p>Kotlin is <b>statically typed</b>: every variable has a type fixed at compile time. But you rarely need to write it — the compiler <b>infers</b> it from the value.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Types.kt" data-run>
+            fun main() {
+                val city = "Hanoi"            // inferred: String
+                val population = 8_500_000    // inferred: Int (underscores improve readability)
+                val area: Double = 3359.8     // explicit type
+                val isCapital: Boolean = true
+
+                val later: String             // declare now…
+                later = "assigned once"       // …assign exactly once before use
+
+                println("$city: $population people on $area km², capital=$isCapital")
+                println(later)
+                println(city::class.simpleName)   // inspect a type at runtime
+            }
+          </script>
+          <script type="text/plain" data-output>
+            Hanoi: 8500000 people on 3359.8 km², capital=true
+            assigned once
+            String
+          </script>
+          <p>Write the type explicitly when it improves readability, when there's no initial value, or when you want a <em>different</em> type than the one inferred (e.g. <code>val ratio: Double = 1</code> won't compile, but <code>val ratio: Long = 1</code> will — integer literals adapt to the expected integer type).</p>
+        </section>
+
+        <section class="doc-section" id="numbers" data-title="Numbers">
+          <div class="sec-head"><h2><span class="sec-num">3.3</span>Numbers</h2></div>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>Type</th><th>Size</th><th>Range / precision</th><th>Literal</th></tr></thead>
+              <tbody>
+                <tr><td><code>Byte</code></td><td>8 bit</td><td>-128 … 127</td><td><code>val b: Byte = 1</code></td></tr>
+                <tr><td><code>Short</code></td><td>16 bit</td><td>-32 768 … 32 767</td><td><code>val s: Short = 1</code></td></tr>
+                <tr><td><code>Int</code></td><td>32 bit</td><td>about ±2.1 billion</td><td><code>42</code>, <code>1_000</code>, <code>0xFF</code>, <code>0b1010</code></td></tr>
+                <tr><td><code>Long</code></td><td>64 bit</td><td>about ±9.2 × 10¹⁸</td><td><code>42L</code>, <code>3_000_000_000</code></td></tr>
+                <tr><td><code>Float</code></td><td>32 bit</td><td>~6–7 decimal digits</td><td><code>2.5f</code></td></tr>
+                <tr><td><code>Double</code></td><td>64 bit</td><td>~15–16 decimal digits</td><td><code>2.5</code>, <code>1e-3</code></td></tr>
+                <tr><td><code>UInt</code>, <code>ULong</code>…</td><td>32/64 bit</td><td>unsigned (≥ 0)</td><td><code>42u</code>, <code>42uL</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <script type="text/plain" data-code="kotlin" data-file="Numbers.kt" data-run>
+            fun main() {
+                val big = 3_000_000_000          // too big for Int → inferred as Long
+                println(big::class.simpleName)
+
+                println(Int.MAX_VALUE)
+                println(Int.MAX_VALUE + 1)       // overflow wraps around silently!
+                println(Int.MAX_VALUE.toLong() + 1)
+
+                println(7 / 2)                   // Int / Int = Int (truncated)
+                println(7 / 2.0)                 // any Double makes the result Double
+                println(7 % 2)                   // remainder
+
+                println(0.1 + 0.2)               // binary floating point is not exact
+                println(String.format("%.2f", 0.1 + 0.2))
+            }
+          </script>
+          <script type="text/plain" data-output>
+            Long
+            2147483647
+            -2147483648
+            2147483648
+            3
+            3.5
+            1
+            0.30000000000000004
+            0.30
+          </script>
+          <div class="callout warn">
+            <div class="ci">💰</div>
+            <div><span class="ct">Never use Double for money</span>
+              <p>Floating-point numbers can't represent most decimal fractions exactly. Store money as a <code>Long</code> number of cents, or use <code>java.math.BigDecimal</code>.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="bool-char" data-title="Booleans & characters">
+          <div class="sec-head"><h2><span class="sec-num">3.4</span>Booleans &amp; characters</h2></div>
+          <p>A <code>Boolean</code> is <code>true</code> or <code>false</code>. A <code>Char</code> is a single 16-bit Unicode character in <b>single</b> quotes.</p>
+          <script type="text/plain" data-code="kotlin" data-file="BoolChar.kt" data-run>
+            fun main() {
+                val isKotlinFun = true
+                val isJavaFun = false
+                println(isKotlinFun && isJavaFun)   // AND
+                println(isKotlinFun || isJavaFun)   // OR
+                println(!isJavaFun)                 // NOT
+
+                val letter: Char = 'K'
+                println(letter.isLetter())
+                println(letter.lowercaseChar())
+                println(letter.code)                // its Unicode number
+                println('7'.digitToInt() + 1)       // Char → Int digit
+                println('\n' == '\u000A')           // escapes: \t \n \\ \' \" \$ \uXXXX
+            }
+          </script>
+          <script type="text/plain" data-output>
+            false
+            true
+            true
+            true
+            k
+            75
+            8
+            true
+          </script>
+        </section>
+
+        <section class="doc-section" id="strings" data-title="Strings & templates">
+          <div class="sec-head"><h2><span class="sec-num">3.5</span>Strings &amp; string templates</h2></div>
+          <p>Strings are <b>immutable</b> sequences of characters. The most useful feature is the <b>template</b>: <code>$name</code> inserts a variable, <code>${expression}</code> inserts any expression.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Strings.kt" data-run>
+            fun main() {
+                val language = "Kotlin"
+                val version = 2.2
+
+                println("I'm learning $language $version")
+                println("$language has ${language.length} letters")
+                println("Upper: ${language.uppercase()}, first: ${language[0]}, last: ${language.last()}")
+                println("Price: \$9.99")              // escape the dollar sign
+
+                // Common functions — strings never change; these return NEW strings
+                val text = "  Kotlin, Java, Swift  "
+                println(text.trim())
+                println(text.trim().split(", "))
+                println("kotlin".replaceFirstChar { it.uppercase() })
+                println("7".padStart(3, '0'))
+                println("Hello" + " " + "World")       // concatenation works, templates read better
+                println("abc" < "abd")                 // lexicographic comparison
+                println("Kotlin".contains("lin", ignoreCase = true))
+                println("Kotlin".substring(0, 3) + "…")
+            }
+          </script>
+          <script type="text/plain" data-output>
+            I'm learning Kotlin 2.2
+            Kotlin has 6 letters
+            Upper: KOTLIN, first: K, last: n
+            Price: $9.99
+            Kotlin, Java, Swift
+            [Kotlin, Java, Swift]
+            Kotlin
+            007
+            Hello World
+            true
+            true
+            Kot…
+          </script>
+          <h3>Raw (multi-line) strings</h3>
+          <p>Triple quotes <code>"""</code> create a raw string: no escape sequences, line breaks kept. Templates still work. Use <code>trimIndent()</code> to remove the common indentation.</p>
+          <script type="text/plain" data-code="kotlin" data-file="RawStrings.kt" data-run>
+            fun main() {
+                val user = "ada"
+                val json = """
+                    {
+                      "user": "$user",
+                      "path": "C:\temp\new"
+                    }
+                """.trimIndent()
+                println(json)
+
+                val poem = """
+                    |Roses are red,
+                    |  Kotlin is neat.
+                """.trimMargin()                // strips everything up to and including '|'
+                println(poem)
+            }
+          </script>
+          <script type="text/plain" data-output>
+            {
+              "user": "ada",
+              "path": "C:\temp\new"
+            }
+            Roses are red,
+              Kotlin is neat.
+          </script>
+          <h3>Building strings efficiently</h3>
+          <p>Each <code>+</code> creates a new string. When building text in a loop, use <code>buildString</code>, which uses a <code>StringBuilder</code> under the hood:</p>
+          <script type="text/plain" data-code="kotlin" data-file="BuildString.kt" data-run>
+            fun main() {
+                val table = buildString {
+                    for (i in 1..3) {
+                        append(i)
+                        append(" × 7 = ")
+                        appendLine(i * 7)
+                    }
+                }
+                print(table)
+            }
+          </script>
+          <script type="text/plain" data-output>
+            1 × 7 = 7
+            2 × 7 = 14
+            3 × 7 = 21
+          </script>
+        </section>
+
+        <section class="doc-section" id="conversions" data-title="Type conversions">
+          <div class="sec-head"><h2><span class="sec-num">3.6</span>Type conversions</h2></div>
+          <p>Kotlin <b>never converts numbers implicitly</b> — not even from <code>Int</code> to <code>Long</code>. This prevents subtle bugs. Every numeric type has explicit conversion functions.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Conversions.kt" data-run>
+            fun main() {
+                val i: Int = 42
+                // val l: Long = i            // ❌ type mismatch
+                val l: Long = i.toLong()      // ✅ explicit
+                val d = i.toDouble()
+                println("$l $d")
+
+                println(3.99.toInt())         // truncates toward zero
+                println(3.5.roundToIntDemo())
+                println(65.toChar())          // Int → Char
+                println(i.toString() + "!")
+
+                // String → number
+                println("123".toInt() + 1)
+                println("3.14".toDouble() * 2)
+                println("abc".toIntOrNull())  // null instead of a crash
+                println("ff".toInt(radix = 16))
+            }
+
+            // kotlin.math.roundToInt rounds half up; shown via a tiny helper
+            fun Double.roundToIntDemo(): Int = kotlin.math.round(this).toInt()
+          </script>
+          <script type="text/plain" data-output>
+            42 42.0
+            3
+            4
+            A
+            42!
+            124
+            6.28
+            null
+            255
+          </script>
+          <div class="callout java">
+            <div class="ci">☕</div>
+            <div><span class="ct">Coming from Java</span>
+              <p>Java widens <code>int</code> to <code>long</code> automatically; Kotlin does not. Arithmetic still mixes types sensibly: <code>Int + Long</code> gives a <code>Long</code>, <code>Int * Double</code> gives a <code>Double</code>. There are no primitive vs. boxed types to choose from in source code — the compiler uses JVM primitives (<code>int</code>) whenever possible and boxes (<code>Integer</code>) only when needed, e.g. for nullable types or generics.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="operators" data-title="Operators">
+          <div class="sec-head"><h2><span class="sec-num">3.7</span>Operators</h2></div>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>Category</th><th>Operators</th><th>Example → result</th></tr></thead>
+              <tbody>
+                <tr><td>Arithmetic</td><td><code>+ - * / %</code></td><td><code>17 % 5</code> → <code>2</code></td></tr>
+                <tr><td>Compound assignment</td><td><code>+= -= *= /= %=</code></td><td><code>x += 2</code></td></tr>
+                <tr><td>Increment / decrement</td><td><code>++ --</code></td><td><code>count++</code></td></tr>
+                <tr><td>Comparison</td><td><code>== != &lt; &gt; &lt;= &gt;=</code></td><td><code>3 &gt;= 3</code> → <code>true</code></td></tr>
+                <tr><td>Referential equality</td><td><code>=== !==</code></td><td>same object in memory?</td></tr>
+                <tr><td>Logical</td><td><code>&amp;&amp; || !</code></td><td>short-circuiting</td></tr>
+                <tr><td>Range / membership</td><td><code>.. ..&lt; in !in</code></td><td><code>5 in 1..10</code> → <code>true</code></td></tr>
+                <tr><td>Bitwise (named functions)</td><td><code>and or xor inv shl shr ushr</code></td><td><code>0b1100 and 0b1010</code> → <code>8</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <script type="text/plain" data-code="kotlin" data-file="Operators.kt" data-run>
+            import kotlin.math.abs
+            import kotlin.math.max
+            import kotlin.math.pow
+            import kotlin.math.sqrt
+
+            fun main() {
+                var count = 5
+                println(count++)       // prints 5, then increments (postfix)
+                println(++count)       // increments to 7, then prints (prefix)
+
+                val a = StringBuilder("kot").append("lin").toString()  // built at runtime
+                val b = "kotlin"
+                println(a == b)        // structural equality: same content → true
+                println(a === b)       // referential equality: same object? → false
+
+                println(2 + 3 * 4)     // * before +  → 14
+                println((2 + 3) * 4)   // parentheses first → 20
+
+                println(sqrt(16.0))
+                println(2.0.pow(10))
+                println(max(3, 9))
+                println(abs(-7))
+            }
+          </script>
+          <script type="text/plain" data-output>
+            5
+            7
+            true
+            false
+            14
+            20
+            4.0
+            1024.0
+            9
+            7
+          </script>
+          <div class="callout java">
+            <div class="ci">☕</div>
+            <div><span class="ct">Coming from Java</span>
+              <p>In Kotlin, <code>==</code> calls <code>equals()</code> (and is null-safe), so <code>"a" == "a"</code> compares content — no more <code>.equals()</code> bugs. Use <code>===</code> for Java's reference comparison.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="constants" data-title="Constants & naming">
+          <div class="sec-head"><h2><span class="sec-num">3.8</span>Constants &amp; naming conventions</h2></div>
+          <p><code>const val</code> declares a <b>compile-time constant</b>: a primitive or String known at compile time, declared at top level or in an <code>object</code>. The compiler inlines its value wherever it's used.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Constants.kt" data-run>
+            const val MAX_LOGIN_ATTEMPTS = 3            // SCREAMING_SNAKE_CASE for constants
+            const val BASE_URL = "https://api.example.com"
+
+            fun main() {
+                val userName = "ada"                      // camelCase for variables & functions
+                val attemptsLeft = MAX_LOGIN_ATTEMPTS - 1
+                println("$userName has $attemptsLeft attempts left at $BASE_URL")
+            }
+          </script>
+          <script type="text/plain" data-output>
+            ada has 2 attempts left at https://api.example.com
+          </script>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>Kind</th><th>Convention</th><th>Example</th></tr></thead>
+              <tbody>
+                <tr><td>Classes, interfaces, objects</td><td>PascalCase</td><td><code>UserRepository</code></td></tr>
+                <tr><td>Functions, variables, parameters</td><td>camelCase</td><td><code>loadUser</code>, <code>isVisible</code></td></tr>
+                <tr><td>Constants</td><td>SCREAMING_SNAKE_CASE</td><td><code>MAX_SIZE</code></td></tr>
+                <tr><td>Packages</td><td>lowercase, dotted</td><td><code>com.example.taskflow</code></td></tr>
+                <tr><td>Booleans</td><td>Read like a question</td><td><code>isDone</code>, <code>hasError</code>, <code>canEdit</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="doc-section" id="special-types" data-title="Any, Unit & Nothing">
+          <div class="sec-head"><h2><span class="sec-num">3.9</span>The type hierarchy: <code>Any</code>, <code>Unit</code>, <code>Nothing</code></h2></div>
+          <div class="grid grid-3">
+            <div class="glass card"><h4><code>Any</code></h4><p class="small">The root of every non-nullable type (like Java's <code>Object</code>). Provides <code>equals</code>, <code>hashCode</code>, <code>toString</code>.</p></div>
+            <div class="glass card"><h4><code>Unit</code></h4><p class="small">“No meaningful value” — the return type of functions that return nothing useful (Java's <code>void</code>). It has exactly one value, also called <code>Unit</code>.</p></div>
+            <div class="glass card"><h4><code>Nothing</code></h4><p class="small">“This never returns” — e.g. a function that always throws. It's a subtype of every type, which is why <code>throw</code> can appear anywhere an expression is expected.</p></div>
+          </div>
+          <script type="text/plain" data-code="kotlin" data-file="Hierarchy.kt" data-run>
+            fun describe(x: Any): String = "$x is a ${x::class.simpleName}"
+
+            fun fail(message: String): Nothing = throw IllegalStateException(message)
+
+            fun main() {
+                println(describe(42))
+                println(describe("hi"))
+                println(describe(3.14))
+                val result: Unit = println("println returns Unit")
+                println(result)
+                val port: Int = System.getenv("NO_SUCH_VAR")?.toInt() ?: 8080  // preview of lesson 06
+                println(port)
+            }
+          </script>
+          <script type="text/plain" data-output>
+            42 is a Int
+            hi is a String
+            3.14 is a Double
+            println returns Unit
+            kotlin.Unit
+            8080
+          </script>
+        </section>
+
+        <section class="doc-section" id="exercises" data-title="Exercises">
+          <div class="sec-head"><h2><span class="sec-num">3.10</span>Exercises</h2></div>
+          <details class="exercise">
+            <summary>Exercise 1 — Temperature converter <span class="badge green">Easy</span></summary>
+            <div class="ex-body">
+              <p>Given <code>val celsius = 36.6</code>, print the temperature in Fahrenheit (<code>F = C × 9/5 + 32</code>) and Kelvin (<code>K = C + 273.15</code>), each with one decimal place.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution" data-run>
+                fun main() {
+                    val celsius = 36.6
+                    val fahrenheit = celsius * 9 / 5 + 32
+                    val kelvin = celsius + 273.15
+                    println("%.1f °C = %.1f °F = %.1f K".format(celsius, fahrenheit, kelvin))
+                }
+              </script>
+              <script type="text/plain" data-output>
+                36.6 °C = 97.9 °F = 309.8 K
+              </script>
+              <p class="small muted">Watch out: <code>9 / 5</code> alone is integer division (= 1). It works here because <code>celsius * 9</code> is evaluated first and is already a Double.</p>
+            </div>
+          </details>
+          <details class="exercise">
+            <summary>Exercise 2 — Seconds to h:mm:ss <span class="badge blue">Medium</span></summary>
+            <div class="ex-body">
+              <p>Convert <code>val totalSeconds = 9_754</code> to the format <code>2:42:34</code> using <code>/</code>, <code>%</code> and <code>padStart</code>.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution" data-run>
+                fun main() {
+                    val totalSeconds = 9_754
+                    val hours = totalSeconds / 3600
+                    val minutes = totalSeconds % 3600 / 60
+                    val seconds = totalSeconds % 60
+                    val mm = minutes.toString().padStart(2, '0')
+                    val ss = seconds.toString().padStart(2, '0')
+                    println("$hours:$mm:$ss")
+                }
+              </script>
+              <script type="text/plain" data-output>
+                2:42:34
+              </script>
+            </div>
+          </details>
+          <details class="exercise">
+            <summary>Exercise 3 — Receipt formatter <span class="badge amber">Challenge</span></summary>
+            <div class="ex-body">
+              <p>Store prices as <code>Long</code> cents: coffee 350, bagel 275, juice 425. Compute subtotal, 8% tax (rounded to the nearest cent) and total, and print a receipt using a raw string. Format cents as dollars with two decimals <em>without</em> using Double.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution" data-run>
+                fun money(cents: Long): String = "$" + (cents / 100) + "." + (cents % 100).toString().padStart(2, '0')
+
+                fun main() {
+                    val coffee = 350L
+                    val bagel = 275L
+                    val juice = 425L
+                    val subtotal = coffee + bagel + juice
+                    val tax = (subtotal * 8 + 50) / 100      // +50 rounds half up
+                    val total = subtotal + tax
+                    val receipt = """
+                        |Coffee   ${money(coffee)}
+                        |Bagel    ${money(bagel)}
+                        |Juice    ${money(juice)}
+                        |---------------
+                        |Subtotal ${money(subtotal)}
+                        |Tax 8%   ${money(tax)}
+                        |TOTAL    ${money(total)}
+                    """.trimMargin()
+                    println(receipt)
+                }
+              </script>
+              <script type="text/plain" data-output>
+                Coffee   $3.50
+                Bagel    $2.75
+                Juice    $4.25
+                ---------------
+                Subtotal $10.50
+                Tax 8%   $0.84
+                TOTAL    $11.34
+              </script>
+            </div>
+          </details>
+        </section>
+
+        <section class="doc-section" id="quiz" data-title="Quiz">
+          <div class="sec-head"><h2><span class="sec-num">3.11</span>Quiz</h2></div>
+          <script type="application/json" data-quiz>
+          [
+            {"q": "Which declaration compiles?", "options": ["`val x = 1; x = 2`", "`var x = 1; x = \"two\"`", "`var x = 1; x = 2`", "`val x: Int = \"1\"`"], "answer": 2, "explain": "A `var` can be reassigned with a value of the same type. `val` can't be reassigned and types never change."},
+            {"q": "What does `println(10 / 4)` print?", "options": ["2.5", "2", "3", "2.0"], "answer": 1, "explain": "Both operands are Int, so this is integer division which truncates: 2. Use `10 / 4.0` for 2.5."},
+            {"q": "What is the inferred type of `val n = 5_000_000_000`?", "options": ["Int", "Long", "Double", "It doesn't compile"], "answer": 1, "explain": "The literal doesn't fit in Int (max ≈ 2.1 billion), so the compiler infers Long."},
+            {"q": "Given `val a = \"hi\"` and `val b = \"hi\"`, what does `a == b` check?", "options": ["Whether they are the same object", "Whether their contents are equal (calls `equals`)", "Whether both are non-null", "Their hash codes only"], "answer": 1, "explain": "`==` is structural equality. `===` is referential equality."},
+            {"q": "What does this print?", "code": "val name = \"Kotlin\"\nprintln(\"${name.length * 2} and $name.length\")", "options": ["`12 and 6`", "`12 and Kotlin.length`", "`${12} and 6`", "Compile error"], "answer": 1, "explain": "`$name` only captures the identifier `name`; `.length` is plain text. Use `${name.length}` for expressions."},
+            {"q": "Which line fails to compile?", "options": ["`val l: Long = 5`", "`val i = 5; val l: Long = i`", "`val d = 5 * 2.0`", "`val s = 5.toString()`"], "answer": 1, "explain": "A literal adapts to the expected type, but an existing `Int` variable never converts to `Long` implicitly. Use `i.toLong()`."}
+          ]
+          </script>
+        </section>
+
+        <section class="doc-section" id="references" data-title="Further reading">
+          <div class="sec-head"><h2><span class="sec-num">3.12</span>Further reading</h2></div>
+          <ul>
+            <li><a href="https://kotlinlang.org/docs/basic-types.html" target="_blank" rel="noopener">Kotlin docs — Basic types</a></li>
+            <li><a href="https://kotlinlang.org/docs/numbers.html" target="_blank" rel="noopener">Numbers</a> · <a href="https://kotlinlang.org/docs/strings.html" target="_blank" rel="noopener">Strings</a></li>
+            <li><a href="https://kotlinlang.org/docs/coding-conventions.html" target="_blank" rel="noopener">Kotlin coding conventions</a></li>
+          </ul>
+        </section>
+
+        <div id="pager"></div>
+      </div>
+    </main>
+  </div>
+  <div id="site-footer"></div>
+  <script src="assets/js/core.js?v=__BUILD__"></script>
+</body>
+</html>

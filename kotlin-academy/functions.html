@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Functions — Kotlin Academy</title>
+  <meta name="description" content="Kotlin functions: parameters and return types, single-expression functions, default and named arguments, vararg, infix, local, recursive and tail-recursive functions, Unit and Nothing.">
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <meta name="color-scheme" content="dark light">
+  <link rel="stylesheet" href="assets/css/main.css?v=__BUILD__">
+  <script>try{var t=localStorage.getItem("ka-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body data-page="functions">
+  <div id="site-header"></div>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="content">
+      <div class="content-inner">
+
+        <header class="page-hero">
+          <nav class="crumbs"><a href="index.html">Home</a><span>/</span><span>Kotlin Fundamentals</span><span>/</span><span>Lesson 05</span></nav>
+          <div class="eyebrow">Lesson 05 · Kotlin Fundamentals</div>
+          <h1>Functions</h1>
+          <p class="lead">Functions are the building blocks of every Kotlin program. Kotlin makes them unusually expressive: default and named arguments replace overloads and builders, single-expression functions remove ceremony, and functions can live anywhere — top level, inside classes, even inside other functions.</p>
+          <div class="page-meta"><span>⏱ 45 min</span><span>🎯 Beginner</span><span>▶ All examples are runnable</span></div>
+          <div class="objectives">
+            <h4>You will be able to</h4>
+            <ul>
+              <li>Declare functions with parameters and return types</li>
+              <li>Write single-expression functions</li>
+              <li>Use default and named arguments</li>
+              <li>Accept a variable number of arguments with <code>vararg</code></li>
+              <li>Create <code>infix</code>, local and recursive functions</li>
+              <li>Explain <code>Unit</code>, <code>Nothing</code> and <code>tailrec</code></li>
+            </ul>
+          </div>
+        </header>
+
+        <section class="doc-section" id="declaring" data-title="Declaring functions">
+          <div class="sec-head"><h2><span class="sec-num">5.1</span>Declaring functions</h2></div>
+          <figure class="diagram">
+            <svg viewBox="0 0 700 120" width="700" role="img" aria-label="Anatomy of a Kotlin function">
+              <g font-family="JetBrains Mono, monospace" font-size="17">
+                <text x="20" y="60"><tspan fill="#ff9b6a">fun</tspan><tspan fill="#6fd3ff"> area</tspan><tspan fill="currentColor">(</tspan><tspan fill="currentColor">width</tspan><tspan fill="currentColor">: </tspan><tspan fill="#c7a8ff">Double</tspan><tspan fill="currentColor">, height: </tspan><tspan fill="#c7a8ff">Double</tspan><tspan fill="currentColor">): </tspan><tspan fill="#c7a8ff">Double</tspan><tspan fill="currentColor"> { … }</tspan></text>
+              </g>
+              <g font-family="Inter, sans-serif" font-size="12" fill="#9a98a8">
+                <path d="M34 70v22" stroke="#ff9b6a"/><text x="8" y="108">keyword</text>
+                <path d="M100 70v22" stroke="#6fd3ff"/><text x="80" y="108">name</text>
+                <path d="M270 70v22" stroke="#a98bff"/><text x="190" y="108">parameters (name: Type)</text>
+                <path d="M548 70v22" stroke="#c7a8ff"/><text x="505" y="108">return type</text>
+                <path d="M640 70v22" stroke="#9a98a8"/><text x="625" y="108">body</text>
+              </g>
+            </svg>
+          </figure>
+          <script type="text/plain" data-code="kotlin" data-file="Functions.kt" data-run>
+            fun area(width: Double, height: Double): Double {
+                return width * height
+            }
+
+            // Returns nothing useful → return type Unit can be omitted
+            fun greet(name: String) {
+                println("Hello, $name!")
+            }
+
+            fun main() {
+                val a = area(3.0, 4.5)
+                println("Area: $a")
+                greet("Kotlin")
+            }
+          </script>
+          <script type="text/plain" data-output>
+            Area: 13.5
+            Hello, Kotlin!
+          </script>
+          <ul>
+            <li>Parameters <b>always</b> need explicit types; they are read-only (<code>val</code>).</li>
+            <li>A function with a block body must declare its return type (unless it's <code>Unit</code>) and use <code>return</code>.</li>
+            <li>Functions can be declared after they're used — order in the file doesn't matter.</li>
+          </ul>
+        </section>
+
+        <section class="doc-section" id="single-expression" data-title="Single-expression functions">
+          <div class="sec-head"><h2><span class="sec-num">5.2</span>Single-expression functions</h2></div>
+          <p>When the body is a single expression, replace <code>{ return … }</code> with <code>=</code>. The return type can then be inferred.</p>
+          <script type="text/plain" data-code="kotlin" data-file="SingleExpr.kt" data-run>
+            fun square(x: Int) = x * x                              // inferred: Int
+            fun isEven(n: Int): Boolean = n % 2 == 0                // explicit type for public APIs
+            fun max(a: Int, b: Int) = if (a > b) a else b           // if is an expression
+            fun sign(n: Int) = when {
+                n > 0 -> "positive"
+                n < 0 -> "negative"
+                else -> "zero"
+            }
+
+            fun main() {
+                println(square(7))
+                println(isEven(10))
+                println(max(3, 8))
+                println(sign(-4))
+            }
+          </script>
+          <script type="text/plain" data-output>
+            49
+            true
+            8
+            negative
+          </script>
+          <div class="callout tip">
+            <div class="ci">💡</div>
+            <div><span class="ct">Style</span>
+              <p>Prefer the expression form for short functions. For public library APIs, still write the return type explicitly — it documents the contract and prevents accidental type changes.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="default-named" data-title="Default & named arguments">
+          <div class="sec-head"><h2><span class="sec-num">5.3</span>Default &amp; named arguments</h2></div>
+          <p>Parameters can have <b>default values</b>, and callers can pass arguments <b>by name</b> in any order. Together they replace Java's telescoping overloads and many builder classes.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Defaults.kt" data-run>
+            fun formatPrice(
+                amount: Double,
+                currency: String = "USD",
+                decimals: Int = 2,
+                showSymbol: Boolean = true,
+            ): String {                                   // trailing commas are allowed
+                val symbol = if (showSymbol) when (currency) {
+                    "USD" -> "$"
+                    "EUR" -> "€"
+                    "VND" -> "₫"
+                    else -> "$currency "
+                } else ""
+                return symbol + "%.${decimals}f".format(amount)
+            }
+
+            fun main() {
+                println(formatPrice(9.5))                             // all defaults
+                println(formatPrice(9.5, "EUR"))                      // positional
+                println(formatPrice(25_000.0, currency = "VND", decimals = 0))
+                println(formatPrice(9.5, showSymbol = false))         // skip middle params
+                println(formatPrice(decimals = 3, amount = 1.0))      // any order when named
+            }
+          </script>
+          <script type="text/plain" data-output>
+            $9.50
+            €9.50
+            ₫25000
+            9.50
+            $1.000
+          </script>
+          <div class="callout tip">
+            <div class="ci">📖</div>
+            <div><span class="ct">Name your booleans</span>
+              <p><code>sendEmail(user, true, false)</code> is unreadable. <code>sendEmail(user, urgent = true, copyToSelf = false)</code> explains itself. Use named arguments whenever a literal's meaning isn't obvious.</p>
+            </div>
+          </div>
+          <div class="callout java">
+            <div class="ci">☕</div>
+            <div><span class="ct">Coming from Java</span>
+              <p>Java callers don't see default values. Annotate the function with <code>@JvmOverloads</code> to generate the overloads Java needs. You'll see this on Android custom views: <code>class MyView @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null)</code>.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="vararg" data-title="vararg">
+          <div class="sec-head"><h2><span class="sec-num">5.4</span>Variable number of arguments: <code>vararg</code></h2></div>
+          <script type="text/plain" data-code="kotlin" data-file="Vararg.kt" data-run>
+            fun average(vararg numbers: Int): Double {
+                if (numbers.isEmpty()) return 0.0
+                return numbers.sum().toDouble() / numbers.size  // numbers is an IntArray
+            }
+
+            fun log(level: String, vararg parts: Any) {
+                println("[$level] " + parts.joinToString(" "))
+            }
+
+            fun main() {
+                println(average(1, 2, 3, 4))
+                println(average())
+                val scores = intArrayOf(90, 80, 70)
+                println(average(*scores))               // * = spread operator
+                println(average(100, *scores, 60))      // mix freely
+                log("INFO", "User", 42, "logged in")
+            }
+          </script>
+          <script type="text/plain" data-output>
+            2.5
+            0.0
+            80.0
+            80.0
+            [INFO] User 42 logged in
+          </script>
+        </section>
+
+        <section class="doc-section" id="unit-nothing" data-title="Unit & Nothing returns">
+          <div class="sec-head"><h2><span class="sec-num">5.5</span>Early returns, <code>Unit</code> and <code>Nothing</code></h2></div>
+          <p>A function that “returns nothing” actually returns <code>Unit</code>. A function that <em>never returns normally</em> (always throws or loops forever) returns <code>Nothing</code> — and the compiler uses that knowledge for flow analysis.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Returns.kt" data-run>
+            fun validateAge(age: Int) {                 // : Unit is implied
+                if (age < 0) {
+                    println("Invalid age $age")
+                    return                              // early return
+                }
+                println("Age $age OK")
+            }
+
+            fun fail(reason: String): Nothing {
+                throw IllegalArgumentException(reason)
+            }
+
+            fun parsePort(text: String): Int {
+                val port = text.toIntOrNull() ?: fail("Not a number: $text")
+                // Because fail() returns Nothing, the compiler knows port is an Int here
+                return port
+            }
+
+            fun main() {
+                validateAge(-3)
+                validateAge(30)
+                println(parsePort("8080"))
+                try {
+                    parsePort("http")
+                } catch (e: IllegalArgumentException) {
+                    println("Caught: ${e.message}")
+                }
+            }
+          </script>
+          <script type="text/plain" data-output>
+            Invalid age -3
+            Age 30 OK
+            8080
+            Caught: Not a number: http
+          </script>
+          <p class="small muted">The standard library has <code>TODO("reason")</code>, which returns <code>Nothing</code> — perfect for stubbing functions you haven't written yet.</p>
+        </section>
+
+        <section class="doc-section" id="infix-local" data-title="Infix & local functions">
+          <div class="sec-head"><h2><span class="sec-num">5.6</span>Infix &amp; local functions</h2></div>
+          <p><b>Infix</b> functions (one parameter, marked <code>infix</code>) can be called without dot and parentheses. You've already used one: <code>to</code> in <code>"a" to 1</code>. <b>Local</b> functions are declared inside another function and can access its variables — perfect for helpers nobody else needs.</p>
+          <script type="text/plain" data-code="kotlin" data-file="InfixLocal.kt" data-run>
+            infix fun Int.pow(exponent: Int): Long {
+                var result = 1L
+                repeat(exponent) { result *= this }
+                return result
+            }
+
+            fun printReport(items: List<String>) {
+                var line = 0
+                fun printLine(text: String) {           // local function, sees `line`
+                    line++
+                    println("${line.toString().padStart(2)}. $text")
+                }
+                printLine("REPORT")
+                items.forEach { printLine(it) }
+                printLine("END ($line lines)")
+            }
+
+            fun main() {
+                println(2 pow 10)                       // infix call
+                println(2.pow(10))                      // same thing, regular call
+                val pair = "Kotlin" to 2016             // `to` is infix too → Pair
+                println(pair)
+                printReport(listOf("alpha", "beta"))
+            }
+          </script>
+          <script type="text/plain" data-output>
+            1024
+            1024
+            (Kotlin, 2016)
+             1. REPORT
+             2. alpha
+             3. beta
+             4. END (3 lines)
+          </script>
+          <p class="small muted"><code>fun Int.pow(…)</code> is an <b>extension function</b> — it adds a function to an existing type. Lesson 10 covers extensions in depth.</p>
+        </section>
+
+        <section class="doc-section" id="recursion" data-title="Recursion & tailrec">
+          <div class="sec-head"><h2><span class="sec-num">5.7</span>Recursion &amp; <code>tailrec</code></h2></div>
+          <p>A recursive function calls itself. Each call uses stack memory, so very deep recursion throws <code>StackOverflowError</code>. If the recursive call is the <b>very last</b> operation, mark the function <code>tailrec</code> and the compiler rewrites it into a loop.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Recursion.kt" data-run>
+            fun factorial(n: Int): Long = if (n <= 1) 1 else n * factorial(n - 1)
+
+            tailrec fun gcd(a: Long, b: Long): Long = if (b == 0L) a else gcd(b, a % b)
+
+            tailrec fun sumTo(n: Long, acc: Long = 0): Long =
+                if (n == 0L) acc else sumTo(n - 1, acc + n)   // accumulator pattern
+
+            fun main() {
+                println(factorial(20))
+                println(gcd(1071, 462))
+                println(sumTo(1_000_000))        // would overflow the stack without tailrec
+            }
+          </script>
+          <script type="text/plain" data-output>
+            2432902008176640000
+            21
+            500000500000
+          </script>
+          <div class="callout note">
+            <div class="ci">ℹ️</div>
+            <div><span class="ct">Why isn't <code>factorial</code> tail-recursive?</span>
+              <p>After <code>factorial(n - 1)</code> returns, we still multiply by <code>n</code> — the call isn't the last operation. The compiler warns if you put <code>tailrec</code> on a function that isn't truly tail-recursive.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="design" data-title="Designing good functions">
+          <div class="sec-head"><h2><span class="sec-num">5.8</span>Designing good functions</h2></div>
+          <ul class="checklist">
+            <li><b>Do one thing.</b> If the name needs “and”, split it.</li>
+            <li><b>Name with verbs</b> for actions (<code>loadUser</code>, <code>sendEmail</code>) and with nouns or <code>is/has</code> for queries (<code>userCount</code>, <code>isValid</code>).</li>
+            <li><b>Keep them short</b> — a screenful at most. Extract local or private helpers.</li>
+            <li><b>Prefer pure functions</b> (same input → same output, no side effects). They're trivial to test.</li>
+            <li><b>Few parameters.</b> Beyond 3–4, group them into a data class (lesson 09).</li>
+            <li><b>Fail fast</b> with <code>require(…)</code> on invalid input (lesson 12).</li>
+          </ul>
+        </section>
+
+        <section class="doc-section" id="exercises" data-title="Exercises">
+          <div class="sec-head"><h2><span class="sec-num">5.9</span>Exercises</h2></div>
+          <details class="exercise">
+            <summary>Exercise 1 — Password strength <span class="badge green">Easy</span></summary>
+            <div class="ex-body">
+              <p>Write <code>fun isStrong(password: String, minLength: Int = 8): Boolean</code>: true if the password is at least <code>minLength</code> long and contains at least one digit and one uppercase letter. Use <code>any { it.isDigit() }</code>.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution" data-run>
+                fun isStrong(password: String, minLength: Int = 8): Boolean =
+                    password.length >= minLength &&
+                        password.any { it.isDigit() } &&
+                        password.any { it.isUpperCase() }
+
+                fun main() {
+                    println(isStrong("kotlin"))
+                    println(isStrong("Kotlin2025"))
+                    println(isStrong("Kt1", minLength = 3))
+                }
+              </script>
+              <script type="text/plain" data-output>
+                false
+                true
+                true
+              </script>
+            </div>
+          </details>
+          <details class="exercise">
+            <summary>Exercise 2 — Flexible greeting <span class="badge blue">Medium</span></summary>
+            <div class="ex-body">
+              <p>Write a single function <code>greeting</code> that supports all these calls: <code>greeting("Ada")</code> → <code>Hello, Ada!</code>; <code>greeting("Ada", "Hi")</code> → <code>Hi, Ada!</code>; <code>greeting("Ada", shout = true)</code> → <code>HELLO, ADA!</code>; <code>greeting("Ada", "Hey", "?")</code> → <code>Hey, Ada?</code>.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution" data-run>
+                fun greeting(name: String, word: String = "Hello", end: String = "!", shout: Boolean = false): String {
+                    val text = "$word, $name$end"
+                    return if (shout) text.uppercase() else text
+                }
+
+                fun main() {
+                    println(greeting("Ada"))
+                    println(greeting("Ada", "Hi"))
+                    println(greeting("Ada", shout = true))
+                    println(greeting("Ada", "Hey", "?"))
+                }
+              </script>
+              <script type="text/plain" data-output>
+                Hello, Ada!
+                Hi, Ada!
+                HELLO, ADA!
+                Hey, Ada?
+              </script>
+            </div>
+          </details>
+          <details class="exercise">
+            <summary>Exercise 3 — Fibonacci, three ways <span class="badge amber">Challenge</span></summary>
+            <div class="ex-body">
+              <p>Implement <code>fib(n)</code> (fib(0)=0, fib(1)=1) recursively, with <code>tailrec</code>, and iteratively. Why is the naive recursive version so slow for <code>n = 40</code>?</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution" data-run>
+                fun fibNaive(n: Int): Long = if (n < 2) n.toLong() else fibNaive(n - 1) + fibNaive(n - 2)
+
+                tailrec fun fibTail(n: Int, a: Long = 0, b: Long = 1): Long =
+                    if (n == 0) a else fibTail(n - 1, b, a + b)
+
+                fun fibLoop(n: Int): Long {
+                    var a = 0L
+                    var b = 1L
+                    repeat(n) {
+                        val next = a + b
+                        a = b
+                        b = next
+                    }
+                    return a
+                }
+
+                fun main() {
+                    println(fibNaive(20))
+                    println(fibTail(90))
+                    println(fibLoop(90))
+                }
+              </script>
+              <script type="text/plain" data-output>
+                6765
+                2880067194370816120
+                2880067194370816120
+              </script>
+              <p class="small muted">The naive version recomputes the same values exponentially many times (~2ⁿ calls). The other two are linear.</p>
+            </div>
+          </details>
+        </section>
+
+        <section class="doc-section" id="quiz" data-title="Quiz">
+          <div class="sec-head"><h2><span class="sec-num">5.10</span>Quiz</h2></div>
+          <script type="application/json" data-quiz>
+          [
+            {"q": "What is the return type of `fun log(msg: String) { println(msg) }`?", "options": ["void", "Nothing", "Unit", "Any"], "answer": 2, "explain": "Functions without a declared return type and with a block body return `Unit`."},
+            {"q": "Given `fun box(w: Int = 1, h: Int = 2, d: Int = 3)`, which call sets only `d` to 9?", "options": ["`box(9)`", "`box(, , 9)`", "`box(d = 9)`", "`box(3 = 9)`"], "answer": 2, "explain": "Named arguments let you skip parameters that have defaults."},
+            {"q": "How do you pass an existing `IntArray` to a `vararg numbers: Int` parameter?", "options": ["`sum(array)`", "`sum(*array)`", "`sum(...array)`", "`sum(array.toList())`"], "answer": 1, "explain": "The spread operator `*` unpacks the array into individual arguments."},
+            {"q": "Which function can be marked `tailrec`?", "options": ["`fun f(n: Int): Int = if (n == 0) 0 else 1 + f(n - 1)`", "`fun f(n: Int, acc: Int): Int = if (n == 0) acc else f(n - 1, acc + 1)`", "`fun f(n: Int): Int = f(n - 1) * 2`", "Any recursive function"], "answer": 1, "explain": "Only when the recursive call is the last operation. In the first option, `1 + …` happens after the call."},
+            {"q": "Why does `val p = text.toIntOrNull() ?: fail(\"bad\")` give `p` the type `Int` (not `Int?`) when `fail` returns `Nothing`?", "options": ["Because of a cast", "Because `Nothing` means fail() never returns, so the only way to continue is with a non-null Int", "Because `?:` always returns Int", "It doesn't; p is Int?"], "answer": 1, "explain": "`Nothing` is a subtype of every type and signals that execution can't continue past that call."}
+          ]
+          </script>
+        </section>
+
+        <section class="doc-section" id="references" data-title="Further reading">
+          <div class="sec-head"><h2><span class="sec-num">5.11</span>Further reading</h2></div>
+          <ul>
+            <li><a href="https://kotlinlang.org/docs/functions.html" target="_blank" rel="noopener">Kotlin docs — Functions</a></li>
+            <li><a href="https://kotlinlang.org/docs/java-to-kotlin-interop.html#overloads-generation" target="_blank" rel="noopener">@JvmOverloads and Java interop</a></li>
+          </ul>
+        </section>
+
+        <div id="pager"></div>
+      </div>
+    </main>
+  </div>
+  <div id="site-footer"></div>
+  <script src="assets/js/core.js?v=__BUILD__"></script>
+</body>
+</html>

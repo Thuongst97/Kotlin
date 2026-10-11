@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Null Safety — Kotlin Academy</title>
+  <meta name="description" content="Kotlin null safety: nullable types, safe calls, the Elvis operator, smart casts, not-null assertions, let, safe casts, lateinit, lazy and Java platform types.">
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <meta name="color-scheme" content="dark light">
+  <link rel="stylesheet" href="assets/css/main.css?v=__BUILD__">
+  <script>try{var t=localStorage.getItem("ka-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body data-page="null-safety">
+  <div id="site-header"></div>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="content">
+      <div class="content-inner">
+
+        <header class="page-hero">
+          <nav class="crumbs"><a href="index.html">Home</a><span>/</span><span>Kotlin Fundamentals</span><span>/</span><span>Lesson 06</span></nav>
+          <div class="eyebrow">Lesson 06 · Kotlin Fundamentals</div>
+          <h1>Null Safety</h1>
+          <p class="lead">Tony Hoare called the null reference his “billion-dollar mistake”. Kotlin fixes it in the type system: the compiler knows which values may be <code>null</code> and forces you to handle them — so <code>NullPointerException</code> becomes a compile error instead of a crash in your users' hands.</p>
+          <div class="page-meta"><span>⏱ 40 min</span><span>🎯 Beginner</span><span>⭐ The most important Kotlin feature</span></div>
+          <div class="objectives">
+            <h4>You will be able to</h4>
+            <ul>
+              <li>Distinguish <code>String</code> from <code>String?</code></li>
+              <li>Use <code>?.</code>, <code>?:</code>, <code>as?</code> and <code>?.let</code></li>
+              <li>Rely on smart casts after null checks</li>
+              <li>Know why <code>!!</code> is a code smell</li>
+              <li>Initialize properties with <code>lateinit</code> and <code>lazy</code></li>
+              <li>Handle nulls coming from Java code</li>
+            </ul>
+          </div>
+        </header>
+
+        <section class="doc-section" id="nullable" data-title="Nullable types">
+          <div class="sec-head"><h2><span class="sec-num">6.1</span>Nullable and non-nullable types</h2></div>
+          <p>By default, a type <b>cannot</b> hold <code>null</code>. Add <code>?</code> to the type to allow it. <code>String</code> and <code>String?</code> are different types, and the compiler won't let you call methods on a <code>String?</code> without handling the null case.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Nullable.kt">
+            var name: String = "Ada"
+            // name = null                  // ❌ Null can not be a value of a non-null type String
+
+            var nickname: String? = "Countess"
+            nickname = null                 // ✅ allowed
+
+            // println(nickname.length)     // ❌ Only safe (?.) or non-null asserted (!!.) calls are allowed
+          </script>
+          <figure class="diagram">
+            <svg viewBox="0 0 560 150" width="560" role="img" aria-label="String is a subtype of String?">
+              <g font-family="Inter, sans-serif" font-size="14" text-anchor="middle">
+                <rect x="180" y="10" width="200" height="44" rx="10" fill="rgba(169,139,255,.15)" stroke="#a98bff"/>
+                <text x="280" y="37" fill="currentColor" font-weight="700">String?  (String or null)</text>
+                <rect x="60" y="96" width="180" height="44" rx="10" fill="rgba(61,220,151,.13)" stroke="#3ddc97"/>
+                <text x="150" y="123" fill="currentColor" font-weight="700">String  ("Ada", "")</text>
+                <rect x="320" y="96" width="180" height="44" rx="10" fill="rgba(255,107,122,.12)" stroke="#ff6b7a"/>
+                <text x="410" y="123" fill="currentColor" font-weight="700">Nothing?  (null)</text>
+                <path d="M150 96L250 54M410 96L310 54" stroke="#9a98a8" stroke-width="1.5"/>
+              </g>
+            </svg>
+            <figcaption>Every <code>String</code> is also a <code>String?</code>, but not the other way around. Passing <code>String</code> where <code>String?</code> is expected is always fine.</figcaption>
+          </figure>
+        </section>
+
+        <section class="doc-section" id="safe-call" data-title="Safe call ?.">
+          <div class="sec-head"><h2><span class="sec-num">6.2</span>The safe-call operator <code>?.</code></h2></div>
+          <p><code>a?.b</code> means: “if <code>a</code> is not null, evaluate <code>a.b</code>; otherwise the whole expression is <code>null</code>.” Calls can be chained — the first null short-circuits the rest.</p>
+          <script type="text/plain" data-code="kotlin" data-file="SafeCall.kt" data-run>
+            class Address(val city: String?)
+            class User(val name: String, val address: Address?)
+
+            fun main() {
+                val nickname: String? = null
+                println(nickname?.length)          // null, no crash
+                println(nickname?.uppercase())
+
+                val ada = User("Ada", Address("London"))
+                val bob = User("Bob", null)
+                println(ada.address?.city?.length)  // 6
+                println(bob.address?.city?.length)  // null — stopped at address
+
+                // Safe-call assignment: only assigns if the receiver is non-null
+                var buffer: StringBuilder? = null
+                buffer?.append("ignored")
+                println(buffer)
+            }
+          </script>
+          <script type="text/plain" data-output>
+            null
+            null
+            6
+            null
+            null
+          </script>
+        </section>
+
+        <section class="doc-section" id="elvis" data-title="Elvis operator ?:">
+          <div class="sec-head"><h2><span class="sec-num">6.3</span>The Elvis operator <code>?:</code></h2></div>
+          <p><code>a ?: b</code> returns <code>a</code> if it isn't null, otherwise <code>b</code>. (Tilt your head: <code>?:</code> looks like Elvis's hairstyle.) Because <code>return</code> and <code>throw</code> are expressions, the right side can also exit the function.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Elvis.kt" data-run>
+            fun displayName(nickname: String?, fullName: String): String =
+                nickname ?: fullName
+
+            fun parseQuantity(text: String?): Int {
+                val raw = text ?: return 0                            // early exit
+                val number = raw.toIntOrNull()
+                    ?: throw IllegalArgumentException("'$raw' is not a number")
+                return number
+            }
+
+            fun main() {
+                println(displayName(null, "Ada Lovelace"))
+                println(displayName("ada", "Ada Lovelace"))
+                println(parseQuantity(null))
+                println(parseQuantity("12"))
+                println(runCatching { parseQuantity("a dozen") }.exceptionOrNull()?.message)
+
+                val config: Map<String, String> = mapOf("theme" to "dark")
+                val fontSize = config["fontSize"]?.toIntOrNull() ?: 14   // a very common combo
+                println(fontSize)
+            }
+          </script>
+          <script type="text/plain" data-output>
+            Ada Lovelace
+            ada
+            0
+            12
+            'a dozen' is not a number
+            14
+          </script>
+        </section>
+
+        <section class="doc-section" id="smart-casts" data-title="Null checks & smart casts">
+          <div class="sec-head"><h2><span class="sec-num">6.4</span>Null checks &amp; smart casts</h2></div>
+          <p>After you check that a value isn't null, the compiler <b>smart-casts</b> it to the non-null type for the rest of that scope.</p>
+          <script type="text/plain" data-code="kotlin" data-file="SmartCast.kt" data-run>
+            fun describe(text: String?) {
+                if (text == null) {
+                    println("No text")
+                    return
+                }
+                // From here on, text is String (not String?) — no ?. needed
+                println("'$text' has ${text.length} characters")
+            }
+
+            fun shout(text: String?): String {
+                if (text != null && text.isNotBlank()) {   // smart cast works inside && too
+                    return text.uppercase() + "!"
+                }
+                return "..."
+            }
+
+            fun main() {
+                describe(null)
+                describe("Kotlin")
+                println(shout("hey"))
+                println(shout("   "))
+                println(shout(null))
+            }
+          </script>
+          <script type="text/plain" data-output>
+            No text
+            'Kotlin' has 6 characters
+            HEY!
+            ...
+            ...
+          </script>
+          <div class="callout warn">
+            <div class="ci">⚠️</div>
+            <div><span class="ct">Smart casts need stability</span>
+              <p>The compiler only smart-casts values that can't change between the check and the use: local <code>val</code>s, local <code>var</code>s not captured by a lambda that modifies them, and <code>val</code> properties without custom getters in the same module. For a mutable class property (<code>var</code>), copy it into a local <code>val</code> first, or use <code>?.let</code>.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="let" data-title="?.let and safe casts">
+          <div class="sec-head"><h2><span class="sec-num">6.5</span><code>?.let</code>, safe casts <code>as?</code> and null-aware helpers</h2></div>
+          <p><code>value?.let { … }</code> runs the block only when the value is non-null; inside, <code>it</code> is non-null. <code>as?</code> casts safely, returning null instead of throwing <code>ClassCastException</code>.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Let.kt" data-run>
+            fun main() {
+                val email: String? = "ada@example.com"
+                email?.let { println("Sending to $it") }        // runs
+                val missing: String? = null
+                missing?.let { println("Never printed") }       // skipped
+
+                val raw: Any = "123"
+                val asNumber: Int? = raw as? Int                // null, not a crash
+                val asText: String? = raw as? String
+                println("$asNumber / $asText")
+
+                // Standard-library helpers for nullable values
+                val blank: String? = "  "
+                println(blank.isNullOrBlank())
+                println(missing.orEmpty().length)              // null → ""
+                val maybeList: List<Int>? = null
+                println(maybeList.orEmpty().size)              // null → emptyList()
+
+                // Collections of nullable values
+                val inputs = listOf("1", "two", null, "4")
+                println(inputs.filterNotNull())
+                println(inputs.mapNotNull { it?.toIntOrNull() })
+                println(listOfNotNull("a", null, "c"))
+            }
+          </script>
+          <script type="text/plain" data-output>
+            Sending to ada@example.com
+            null / 123
+            true
+            0
+            0
+            [1, two, 4]
+            [1, 4]
+            [a, c]
+          </script>
+        </section>
+
+        <section class="doc-section" id="bang-bang" data-title="The !! operator">
+          <div class="sec-head"><h2><span class="sec-num">6.6</span>The not-null assertion <code>!!</code></h2></div>
+          <p><code>value!!</code> converts a nullable value to non-null — and throws <code>NullPointerException</code> if it's null. It means “trust me, compiler”. You're turning off the safety net.</p>
+          <script type="text/plain" data-code="kotlin" data-file="BangBang.kt" data-run>
+            fun main() {
+                val present: String? = "ok"
+                println(present!!.length)
+
+                val absent: String? = null
+                try {
+                    println(absent!!.length)
+                } catch (e: NullPointerException) {
+                    println("💥 NullPointerException")
+                }
+            }
+          </script>
+          <script type="text/plain" data-output>
+            2
+            💥 NullPointerException
+          </script>
+          <div class="callout danger">
+            <div class="ci">🚫</div>
+            <div><span class="ct">Treat <code>!!</code> as a code smell</span>
+              <p>Every <code>!!</code> is a potential crash. Prefer, in order: making the type non-null in the first place, <code>?:</code> with a default, <code>?: return</code>, <code>?.let</code>, or <code>requireNotNull(x) { "message" }</code> / <code>checkNotNull</code> which at least throw with a useful message. A good codebase has almost no <code>!!</code>.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="lateinit-lazy" data-title="lateinit & lazy">
+          <div class="sec-head"><h2><span class="sec-num">6.7</span>Deferred initialization: <code>lateinit</code> and <code>lazy</code></h2></div>
+          <p>Sometimes a property can't be initialized in the constructor, but you don't want to make it nullable just for that.</p>
+          <div class="grid grid-2">
+            <div class="glass card"><h4><code>lateinit var</code></h4><p class="small">“I promise to assign this before reading it.” Only for non-null, non-primitive <code>var</code>s. Reading it too early throws <code>UninitializedPropertyAccessException</code>. Common in tests (<code>@Before</code>) and dependency injection.</p></div>
+            <div class="glass card"><h4><code>val … by lazy { }</code></h4><p class="small">Computed on first access, then cached. Thread-safe by default. Ideal for expensive objects that may not be needed.</p></div>
+          </div>
+          <script type="text/plain" data-code="kotlin" data-file="Deferred.kt" data-run>
+            class ReportScreen {
+                lateinit var title: String                  // set later by setup()
+
+                val heavyData: List<Int> by lazy {
+                    println("  (computing heavyData…)")
+                    (1..5).map { it * it }
+                }
+
+                fun setup() { title = "Monthly report" }
+
+                fun render() {
+                    if (!::title.isInitialized) {           // check without throwing
+                        println("Not set up yet")
+                        return
+                    }
+                    println(title)
+                }
+            }
+
+            fun main() {
+                val screen = ReportScreen()
+                screen.render()
+                screen.setup()
+                screen.render()
+                println("Before first access")
+                println(screen.heavyData)     // computed now
+                println(screen.heavyData)     // cached, block doesn't run again
+            }
+          </script>
+          <script type="text/plain" data-output>
+            Not set up yet
+            Monthly report
+            Before first access
+              (computing heavyData…)
+            [1, 4, 9, 16, 25]
+            [1, 4, 9, 16, 25]
+          </script>
+        </section>
+
+        <section class="doc-section" id="platform-types" data-title="Java interop: platform types">
+          <div class="sec-head"><h2><span class="sec-num">6.8</span>Java interop: platform types</h2></div>
+          <p>Java has no nullability in its type system, so a <code>String</code> returned by Java code might be null. Kotlin represents such values as <b>platform types</b>, shown in IDE hints as <code>String!</code>: you may treat them as nullable or non-null — and you're responsible if you're wrong.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Platform.kt" data-run>
+            fun main() {
+                // System.getenv is a Java method returning String (may be null)
+                val home = System.getenv("SOME_UNSET_VARIABLE")   // type: String!
+
+                val safe: String? = home          // ✅ treat as nullable — recommended
+                println(safe?.length ?: "not set")
+
+                // val unsafe: String = home     // compiles, but throws at runtime if null
+            }
+          </script>
+          <script type="text/plain" data-output>
+            not set
+          </script>
+          <div class="callout tip">
+            <div class="ci">💡</div>
+            <div><span class="ct">Annotated Java is safe</span>
+              <p>When Java code uses nullability annotations (<code>@Nullable</code>/<code>@NonNull</code> from JetBrains, AndroidX, JSpecify…), Kotlin sees real <code>String?</code>/<code>String</code> types. The Android SDK and AndroidX are annotated, which is why Android APIs mostly feel null-safe in Kotlin.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="exercises" data-title="Exercises">
+          <div class="sec-head"><h2><span class="sec-num">6.9</span>Exercises</h2></div>
+          <details class="exercise">
+            <summary>Exercise 1 — Safe initials <span class="badge green">Easy</span></summary>
+            <div class="ex-body">
+              <p>Write <code>fun initials(first: String?, last: String?): String</code> that returns e.g. <code>"A.L."</code>, using <code>?</code> for any missing or blank part: <code>initials(null, "Lovelace")</code> → <code>"?.L."</code>.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution" data-run>
+                fun initial(part: String?): Char =
+                    part?.trim()?.firstOrNull()?.uppercaseChar() ?: '?'
+
+                fun initials(first: String?, last: String?): String =
+                    "${initial(first)}.${initial(last)}."
+
+                fun main() {
+                    println(initials("ada", "lovelace"))
+                    println(initials(null, "Lovelace"))
+                    println(initials("  ", null))
+                }
+              </script>
+              <script type="text/plain" data-output>
+                A.L.
+                ?.L.
+                ?.?.
+              </script>
+            </div>
+          </details>
+          <details class="exercise">
+            <summary>Exercise 2 — Remove the <code>!!</code> <span class="badge blue">Medium</span></summary>
+            <div class="ex-body">
+              <p>Rewrite this function without any <code>!!</code>, keeping the behaviour (return <code>-1</code> when anything is missing).</p>
+              <script type="text/plain" data-code="kotlin" data-file="Task">
+                fun discountPercent(user: Map<String, String>?): Int {
+                    if (user == null || user["tier"] == null) return -1
+                    return when (user["tier"]!!.lowercase()) {
+                        "gold" -> 20
+                        "silver" -> 10
+                        else -> user["custom"]!!.toInt()
+                    }
+                }
+              </script>
+              <script type="text/plain" data-code="kotlin" data-file="Solution" data-run>
+                fun discountPercent(user: Map<String, String>?): Int {
+                    val tier = user?.get("tier") ?: return -1
+                    return when (tier.lowercase()) {
+                        "gold" -> 20
+                        "silver" -> 10
+                        else -> user["custom"]?.toIntOrNull() ?: -1   // user is smart-cast to non-null here
+                    }
+                }
+
+                fun main() {
+                    println(discountPercent(null))
+                    println(discountPercent(mapOf("tier" to "Gold")))
+                    println(discountPercent(mapOf("tier" to "vip", "custom" to "35")))
+                    println(discountPercent(mapOf("tier" to "vip")))
+                }
+              </script>
+              <script type="text/plain" data-output>
+                -1
+                20
+                35
+                -1
+              </script>
+              <p class="small muted">Bonus: the original crashed with an NPE when <code>custom</code> was missing, and with <code>NumberFormatException</code> when it wasn't a number. The new version handles both.</p>
+            </div>
+          </details>
+          <details class="exercise">
+            <summary>Exercise 3 — Parse a config file <span class="badge amber">Challenge</span></summary>
+            <div class="ex-body">
+              <p>Parse lines like <code>"port=8080"</code>. Ignore blank lines, comments starting with <code>#</code>, and malformed lines. Return a <code>Map&lt;String, String&gt;</code>. Then read <code>port</code> as Int with default 80 and <code>debug</code> as Boolean with default false.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution" data-run>
+                fun parseConfig(text: String): Map<String, String> =
+                    text.lines()
+                        .map { it.trim() }
+                        .filter { it.isNotEmpty() && !it.startsWith("#") }
+                        .mapNotNull { line ->
+                            val idx = line.indexOf('=')
+                            if (idx <= 0) null else line.substring(0, idx).trim() to line.substring(idx + 1).trim()
+                        }
+                        .toMap()
+
+                fun main() {
+                    val config = parseConfig(
+                        """
+                        # server settings
+                        host = example.com
+                        port=8080
+                        this line is broken
+                        =nokey
+                        """
+                    )
+                    println(config)
+                    val port = config["port"]?.toIntOrNull() ?: 80
+                    val debug = config["debug"]?.toBooleanStrictOrNull() ?: false
+                    println("port=$port debug=$debug")
+                }
+              </script>
+              <script type="text/plain" data-output>
+                {host=example.com, port=8080}
+                port=8080 debug=false
+              </script>
+            </div>
+          </details>
+        </section>
+
+        <section class="doc-section" id="quiz" data-title="Quiz">
+          <div class="sec-head"><h2><span class="sec-num">6.10</span>Quiz</h2></div>
+          <script type="application/json" data-quiz>
+          [
+            {"q": "What is the type of `s?.length` when `s: String?`?", "options": ["Int", "Int?", "String?", "Nothing"], "answer": 1, "explain": "A safe call may short-circuit to null, so the result is nullable: `Int?`."},
+            {"q": "What does `val n = null ?: \"x\" ?: \"y\"` evaluate to?", "options": ["null", "\"x\"", "\"y\"", "Compile error"], "answer": 1, "explain": "Elvis returns the first non-null operand from left to right."},
+            {"q": "Which is the safest way to get a non-null length from `name: String?` with a default of 0?", "options": ["`name!!.length`", "`name.length`", "`name?.length ?: 0`", "`(name as String).length`"], "answer": 2, "explain": "`!!` and a cast both throw on null; `name.length` doesn't compile."},
+            {"q": "When should you prefer `lateinit var` over a nullable property?", "options": ["For Int and Boolean values", "When the value is guaranteed to be set before first use but can't be set in the constructor", "Whenever you're lazy", "For `val` properties"], "answer": 1, "explain": "`lateinit` works only for non-null, non-primitive `var`s. `val` + expensive computation → `by lazy`."},
+            {"q": "Given `val x: Any = 42`, what is `x as? String`?", "options": ["\"42\"", "null", "ClassCastException", "42"], "answer": 1, "explain": "`as?` returns null when the cast is impossible. `as String` would throw."},
+            {"q": "A Java method returns `String` without annotations. In Kotlin its type is…", "options": ["String", "String?", "String! (platform type)", "Any"], "answer": 2, "explain": "Platform types defer the decision to you. Declare the variable as `String?` to be safe."}
+          ]
+          </script>
+        </section>
+
+        <section class="doc-section" id="references" data-title="Further reading">
+          <div class="sec-head"><h2><span class="sec-num">6.11</span>Further reading</h2></div>
+          <ul>
+            <li><a href="https://kotlinlang.org/docs/null-safety.html" target="_blank" rel="noopener">Kotlin docs — Null safety</a></li>
+            <li><a href="https://kotlinlang.org/docs/java-interop.html#null-safety-and-platform-types" target="_blank" rel="noopener">Null safety and platform types</a></li>
+            <li><a href="https://kotlinlang.org/docs/delegated-properties.html#lazy-properties" target="_blank" rel="noopener">Lazy properties</a></li>
+          </ul>
+        </section>
+
+        <div id="pager"></div>
+      </div>
+    </main>
+  </div>
+  <div id="site-footer"></div>
+  <script src="assets/js/core.js?v=__BUILD__"></script>
+</body>
+</html>

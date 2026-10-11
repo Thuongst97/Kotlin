@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Control Flow — Kotlin Academy</title>
+  <meta name="description" content="Kotlin if and when as expressions, ranges and progressions, for, while and do-while loops, break, continue and labels.">
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <meta name="color-scheme" content="dark light">
+  <link rel="stylesheet" href="assets/css/main.css?v=__BUILD__">
+  <script>try{var t=localStorage.getItem("ka-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body data-page="control-flow">
+  <div id="site-header"></div>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="content">
+      <div class="content-inner">
+
+        <header class="page-hero">
+          <nav class="crumbs"><a href="index.html">Home</a><span>/</span><span>Kotlin Fundamentals</span><span>/</span><span>Lesson 04</span></nav>
+          <div class="eyebrow">Lesson 04 · Kotlin Fundamentals</div>
+          <h1>Control Flow</h1>
+          <p class="lead">Make decisions with <code>if</code> and <code>when</code>, repeat work with loops, and iterate over ranges. In Kotlin, <code>if</code> and <code>when</code> are <b>expressions</b> — they produce values — which changes how you write code.</p>
+          <div class="page-meta"><span>⏱ 40 min</span><span>🎯 Beginner</span><span>▶ All examples are runnable</span></div>
+          <div class="objectives">
+            <h4>You will be able to</h4>
+            <ul>
+              <li>Use <code>if</code> as a statement and as an expression</li>
+              <li>Replace if-else chains with <code>when</code></li>
+              <li>Create ranges with <code>..</code>, <code>..&lt;</code>, <code>downTo</code>, <code>step</code></li>
+              <li>Loop with <code>for</code>, <code>while</code>, <code>do-while</code>, <code>repeat</code></li>
+              <li>Control loops with <code>break</code>, <code>continue</code> and labels</li>
+            </ul>
+          </div>
+        </header>
+
+        <section class="doc-section" id="if" data-title="if / else">
+          <div class="sec-head"><h2><span class="sec-num">4.1</span><code>if</code> / <code>else</code></h2></div>
+          <p>The classic form works as you'd expect. The twist: <code>if</code> is an <b>expression</b>, so it returns a value — the last expression of the chosen branch. That's why Kotlin has no ternary <code>a ? b : c</code> operator.</p>
+          <script type="text/plain" data-code="kotlin" data-file="If.kt" data-run>
+            fun main() {
+                val temperature = 31
+
+                // As a statement
+                if (temperature > 30) {
+                    println("It's hot")
+                } else if (temperature < 10) {
+                    println("It's cold")
+                } else {
+                    println("It's pleasant")
+                }
+
+                // As an expression: the value of the chosen branch is assigned
+                val advice = if (temperature > 30) "Drink water" else "Enjoy"
+                println(advice)
+
+                // Blocks work too — the LAST expression is the value
+                val fee = if (temperature > 35) {
+                    println("Heat surcharge applied")
+                    15
+                } else {
+                    10
+                }
+                println("Fee: $fee")
+            }
+          </script>
+          <script type="text/plain" data-output>
+            It's hot
+            Drink water
+            Fee: 10
+          </script>
+          <div class="callout note">
+            <div class="ci">ℹ️</div>
+            <div><span class="ct">When used as an expression, <code>else</code> is required</span>
+              <p>The compiler must know which value to produce in every case: <code>val x = if (ok) 1</code> does not compile.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="when" data-title="when">
+          <div class="sec-head"><h2><span class="sec-num">4.2</span><code>when</code> — the super-powered switch</h2></div>
+          <p><code>when</code> matches a value against branches and runs the first one that matches. No <code>break</code> needed, no fall-through bugs.</p>
+          <script type="text/plain" data-code="kotlin" data-file="When.kt" data-run>
+            fun describe(day: Int): String = when (day) {
+                1, 7 -> "Weekend"                 // several values in one branch
+                in 2..6 -> "Weekday"              // range check
+                else -> "Not a day"
+            }
+
+            fun classify(x: Any): String = when (x) {
+                is Int -> "Int, doubled = ${x * 2}"         // smart cast: x is Int here
+                is String -> "String of length ${x.length}" // and String here
+                is List<*> -> "List with ${x.size} items"
+                else -> "Something else"
+            }
+
+            fun main() {
+                println(describe(1))
+                println(describe(3))
+                println(describe(9))
+                println(classify(21))
+                println(classify("Kotlin"))
+                println(classify(listOf(1, 2, 3)))
+                println(classify(2.5))
+            }
+          </script>
+          <script type="text/plain" data-output>
+            Weekend
+            Weekday
+            Not a day
+            Int, doubled = 42
+            String of length 6
+            List with 3 items
+            Something else
+          </script>
+          <h3><code>when</code> without a subject</h3>
+          <p>Leave out the argument and each branch becomes a boolean condition — a clean replacement for long <code>if-else if</code> chains:</p>
+          <script type="text/plain" data-code="kotlin" data-file="Bmi.kt" data-run>
+            fun bmiCategory(weightKg: Double, heightM: Double): String {
+                val bmi = weightKg / (heightM * heightM)
+                return when {
+                    bmi < 18.5 -> "Underweight"
+                    bmi < 25.0 -> "Normal"
+                    bmi < 30.0 -> "Overweight"
+                    else -> "Obese"
+                }
+            }
+
+            fun main() {
+                println(bmiCategory(70.0, 1.75))
+                println(bmiCategory(50.0, 1.80))
+            }
+          </script>
+          <script type="text/plain" data-output>
+            Normal
+            Underweight
+          </script>
+          <div class="callout tip">
+            <div class="ci">💡</div>
+            <div><span class="ct">Exhaustiveness</span>
+              <p>When <code>when</code> is used as an expression, it must cover every case. For <code>enum</code> and <code>sealed</code> types (lesson 09), the compiler checks all cases are handled <em>without</em> needing <code>else</code> — so adding a new case later produces compile errors exactly where you need to update code. This is one of Kotlin's most valuable safety features.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="ranges" data-title="Ranges & progressions">
+          <div class="sec-head"><h2><span class="sec-num">4.3</span>Ranges &amp; progressions</h2></div>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>Expression</th><th>Values</th><th>Notes</th></tr></thead>
+              <tbody>
+                <tr><td><code>1..5</code></td><td>1 2 3 4 5</td><td>closed: includes both ends</td></tr>
+                <tr><td><code>1..&lt;5</code></td><td>1 2 3 4</td><td>open-ended: excludes the end (also <code>1 until 5</code>)</td></tr>
+                <tr><td><code>5 downTo 1</code></td><td>5 4 3 2 1</td><td>counting down</td></tr>
+                <tr><td><code>0..10 step 3</code></td><td>0 3 6 9</td><td>custom step</td></tr>
+                <tr><td><code>'a'..'e'</code></td><td>a b c d e</td><td>works for Char</td></tr>
+                <tr><td><code>1.0..2.0</code></td><td>—</td><td>Double ranges only support <code>in</code> checks, not iteration</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <script type="text/plain" data-code="kotlin" data-file="Ranges.kt" data-run>
+            fun main() {
+                println((1..5).toList())
+                println((1..<5).toList())
+                println((10 downTo 0 step 5).toList())
+                println(('a'..'e').joinToString(""))
+
+                val age = 17
+                println(age in 13..19)          // is a teenager?
+                println(age !in 18..65)
+                println(3.7 in 1.0..5.0)
+
+                val r = 1..10
+                println("first=${r.first} last=${r.last} sum=${r.sum()} count=${r.count()}")
+            }
+          </script>
+          <script type="text/plain" data-output>
+            [1, 2, 3, 4, 5]
+            [1, 2, 3, 4]
+            [10, 5, 0]
+            abcde
+            true
+            true
+            true
+            first=1 last=10 sum=55 count=10
+          </script>
+        </section>
+
+        <section class="doc-section" id="for" data-title="for loops">
+          <div class="sec-head"><h2><span class="sec-num">4.4</span><code>for</code> loops</h2></div>
+          <p>Kotlin's <code>for</code> iterates over anything that provides an iterator: ranges, strings, arrays, collections, maps. There is no C-style <code>for (int i = 0; i &lt; n; i++)</code> — use a range instead.</p>
+          <script type="text/plain" data-code="kotlin" data-file="For.kt" data-run>
+            fun main() {
+                for (i in 1..3) print("$i ")
+                println()
+
+                for (i in 10 downTo 0 step 4) print("$i ")
+                println()
+
+                val fruits = listOf("apple", "banana", "cherry")
+                for (fruit in fruits) println(fruit)
+
+                // Index and value together
+                for ((index, fruit) in fruits.withIndex()) {
+                    println("$index: $fruit")
+                }
+
+                // Only the indices
+                for (i in fruits.indices) print("${fruits[i].first()} ")
+                println()
+
+                // Over a map: destructure key and value
+                val prices = mapOf("apple" to 1.2, "banana" to 0.5)
+                for ((name, price) in prices) println("$name costs $price")
+
+                // Over a string's characters
+                for (ch in "Kt!") print("[$ch]")
+                println()
+            }
+          </script>
+          <script type="text/plain" data-output>
+            1 2 3
+            10 6 2
+            apple
+            banana
+            cherry
+            0: apple
+            1: banana
+            2: cherry
+            a b c
+            apple costs 1.2
+            banana costs 0.5
+            [K][t][!]
+          </script>
+          <p class="small muted">The <code>for</code> loop over a range compiles to the same fast counting loop as in Java — no list or iterator object is created.</p>
+        </section>
+
+        <section class="doc-section" id="while" data-title="while & do-while">
+          <div class="sec-head"><h2><span class="sec-num">4.5</span><code>while</code>, <code>do-while</code> &amp; <code>repeat</code></h2></div>
+          <p>Use <code>while</code> when you don't know in advance how many iterations you need. <code>do-while</code> runs the body at least once — handy for input validation. <code>repeat(n)</code> is the simplest way to do something <em>n</em> times.</p>
+          <script type="text/plain" data-code="kotlin" data-file="While.kt" data-run>
+            fun main() {
+                // Collatz sequence: how many steps to reach 1?
+                var n = 27
+                var steps = 0
+                while (n != 1) {
+                    n = if (n % 2 == 0) n / 2 else 3 * n + 1
+                    steps++
+                }
+                println("27 reaches 1 after $steps steps")
+
+                // do-while: body first, condition after
+                var attempts = 0
+                do {
+                    attempts++
+                    val roll = attempts * 2      // pretend this is a dice roll
+                } while (roll < 6)
+                println("Needed $attempts attempts")
+
+                repeat(3) { i -> print("Hip ${i + 1}! ") }
+                println("Hooray!")
+            }
+          </script>
+          <script type="text/plain" data-output>
+            27 reaches 1 after 111 steps
+            Needed 3 attempts
+            Hip 1! Hip 2! Hip 3! Hooray!
+          </script>
+          <div class="callout note">
+            <div class="ci">ℹ️</div>
+            <div><span class="ct">Scope detail</span>
+              <p>Notice that <code>roll</code> is declared <em>inside</em> the <code>do</code> body but used in the <code>while</code> condition. Kotlin allows this specifically for <code>do-while</code>.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="jumps" data-title="break, continue & labels">
+          <div class="sec-head"><h2><span class="sec-num">4.6</span><code>break</code>, <code>continue</code> &amp; labels</h2></div>
+          <p><code>break</code> exits the nearest loop, <code>continue</code> skips to its next iteration. To affect an <em>outer</em> loop, mark it with a <b>label</b> (<code>name@</code>) and refer to it with <code>break@name</code>.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Jumps.kt" data-run>
+            fun main() {
+                for (i in 1..10) {
+                    if (i % 2 == 0) continue     // skip even numbers
+                    if (i > 7) break             // stop entirely
+                    print("$i ")
+                }
+                println()
+
+                // Find the first pair whose product is 42
+                outer@ for (a in 1..9) {
+                    for (b in 1..9) {
+                        if (a * b == 42) {
+                            println("Found $a × $b")
+                            break@outer          // leaves BOTH loops
+                        }
+                    }
+                }
+            }
+          </script>
+          <script type="text/plain" data-output>
+            1 3 5 7
+            Found 6 × 7
+          </script>
+          <div class="callout tip">
+            <div class="ci">💡</div>
+            <div><span class="ct">Prefer functions over labels</span>
+              <p>Labeled breaks are sometimes the clearest solution, but often extracting the nested loop into a function and using <code>return</code> reads better. And many loops disappear entirely once you learn collection operations (lesson 07): the example above becomes <code>(1..9).firstNotNullOfOrNull { … }</code>.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="exercises" data-title="Exercises">
+          <div class="sec-head"><h2><span class="sec-num">4.7</span>Exercises</h2></div>
+          <details class="exercise">
+            <summary>Exercise 1 — FizzBuzz with <code>when</code> <span class="badge green">Easy</span></summary>
+            <div class="ex-body">
+              <p>For numbers 1 to 15 print <code>Fizz</code> for multiples of 3, <code>Buzz</code> for multiples of 5, <code>FizzBuzz</code> for both, otherwise the number. Use <code>when</code> without a subject.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution" data-run>
+                fun main() {
+                    for (i in 1..15) {
+                        val text = when {
+                            i % 15 == 0 -> "FizzBuzz"
+                            i % 3 == 0 -> "Fizz"
+                            i % 5 == 0 -> "Buzz"
+                            else -> i.toString()
+                        }
+                        print("$text ")
+                    }
+                    println()
+                }
+              </script>
+              <script type="text/plain" data-output>
+                1 2 Fizz 4 Buzz Fizz 7 8 Fizz Buzz 11 Fizz 13 14 FizzBuzz
+              </script>
+              <p class="small muted">Order matters: the <code>% 15</code> branch must come first, because <code>when</code> takes the first match.</p>
+            </div>
+          </details>
+          <details class="exercise">
+            <summary>Exercise 2 — Letter grades <span class="badge green">Easy</span></summary>
+            <div class="ex-body">
+              <p>Write <code>fun grade(score: Int): Char</code> returning A (90–100), B (80–89), C (70–79), D (60–69), F (0–59). Use <code>when</code> with ranges. For anything outside 0..100 throw <code>IllegalArgumentException</code>.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution" data-run>
+                fun grade(score: Int): Char = when (score) {
+                    in 90..100 -> 'A'
+                    in 80..89 -> 'B'
+                    in 70..79 -> 'C'
+                    in 60..69 -> 'D'
+                    in 0..59 -> 'F'
+                    else -> throw IllegalArgumentException("Invalid score: $score")
+                }
+
+                fun main() {
+                    for (s in listOf(95, 83, 71, 64, 12)) print("${grade(s)} ")
+                    println()
+                }
+              </script>
+              <script type="text/plain" data-output>
+                A B C D F
+              </script>
+            </div>
+          </details>
+          <details class="exercise">
+            <summary>Exercise 3 — Prime numbers <span class="badge blue">Medium</span></summary>
+            <div class="ex-body">
+              <p>Print all prime numbers below 50. A number <em>n</em> &gt; 1 is prime if no number from 2 to √n divides it. Use a labeled <code>continue</code> or a helper function.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution" data-run>
+                fun isPrime(n: Int): Boolean {
+                    if (n < 2) return false
+                    var d = 2
+                    while (d * d <= n) {
+                        if (n % d == 0) return false
+                        d++
+                    }
+                    return true
+                }
+
+                fun main() {
+                    for (n in 1..<50) if (isPrime(n)) print("$n ")
+                    println()
+                }
+              </script>
+              <script type="text/plain" data-output>
+                2 3 5 7 11 13 17 19 23 29 31 37 41 43 47
+              </script>
+            </div>
+          </details>
+          <details class="exercise">
+            <summary>Exercise 4 — Number guessing game <span class="badge amber">Challenge</span></summary>
+            <div class="ex-body">
+              <p>In IntelliJ, pick a secret number with <code>(1..100).random()</code> and loop until the user guesses it, printing “Too high” / “Too low”. Count attempts. Ignore input that isn't a number (hint: <code>readln().toIntOrNull() ?: continue</code>).</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution">
+                fun main() {
+                    val secret = (1..100).random()
+                    var attempts = 0
+                    while (true) {
+                        print("Your guess (1-100): ")
+                        val guess = readln().toIntOrNull() ?: continue
+                        attempts++
+                        when {
+                            guess < secret -> println("Too low")
+                            guess > secret -> println("Too high")
+                            else -> {
+                                println("Correct! $attempts attempts.")
+                                break
+                            }
+                        }
+                    }
+                }
+              </script>
+            </div>
+          </details>
+        </section>
+
+        <section class="doc-section" id="quiz" data-title="Quiz">
+          <div class="sec-head"><h2><span class="sec-num">4.8</span>Quiz</h2></div>
+          <script type="application/json" data-quiz>
+          [
+            {"q": "How do you write Java's `cond ? a : b` in Kotlin?", "options": ["`cond ? a : b`", "`if (cond) a else b`", "`cond ?: a`", "`when cond -> a`"], "answer": 1, "explain": "`if` is an expression, so it replaces the ternary operator."},
+            {"q": "Which values does `for (i in 1..<4)` produce?", "options": ["1 2 3 4", "1 2 3", "0 1 2 3", "2 3 4"], "answer": 1, "explain": "`..<` (or `until`) excludes the upper bound."},
+            {"q": "What does this print?", "code": "val x = 5\nprintln(when {\n    x > 3 -> \"big\"\n    x > 1 -> \"medium\"\n    else -> \"small\"\n})", "options": ["big", "medium", "big medium", "small"], "answer": 0, "explain": "`when` stops at the first matching branch; there's no fall-through."},
+            {"q": "Which statement is true about `when` used as an expression on an enum?", "options": ["`else` is always required", "If every enum constant is covered, `else` isn't needed and the compiler enforces it", "Enums can't be used in when", "Only `if` can return values"], "answer": 1, "explain": "Exhaustive `when` over enums and sealed types gives compile errors when a new case is added."},
+            {"q": "Which produces 10 7 4 1?", "options": ["`10 downTo 1 step 3`", "`10..1 step 3`", "`1..10 step -3`", "`(1..10).reversed()`"], "answer": 0, "explain": "`10..1` is an empty range; counting down needs `downTo`. Steps must be positive."},
+            {"q": "`break@outer` inside a nested loop…", "options": ["exits only the inner loop", "exits the loop labelled `outer@`", "restarts the outer loop", "returns from the function"], "answer": 1, "explain": "Labels let `break`/`continue` target an enclosing loop."}
+          ]
+          </script>
+        </section>
+
+        <section class="doc-section" id="references" data-title="Further reading">
+          <div class="sec-head"><h2><span class="sec-num">4.9</span>Further reading</h2></div>
+          <ul>
+            <li><a href="https://kotlinlang.org/docs/control-flow.html" target="_blank" rel="noopener">Kotlin docs — Conditions and loops</a></li>
+            <li><a href="https://kotlinlang.org/docs/ranges.html" target="_blank" rel="noopener">Ranges and progressions</a></li>
+            <li><a href="https://kotlinlang.org/docs/returns.html" target="_blank" rel="noopener">Returns and jumps</a></li>
+          </ul>
+        </section>
+
+        <div id="pager"></div>
+      </div>
+    </main>
+  </div>
+  <div id="site-footer"></div>
+  <script src="assets/js/core.js?v=__BUILD__"></script>
+</body>
+</html>

@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Collections — Kotlin Academy</title>
+  <meta name="description" content="Kotlin collections: List, Set, Map, arrays, read-only vs mutable, transformations, aggregations, grouping, sorting and lazy sequences.">
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <meta name="color-scheme" content="dark light">
+  <link rel="stylesheet" href="assets/css/main.css?v=__BUILD__">
+  <script>try{var t=localStorage.getItem("ka-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body data-page="collections">
+  <div id="site-header"></div>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="content">
+      <div class="content-inner">
+
+        <header class="page-hero">
+          <nav class="crumbs"><a href="index.html">Home</a><span>/</span><span>Kotlin Fundamentals</span><span>/</span><span>Lesson 07</span></nav>
+          <div class="eyebrow">Lesson 07 · Kotlin Fundamentals</div>
+          <h1>Collections</h1>
+          <p class="lead">Real programs work with groups of data: a list of tasks, a set of tags, a map from IDs to users. Kotlin's collection library is one of its superpowers — dozens of expressive operations that replace most hand-written loops.</p>
+          <div class="page-meta"><span>⏱ 60 min</span><span>🎯 Beginner → Intermediate</span><span>▶ All examples are runnable</span></div>
+          <div class="objectives">
+            <h4>You will be able to</h4>
+            <ul>
+              <li>Pick between List, Set, Map and arrays</li>
+              <li>Explain read-only vs mutable collections</li>
+              <li>Transform with <code>map</code>, <code>filter</code>, <code>flatMap</code>, <code>associate</code></li>
+              <li>Group, partition, sort, chunk and zip data</li>
+              <li>Aggregate with <code>sumOf</code>, <code>fold</code>, <code>maxByOrNull</code></li>
+              <li>Use sequences for lazy, efficient pipelines</li>
+            </ul>
+          </div>
+        </header>
+
+        <section class="doc-section" id="overview" data-title="The collection family">
+          <div class="sec-head"><h2><span class="sec-num">7.1</span>The collection family</h2></div>
+          <div class="grid grid-3">
+            <div class="glass card"><h4 class="c-purple">List</h4><p class="small">Ordered, indexed, duplicates allowed. <br><code>listOf("a", "b", "a")</code></p></div>
+            <div class="glass card"><h4 class="c-green">Set</h4><p class="small">Unique elements; default implementation keeps insertion order. <br><code>setOf("a", "b")</code></p></div>
+            <div class="glass card"><h4 class="c-blue">Map</h4><p class="small">Key → value pairs, unique keys; keeps insertion order. <br><code>mapOf("a" to 1)</code></p></div>
+          </div>
+          <h3>Read-only vs mutable</h3>
+          <p>Each kind exists in two flavours. The <b>read-only</b> interface (<code>List</code>, <code>Set</code>, <code>Map</code>) has no methods to change the content; the <b>mutable</b> one (<code>MutableList</code>…) adds <code>add</code>, <code>remove</code>, <code>set</code>, <code>clear</code>.</p>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>Read-only</th><th>Create</th><th>Mutable</th><th>Create</th></tr></thead>
+              <tbody>
+                <tr><td><code>List&lt;T&gt;</code></td><td><code>listOf()</code>, <code>emptyList()</code></td><td><code>MutableList&lt;T&gt;</code></td><td><code>mutableListOf()</code>, <code>ArrayList()</code></td></tr>
+                <tr><td><code>Set&lt;T&gt;</code></td><td><code>setOf()</code></td><td><code>MutableSet&lt;T&gt;</code></td><td><code>mutableSetOf()</code>, <code>hashSetOf()</code></td></tr>
+                <tr><td><code>Map&lt;K, V&gt;</code></td><td><code>mapOf()</code></td><td><code>MutableMap&lt;K, V&gt;</code></td><td><code>mutableMapOf()</code>, <code>hashMapOf()</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout tip">
+            <div class="ci">💡</div>
+            <div><span class="ct">Expose read-only, keep mutable private</span>
+              <p>A common pattern in classes (and in Android ViewModels): store a <code>private val _items = mutableListOf&lt;Item&gt;()</code> and expose <code>val items: List&lt;Item&gt; get() = _items</code>. Callers can read but not modify your state.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="lists" data-title="Lists">
+          <div class="sec-head"><h2><span class="sec-num">7.2</span>Lists</h2></div>
+          <script type="text/plain" data-code="kotlin" data-file="Lists.kt" data-run>
+            fun main() {
+                val planets = listOf("Mercury", "Venus", "Earth", "Mars")
+
+                println(planets[2])                  // index access
+                println(planets.first() + " … " + planets.last())
+                println(planets.getOrNull(10))       // null instead of IndexOutOfBoundsException
+                println(planets.size)
+                println("Earth" in planets)          // contains
+                println(planets.indexOf("Mars"))
+                println(planets.subList(1, 3))       // [from, to)
+                println(planets.reversed())
+
+                val todo = mutableListOf("write code")
+                todo.add("test code")
+                todo.add(0, "plan")                  // insert at index
+                todo += "ship"                       // operator form of add
+                todo.remove("test code")
+                todo[1] = "WRITE CODE"               // replace
+                println(todo)
+
+                val squares = List(5) { i -> i * i } // build by index
+                println(squares)
+            }
+          </script>
+          <script type="text/plain" data-output>
+            Earth
+            Mercury … Mars
+            null
+            4
+            true
+            3
+            [Venus, Earth]
+            [Mars, Earth, Venus, Mercury]
+            [plan, WRITE CODE, ship]
+            [0, 1, 4, 9, 16]
+          </script>
+          <div class="callout warn">
+            <div class="ci">⚠️</div>
+            <div><span class="ct"><code>val</code> + mutable list</span>
+              <p><code>val todo = mutableListOf(…)</code> can still be modified — <code>val</code> only stops you from assigning a <em>different</em> list. Conversely, <code>var list = listOf(…)</code> lets you replace the whole list with a new read-only one (<code>list = list + "x"</code>). In UI state, the second style (new immutable instances) is preferred.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="sets-maps" data-title="Sets & Maps">
+          <div class="sec-head"><h2><span class="sec-num">7.3</span>Sets &amp; Maps</h2></div>
+          <script type="text/plain" data-code="kotlin" data-file="SetsMaps.kt" data-run>
+            fun main() {
+                // ---- Sets: uniqueness + set algebra
+                val tags = mutableSetOf("kotlin", "android", "kotlin")
+                println(tags)                                // duplicate ignored
+                println(tags.add("compose"))                 // true: added
+                println(tags.add("kotlin"))                  // false: already present
+                val backend = setOf("kotlin", "spring", "sql")
+                println(tags intersect backend)
+                println(tags union backend)
+                println(tags subtract backend)
+
+                // ---- Maps
+                val stock = mutableMapOf("apple" to 5, "pear" to 0)
+                println(stock["apple"])                      // 5
+                println(stock["kiwi"])                       // null (missing key)
+                println(stock.getOrDefault("kiwi", 0))
+                stock["kiwi"] = 12                           // put
+                stock["apple"] = stock.getValue("apple") - 1 // getValue throws if missing
+                stock.remove("pear")
+                println(stock)
+                println(stock.keys)
+                println(stock.values.sum())
+
+                for ((fruit, count) in stock) println("$fruit → $count")
+
+                val cache = mutableMapOf<Int, String>()
+                val v = cache.getOrPut(1) { "computed once" } // insert if absent
+                println(v + " / " + cache)
+            }
+          </script>
+          <script type="text/plain" data-output>
+            [kotlin, android]
+            true
+            false
+            [kotlin]
+            [kotlin, android, compose, spring, sql]
+            [android, compose]
+            5
+            null
+            0
+            {apple=4, kiwi=12}
+            [apple, kiwi]
+            16
+            apple → 4
+            kiwi → 12
+            computed once / {1=computed once}
+          </script>
+        </section>
+
+        <section class="doc-section" id="arrays" data-title="Arrays">
+          <div class="sec-head"><h2><span class="sec-num">7.4</span>Arrays</h2></div>
+          <p>Arrays have a <b>fixed size</b> and mutable elements. In everyday Kotlin, prefer lists. Use arrays for <code>vararg</code>, Java APIs that require them, and performance-critical numeric code: <code>IntArray</code>, <code>DoubleArray</code>… map to JVM primitive arrays (<code>int[]</code>) with no boxing.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Arrays.kt" data-run>
+            fun main() {
+                val names = arrayOf("Ada", "Linus")        // Array<String>
+                names[1] = "Grace"                         // elements are mutable…
+                // names.add("X")                          // …but size is fixed
+                println(names.joinToString())
+                println(names)                             // ⚠ prints an address like [Ljava.lang.String;@1b6d…
+                println(names.contentToString())          // ✅ readable
+
+                val zeros = IntArray(5)                    // [0, 0, 0, 0, 0]
+                val evens = IntArray(5) { it * 2 }
+                println(zeros.contentToString() + " " + evens.contentToString())
+                println(evens.sum())
+
+                val a = intArrayOf(1, 2)
+                val b = intArrayOf(1, 2)
+                println(a == b)                            // false! arrays compare by reference
+                println(a.contentEquals(b))                // true
+            }
+          </script>
+          <script type="text/plain" data-output data-loose>
+            Ada, Grace
+            [Ljava.lang.String;@1b6d3586
+            [Ada, Grace]
+            [0, 0, 0, 0, 0] [0, 2, 4, 6, 8]
+            20
+            false
+            true
+          </script>
+        </section>
+
+        <section class="doc-section" id="transform" data-title="Transformations">
+          <div class="sec-head"><h2><span class="sec-num">7.5</span>Transformations: <code>map</code>, <code>filter</code> &amp; friends</h2></div>
+          <p>Collection operations take a <b>lambda</b> — a block of code in <code>{ }</code>. Inside a single-parameter lambda, the parameter is called <code>it</code> (lesson 10 covers lambdas properly). Every operation returns a <b>new</b> collection; the original is untouched.</p>
+          <figure class="diagram">
+            <svg viewBox="0 0 680 150" width="680" role="img" aria-label="map and filter illustrated">
+              <g font-family="JetBrains Mono, monospace" font-size="13" text-anchor="middle">
+                <text x="70" y="20" fill="#9a98a8">input</text>
+                <text x="330" y="20" fill="#9a98a8">.map { it * 10 }</text>
+                <text x="590" y="20" fill="#9a98a8">.filter { it &gt; 15 }</text>
+                <g fill="rgba(169,139,255,.18)" stroke="#a98bff">
+                  <circle cx="30" cy="70" r="18"/><circle cx="70" cy="70" r="18"/><circle cx="110" cy="70" r="18"/>
+                  <circle cx="290" cy="70" r="18"/><circle cx="330" cy="70" r="18"/><circle cx="370" cy="70" r="18"/>
+                </g>
+                <g fill="rgba(61,220,151,.18)" stroke="#3ddc97"><circle cx="570" cy="70" r="18"/><circle cx="610" cy="70" r="18"/></g>
+                <g fill="currentColor"><text x="30" y="75">1</text><text x="70" y="75">2</text><text x="110" y="75">3</text>
+                <text x="290" y="75">10</text><text x="330" y="75">20</text><text x="370" y="75">30</text>
+                <text x="570" y="75">20</text><text x="610" y="75">30</text></g>
+                <path d="M140 70H250M400 70H530" stroke="#a98bff" stroke-width="2" stroke-dasharray="5 4"/>
+                <text x="195" y="110" fill="#9a98a8" font-size="11">same size, new values</text>
+                <text x="465" y="110" fill="#9a98a8" font-size="11">fewer items, same values</text>
+              </g>
+            </svg>
+          </figure>
+          <script type="text/plain" data-code="kotlin" data-file="Transform.kt" data-run>
+            data class Product(val name: String, val category: String, val price: Double)
+
+            fun main() {
+                val products = listOf(
+                    Product("Laptop", "tech", 1200.0),
+                    Product("Mouse", "tech", 25.0),
+                    Product("Desk", "furniture", 300.0),
+                    Product("Chair", "furniture", 150.0),
+                    Product("Pen", "office", 2.0),
+                )
+
+                println(products.map { it.name })
+                println(products.filter { it.price > 100 }.map { it.name })
+                println(products.mapIndexed { i, p -> "${i + 1}.${p.name}" })
+
+                val (cheap, pricey) = products.partition { it.price < 100 }
+                println("cheap=${cheap.map { it.name }} pricey=${pricey.map { it.name }}")
+
+                println(products.associate { it.name to it.price })        // List → Map
+                println(products.associateBy { it.name.lowercase() }.keys)
+                println(products.groupBy { it.category }.mapValues { (_, list) -> list.size })
+
+                val words = listOf("hi there", "kotlin rocks")
+                println(words.flatMap { it.split(" ") })                     // flatten
+                println(listOf(1, 2, 3).zip(listOf("a", "b", "c")))
+                println((1..10).chunked(4))
+                println((1..5).windowed(3))
+                println(listOf<Any>(1, "two", 3.0, "four").filterIsInstance<String>())
+            }
+          </script>
+          <script type="text/plain" data-output>
+            [Laptop, Mouse, Desk, Chair, Pen]
+            [Laptop, Desk, Chair]
+            [1.Laptop, 2.Mouse, 3.Desk, 4.Chair, 5.Pen]
+            cheap=[Mouse, Pen] pricey=[Laptop, Desk, Chair]
+            {Laptop=1200.0, Mouse=25.0, Desk=300.0, Chair=150.0, Pen=2.0}
+            [laptop, mouse, desk, chair, pen]
+            {tech=2, furniture=2, office=1}
+            [hi, there, kotlin, rocks]
+            [(1, a), (2, b), (3, c)]
+            [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10]]
+            [[1, 2, 3], [2, 3, 4], [3, 4, 5]]
+            [two, four]
+          </script>
+        </section>
+
+        <section class="doc-section" id="aggregate" data-title="Aggregation, search & sorting">
+          <div class="sec-head"><h2><span class="sec-num">7.6</span>Aggregation, searching &amp; sorting</h2></div>
+          <script type="text/plain" data-code="kotlin" data-file="Aggregate.kt" data-run>
+            data class Student(val name: String, val score: Int, val year: Int)
+
+            fun main() {
+                val students = listOf(
+                    Student("Linh", 88, 2), Student("Ada", 95, 1),
+                    Student("Bob", 72, 2), Student("Chen", 95, 3),
+                )
+
+                // Aggregation
+                println(students.sumOf { it.score })
+                println(students.map { it.score }.average())
+                println(students.maxByOrNull { it.score }?.name)   // first max
+                println(students.minOf { it.score })
+                println(students.count { it.score >= 80 })
+
+                // Predicates
+                println(students.any { it.score < 60 })
+                println(students.all { it.year in 1..4 })
+                println(students.none { it.name.isEmpty() })
+
+                // Search
+                println(students.find { it.year == 2 }?.name)        // first match or null
+                println(students.firstOrNull { it.score > 100 })
+
+                // Sorting: by score desc, then name asc
+                val ranking = students.sortedWith(compareByDescending<Student> { it.score }.thenBy { it.name })
+                println(ranking.map { "${it.name}:${it.score}" })
+                println(students.sortedBy { it.name }.map { it.name })
+
+                // Slicing & de-duplication
+                println(students.map { it.score }.distinct())
+                println(students.take(2).map { it.name } + students.drop(3).map { it.name })
+
+                // fold: build a result step by step from an initial value
+                val summary = students.fold("") { acc, s -> acc + s.name.first() }
+                println(summary)
+                println((1..5).reduce { acc, n -> acc * n })         // 5! — reduce uses the first element as start
+            }
+          </script>
+          <script type="text/plain" data-output>
+            350
+            87.5
+            Ada
+            72
+            3
+            false
+            true
+            true
+            Linh
+            null
+            [Ada:95, Chen:95, Linh:88, Bob:72]
+            [Ada, Bob, Chen, Linh]
+            [88, 95, 72]
+            [Linh, Ada, Chen]
+            LABC
+            120
+          </script>
+          <div class="callout java">
+            <div class="ci">☕</div>
+            <div><span class="ct">Coming from Java Streams</span>
+              <p>No <code>.stream()</code> and <code>.collect(Collectors.toList())</code> — operations are called directly on collections and return lists. <code>groupBy</code>, <code>partition</code>, <code>associate</code>, <code>sumOf</code> cover most <code>Collectors</code>. The difference: Kotlin collection operations are <b>eager</b>; for laziness use sequences (next section).</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="sequences" data-title="Sequences">
+          <div class="sec-head"><h2><span class="sec-num">7.7</span>Sequences: lazy evaluation</h2></div>
+          <p>Each step of a collection chain creates a full intermediate list. A <code>Sequence</code> instead processes elements <b>one at a time</b> through the whole chain, and stops as soon as it has enough. Use it for long chains over large data, or for infinite streams.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Sequences.kt" data-run>
+            fun main() {
+                println("— List (eager) —")
+                val l = listOf(1, 2, 3, 4)
+                    .map { println("map $it"); it * 2 }
+                    .filter { println("filter $it"); it > 4 }
+                    .first()
+                println("result $l")
+
+                println("— Sequence (lazy) —")
+                val s = listOf(1, 2, 3, 4).asSequence()
+                    .map { println("map $it"); it * 2 }
+                    .filter { println("filter $it"); it > 4 }
+                    .first()                       // terminal operation triggers the work
+                println("result $s")
+
+                // Infinite sequences
+                val powersOf2 = generateSequence(1) { it * 2 }
+                println(powersOf2.take(10).toList())
+                val fib = sequence {
+                    var a = 0; var b = 1
+                    while (true) { yield(a); val t = a + b; a = b; b = t }
+                }
+                println(fib.takeWhile { it < 100 }.toList())
+            }
+          </script>
+          <script type="text/plain" data-output>
+            — List (eager) —
+            map 1
+            map 2
+            map 3
+            map 4
+            filter 2
+            filter 4
+            filter 6
+            filter 8
+            result 6
+            — Sequence (lazy) —
+            map 1
+            filter 2
+            map 2
+            filter 4
+            map 3
+            filter 6
+            result 6
+            [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]
+            [0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89]
+          </script>
+          <div class="callout note">
+            <div class="ci">⚖️</div>
+            <div><span class="ct">When to use which</span>
+              <p>For small collections (hundreds of items) and short chains, plain lists are simpler and often faster. Reach for sequences with large data, many chained steps, short-circuiting terminals like <code>first</code>/<code>take</code>, or generators.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="building" data-title="Building collections">
+          <div class="sec-head"><h2><span class="sec-num">7.8</span>Building collections</h2></div>
+          <p>Need to build a list with some logic, but want a read-only result? <code>buildList</code>, <code>buildSet</code> and <code>buildMap</code> give you a mutable builder inside the block and return a read-only collection.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Builders.kt" data-run>
+            fun menu(isAdmin: Boolean, unread: Int): List<String> = buildList {
+                add("Home")
+                add("Inbox" + if (unread > 0) " ($unread)" else "")
+                if (isAdmin) add("Admin panel")
+                add("Settings")
+            }
+
+            fun main() {
+                println(menu(isAdmin = false, unread = 0))
+                println(menu(isAdmin = true, unread = 3))
+                val letterCounts = buildMap {
+                    for (ch in "banana") put(ch, (get(ch) ?: 0) + 1)
+                }
+                println(letterCounts)
+            }
+          </script>
+          <script type="text/plain" data-output>
+            [Home, Inbox, Settings]
+            [Home, Inbox (3), Admin panel, Settings]
+            {b=1, a=3, n=2}
+          </script>
+        </section>
+
+        <section class="doc-section" id="exercises" data-title="Exercises">
+          <div class="sec-head"><h2><span class="sec-num">7.9</span>Exercises</h2></div>
+          <details class="exercise">
+            <summary>Exercise 1 — Word frequency <span class="badge green">Easy</span></summary>
+            <div class="ex-body">
+              <p>Given a sentence, print the 3 most frequent words (case-insensitive, ignore punctuation) with their counts.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution" data-run>
+                fun main() {
+                    val text = "The cat and the hat. The cat sat! And then the cat ran."
+                    val top = text.lowercase()
+                        .split(Regex("[^a-z]+"))
+                        .filter { it.isNotBlank() }
+                        .groupingBy { it }
+                        .eachCount()
+                        .entries
+                        .sortedByDescending { it.value }
+                        .take(3)
+                    top.forEach { (word, count) -> println("$word: $count") }
+                }
+              </script>
+              <script type="text/plain" data-output>
+                the: 4
+                cat: 3
+                and: 2
+              </script>
+              <p class="small muted"><code>groupingBy { }.eachCount()</code> is a memory-efficient shortcut for <code>groupBy { }.mapValues { it.value.size }</code>.</p>
+            </div>
+          </details>
+          <details class="exercise">
+            <summary>Exercise 2 — Order report <span class="badge blue">Medium</span></summary>
+            <div class="ex-body">
+              <p>Given orders <code>(customer, item, quantity, unitPrice)</code>, compute: total revenue, revenue per customer sorted descending, and the best-selling item by quantity.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution" data-run>
+                data class Order(val customer: String, val item: String, val qty: Int, val unitPrice: Double) {
+                    val total get() = qty * unitPrice
+                }
+
+                fun main() {
+                    val orders = listOf(
+                        Order("An", "coffee", 2, 3.5), Order("Binh", "tea", 1, 2.0),
+                        Order("An", "cake", 1, 4.0), Order("Chi", "coffee", 3, 3.5),
+                        Order("Binh", "coffee", 1, 3.5),
+                    )
+                    println("Revenue: ${orders.sumOf { it.total }}")
+                    orders.groupBy { it.customer }
+                        .mapValues { (_, list) -> list.sumOf { it.total } }
+                        .entries.sortedByDescending { it.value }
+                        .forEach { (c, v) -> println("  $c: $v") }
+                    val best = orders.groupBy { it.item }
+                        .mapValues { (_, list) -> list.sumOf { it.qty } }
+                        .maxByOrNull { it.value }
+                    println("Best seller: ${best?.key} (${best?.value})")
+                }
+              </script>
+              <script type="text/plain" data-output>
+                Revenue: 27.0
+                  An: 11.0
+                  Chi: 10.5
+                  Binh: 5.5
+                Best seller: coffee (6)
+              </script>
+            </div>
+          </details>
+          <details class="exercise">
+            <summary>Exercise 3 — Anagram groups <span class="badge amber">Challenge</span></summary>
+            <div class="ex-body">
+              <p>Group words that are anagrams of each other, keep only groups with 2+ words, and print each group sorted alphabetically.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution" data-run>
+                fun main() {
+                    val words = listOf("listen", "silent", "enlist", "google", "kotlin", "inlets", "gogole", "java")
+                    words.groupBy { it.toCharArray().sorted().joinToString("") }
+                        .values
+                        .filter { it.size > 1 }
+                        .map { it.sorted() }
+                        .forEach { println(it) }
+                }
+              </script>
+              <script type="text/plain" data-output>
+                [enlist, inlets, listen, silent]
+                [gogole, google]
+              </script>
+            </div>
+          </details>
+        </section>
+
+        <section class="doc-section" id="quiz" data-title="Quiz">
+          <div class="sec-head"><h2><span class="sec-num">7.10</span>Quiz</h2></div>
+          <script type="application/json" data-quiz>
+          [
+            {"q": "Which collection guarantees unique elements?", "options": ["List", "Set", "Array", "Sequence"], "answer": 1, "explain": "Sets ignore duplicates; Map keys are unique too."},
+            {"q": "What does `listOf(1, 2, 3).map { it * 2 }.filter { it > 2 }` return?", "options": ["[2, 4, 6]", "[4, 6]", "[3]", "[2, 3]"], "answer": 1, "explain": "map → [2, 4, 6], then filter keeps values > 2 → [4, 6]."},
+            {"q": "Given `val xs = mutableListOf(1)`, which is true?", "options": ["`xs.add(2)` doesn't compile because xs is a val", "`xs.add(2)` works; `xs = mutableListOf()` doesn't compile", "Both compile", "Neither compiles"], "answer": 1, "explain": "`val` makes the reference read-only; the list object itself is mutable."},
+            {"q": "`map[\"missing\"]` on a `Map<String, Int>` returns…", "options": ["0", "null (type Int?)", "Throws NoSuchElementException", "An empty map"], "answer": 1, "explain": "Indexing a map returns `V?`. `getValue` throws, `getOrDefault`/`getOrElse` supply fallbacks."},
+            {"q": "Which operation turns `List<User>` into `Map<Int, User>` keyed by id?", "options": ["`groupBy { it.id }`", "`associateBy { it.id }`", "`partition { it.id }`", "`zip { it.id }`"], "answer": 1, "explain": "`groupBy` would produce `Map<Int, List<User>>`; `associateBy` keeps one value per key."},
+            {"q": "Why can `generateSequence(1) { it + 1 }.take(5).toList()` finish even though the sequence is infinite?", "options": ["Kotlin limits sequences to 1000 elements", "Sequences are lazy: `take(5)` stops pulling after 5 elements", "It doesn't finish", "toList() is lazy"], "answer": 1, "explain": "Each element is computed on demand; the terminal operation only requests five."}
+          ]
+          </script>
+        </section>
+
+        <section class="doc-section" id="references" data-title="Further reading">
+          <div class="sec-head"><h2><span class="sec-num">7.11</span>Further reading</h2></div>
+          <ul>
+            <li><a href="https://kotlinlang.org/docs/collections-overview.html" target="_blank" rel="noopener">Kotlin docs — Collections overview</a></li>
+            <li><a href="https://kotlinlang.org/docs/collection-operations.html" target="_blank" rel="noopener">Collection operations</a></li>
+            <li><a href="https://kotlinlang.org/docs/sequences.html" target="_blank" rel="noopener">Sequences</a></li>
+          </ul>
+        </section>
+
+        <div id="pager"></div>
+      </div>
+    </main>
+  </div>
+  <div id="site-footer"></div>
+  <script src="assets/js/core.js?v=__BUILD__"></script>
+</body>
+</html>
