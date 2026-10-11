@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Flow, StateFlow & Channels — Kotlin Academy</title>
+  <meta name="description" content="Kotlin Flow: cold flows, builders and operators, flowOn, catch and retry, combine and zip, flatMapLatest, StateFlow, SharedFlow, stateIn, channels and testing with Turbine.">
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <meta name="color-scheme" content="dark light">
+  <link rel="stylesheet" href="assets/css/main.css?v=__BUILD__">
+  <script>try{var t=localStorage.getItem("ka-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body data-page="flow">
+  <div id="site-header"></div>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="content">
+      <div class="content-inner">
+
+        <header class="page-hero">
+          <nav class="crumbs"><a href="index.html">Home</a><span>/</span><span>Advanced Kotlin</span><span>/</span><span>Lesson 14</span></nav>
+          <div class="eyebrow">Lesson 14 · Advanced Kotlin</div>
+          <h1>Flow, StateFlow &amp; Channels</h1>
+          <p class="lead">A suspend function returns <em>one</em> value. A <b>Flow</b> emits <em>many</em> values over time: database rows that change, search results as the user types, a download's progress. Flow is how modern Android apps move data from the data layer to the UI.</p>
+          <div class="page-meta"><span>⏱ 60 min</span><span>🎯 Advanced</span><span>📦 kotlinx-coroutines 1.10</span></div>
+          <div class="objectives">
+            <h4>You will be able to</h4>
+            <ul>
+              <li>Create cold flows and collect them</li>
+              <li>Transform with <code>map</code>, <code>filter</code>, <code>debounce</code>…</li>
+              <li>Handle errors with <code>catch</code>, <code>retry</code>, <code>onCompletion</code></li>
+              <li>Combine streams with <code>combine</code>, <code>zip</code>, <code>flatMapLatest</code></li>
+              <li>Hold UI state in <code>StateFlow</code>; send events with <code>SharedFlow</code></li>
+              <li>Convert with <code>stateIn</code> and pick the right sharing policy</li>
+            </ul>
+          </div>
+        </header>
+
+        <section class="doc-section" id="cold" data-title="Cold flows">
+          <div class="sec-head"><h2><span class="sec-num">14.1</span>Cold flows: builders &amp; collection</h2></div>
+          <p>A <code>Flow&lt;T&gt;</code> is <b>cold</b>: the code inside the <code>flow { }</code> builder doesn't run until someone calls a <b>terminal operator</b> like <code>collect</code> — and it runs again, from the start, for every collector. Think of it as a <em>recipe</em>, not a running process.</p>
+          <script type="text/plain" data-code="kotlin" data-file="ColdFlow.kt" data-run>
+            import kotlinx.coroutines.*
+            import kotlinx.coroutines.flow.*
+
+            fun countdown(from: Int): Flow<Int> = flow {
+                println("  flow started")
+                for (i in from downTo 1) {
+                    delay(100)
+                    emit(i)                         // send a value downstream
+                }
+            }
+
+            fun main() = runBlocking {
+                val f = countdown(3)                // nothing printed yet: cold
+                println("collecting #1")
+                f.collect { println("  got $it") }   // runs the flow
+                println("collecting #2")
+                println("  sum = ${f.reduce { a, b -> a + b }}")   // runs it AGAIN
+
+                // Other builders
+                println(flowOf("a", "b").toList())
+                println(listOf(1, 2, 3).asFlow().map { it * it }.toList())
+                println((1..10).asFlow().first { it > 7 })
+            }
+          </script>
+          <script type="text/plain" data-output>
+            collecting #1
+              flow started
+              got 3
+              got 2
+              got 1
+            collecting #2
+              flow started
+              sum = 6
+            [a, b]
+            [1, 4, 9]
+            8
+          </script>
+        </section>
+
+        <section class="doc-section" id="operators" data-title="Operators">
+          <div class="sec-head"><h2><span class="sec-num">14.2</span>Intermediate operators</h2></div>
+          <p>Intermediate operators return a new flow without collecting it. Many mirror collection operations; others deal with time.</p>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>Operator</th><th>What it does</th></tr></thead>
+              <tbody>
+                <tr><td><code>map</code>, <code>filter</code>, <code>take</code>, <code>drop</code></td><td>Same as on collections, element by element</td></tr>
+                <tr><td><code>transform { emit(…) }</code></td><td>Emit zero, one or many values per input</td></tr>
+                <tr><td><code>onEach { }</code></td><td>Side effect for each value (logging)</td></tr>
+                <tr><td><code>distinctUntilChanged()</code></td><td>Skip values equal to the previous one</td></tr>
+                <tr><td><code>debounce(ms)</code></td><td>Emit only after the source is quiet for <em>ms</em> (search boxes)</td></tr>
+                <tr><td><code>scan(initial) { acc, v -> }</code></td><td>Running accumulation, emitting each intermediate result</td></tr>
+                <tr><td><code>flowOn(dispatcher)</code></td><td>Run the <em>upstream</em> on another dispatcher</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <script type="text/plain" data-code="kotlin" data-file="Operators.kt" data-run>
+            import kotlinx.coroutines.*
+            import kotlinx.coroutines.flow.*
+
+            @OptIn(FlowPreview::class)
+            fun main() = runBlocking {
+                (1..6).asFlow()
+                    .filter { it % 2 == 0 }
+                    .map { it * 10 }
+                    .onEach { println("  passing $it") }
+                    .collect { println("got $it") }
+
+                println(flowOf(1, 1, 2, 2, 2, 3, 1).distinctUntilChanged().toList())
+                println(flowOf(5, 3, 8).scan(0) { acc, v -> acc + v }.toList())
+
+                // A user typing "kotlin" with pauses; debounce keeps only "kot" and "kotlin"
+                val typing = flow {
+                    for ((text, pauseAfter) in listOf("k" to 50L, "ko" to 50L, "kot" to 400L, "kotl" to 50L, "kotli" to 50L, "kotlin" to 400L)) {
+                        emit(text)
+                        delay(pauseAfter)
+                    }
+                }
+                println(typing.debounce(300).toList())
+            }
+          </script>
+          <script type="text/plain" data-output>
+              passing 20
+            got 20
+              passing 40
+            got 40
+              passing 60
+            got 60
+            [1, 2, 3, 1]
+            [0, 5, 8, 16]
+            [kot, kotlin]
+          </script>
+          <div class="callout note">
+            <div class="ci">🧭</div>
+            <div><span class="ct">Context preservation &amp; <code>flowOn</code></span>
+              <p>A flow's emissions happen in the collector's coroutine context — you may not call <code>withContext</code> around <code>emit</code>. To run producing code elsewhere, put <code>.flowOn(Dispatchers.IO)</code> after it: everything <em>above</em> <code>flowOn</code> runs on IO, everything below (and the collector) stays where it was.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="errors" data-title="Errors & completion">
+          <div class="sec-head"><h2><span class="sec-num">14.3</span>Errors, retries &amp; completion</h2></div>
+          <script type="text/plain" data-code="kotlin" data-file="FlowErrors.kt" data-run>
+            import kotlinx.coroutines.*
+            import kotlinx.coroutines.flow.*
+            import java.io.IOException
+
+            var attempts = 0
+
+            fun prices(): Flow<Int> = flow {
+                attempts++
+                emit(100)
+                if (attempts < 3) throw IOException("connection reset (attempt $attempts)")
+                emit(101)
+            }
+
+            fun main() = runBlocking {
+                prices()
+                    .retry(retries = 2) { e ->                // retry only for I/O problems
+                        println("  retrying after: ${e.message}")
+                        e is IOException
+                    }
+                    .onCompletion { cause -> println("completed, error=$cause") }
+                    .collect { println("price $it") }
+
+                flow { emit(1); error("boom") }
+                    .catch { e -> println("caught '${e.message}', emitting fallback"); emit(-1) }  // catches UPSTREAM errors
+                    .collect { println("value $it") }
+            }
+          </script>
+          <script type="text/plain" data-output>
+            price 100
+              retrying after: connection reset (attempt 1)
+            price 100
+              retrying after: connection reset (attempt 2)
+            price 100
+            price 101
+            completed, error=null
+            value 1
+            caught 'boom', emitting fallback
+            value -1
+          </script>
+          <p class="small muted"><code>catch</code> only sees exceptions from operators above it, not from the <code>collect</code> block below. To also handle errors thrown by your collection logic, move it into <code>onEach</code> and finish with <code>.catch { }.collect()</code> or <code>launchIn(scope)</code>.</p>
+        </section>
+
+        <section class="doc-section" id="combining" data-title="Combining flows">
+          <div class="sec-head"><h2><span class="sec-num">14.4</span>Combining flows</h2></div>
+          <div class="grid grid-3">
+            <div class="glass card"><h4><code>zip</code></h4><p class="small">Pairs values 1:1 — the 1st with the 1st, the 2nd with the 2nd. Ends with the shorter flow.</p></div>
+            <div class="glass card"><h4><code>combine</code></h4><p class="small">Whenever <em>any</em> source emits, recomputes from the <b>latest</b> value of each. Perfect for “filters + data → UI state”.</p></div>
+            <div class="glass card"><h4><code>flatMapLatest</code></h4><p class="small">For each new value, start a new inner flow and <b>cancel</b> the previous one. Perfect for search queries.</p></div>
+          </div>
+          <script type="text/plain" data-code="kotlin" data-file="Combining.kt" data-run>
+            import kotlinx.coroutines.*
+            import kotlinx.coroutines.flow.*
+
+            @OptIn(ExperimentalCoroutinesApi::class)
+            fun main() = runBlocking {
+                val names = flowOf("Ada", "Linh", "Bob")
+                val ages = flowOf(36, 24)
+                println(names.zip(ages) { n, a -> "$n:$a" }.toList())
+
+                // combine: tasks + filter → visible tasks
+                val tasks = MutableStateFlow(listOf("buy milk" to true, "learn flow" to false))
+                val showDone = MutableStateFlow(true)
+                val visible = combine(tasks, showDone) { list, done ->
+                    list.filter { done || !it.second }.map { it.first }
+                }
+                val job = launch { visible.collect { println("visible: $it") } }
+                delay(50); showDone.value = false
+                delay(50); tasks.value = tasks.value + ("write tests" to false)
+                delay(50); job.cancel()
+
+                // flatMapLatest: a new query cancels the previous search
+                fun search(q: String): Flow<String> = flow { delay(100); emit("results for '$q'") }
+                flow { emit("ko"); delay(30); emit("kot"); delay(30); emit("kotlin") }
+                    .flatMapLatest { search(it) }
+                    .collect { println(it) }
+            }
+          </script>
+          <script type="text/plain" data-output>
+            [Ada:36, Linh:24]
+            visible: [buy milk, learn flow]
+            visible: [learn flow]
+            visible: [learn flow, write tests]
+            results for 'kotlin'
+          </script>
+        </section>
+
+        <section class="doc-section" id="stateflow" data-title="StateFlow">
+          <div class="sec-head"><h2><span class="sec-num">14.5</span><code>StateFlow</code>: observable state</h2></div>
+          <p>A <code>StateFlow</code> is a <b>hot</b> flow that always holds one current <code>value</code>. New collectors immediately receive the latest value; equal consecutive values are skipped (it uses <code>equals</code>, which is why immutable data classes are a perfect fit). It's the standard holder for <b>UI state</b> in a ViewModel.</p>
+          <script type="text/plain" data-code="kotlin" data-file="StateFlow.kt" data-run>
+            import kotlinx.coroutines.*
+            import kotlinx.coroutines.flow.*
+
+            data class CounterState(val count: Int = 0, val isMax: Boolean = false)
+
+            class CounterViewModel {
+                private val _state = MutableStateFlow(CounterState())     // private, mutable
+                val state: StateFlow<CounterState> = _state.asStateFlow() // public, read-only
+
+                fun increment() = _state.update { s ->                    // atomic read-modify-write
+                    val next = s.count + 1
+                    s.copy(count = next, isMax = next >= 3)
+                }
+            }
+
+            fun main() = runBlocking {
+                val vm = CounterViewModel()
+                println("initial value: ${vm.state.value}")
+                val ui = launch { vm.state.collect { println("render $it") } }
+                delay(10)
+                repeat(3) { vm.increment(); delay(10) }
+                vm.increment().also { delay(10) }       // isMax stays true, count changes → still emitted
+                ui.cancel()
+            }
+          </script>
+          <script type="text/plain" data-output>
+            initial value: CounterState(count=0, isMax=false)
+            render CounterState(count=0, isMax=false)
+            render CounterState(count=1, isMax=false)
+            render CounterState(count=2, isMax=false)
+            render CounterState(count=3, isMax=true)
+            render CounterState(count=4, isMax=true)
+          </script>
+          <div class="callout tip">
+            <div class="ci">💡</div>
+            <div><span class="ct">Always update with <code>update { }</code></span>
+              <p><code>_state.value = _state.value.copy(…)</code> is a read-then-write that can lose updates when called from several coroutines. <code>_state.update { it.copy(…) }</code> retries atomically.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="sharedflow" data-title="SharedFlow & stateIn">
+          <div class="sec-head"><h2><span class="sec-num">14.6</span><code>SharedFlow</code>, <code>stateIn</code> &amp; sharing policies</h2></div>
+          <p>A <code>SharedFlow</code> is a hot flow that broadcasts values to all current collectors <b>without</b> holding a current value (configurable <code>replay</code>). Use it for one-off <b>events</b> (“show snackbar”). <code>stateIn</code>/<code>shareIn</code> turn a cold flow into a hot one shared by many collectors.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Sharing.kt" data-run>
+            import kotlinx.coroutines.*
+            import kotlinx.coroutines.flow.*
+
+            fun temperatureSensor(): Flow<Int> = flow {
+                println("  sensor ON")
+                var t = 20
+                while (true) { emit(t++); delay(100) }
+            }.onCompletion { println("  sensor OFF") }
+
+            fun main() = runBlocking {
+                val scope = CoroutineScope(coroutineContext + Job())
+
+                // Hot, shared state: ONE upstream for all collectors
+                val temperature: StateFlow<Int> = temperatureSensor()
+                    .stateIn(scope, SharingStarted.WhileSubscribed(stopTimeoutMillis = 0), initialValue = -1)
+
+                val a = launch { temperature.take(2).collect { println("A sees $it") } }
+                val b = launch { temperature.take(2).collect { println("B sees $it") } }
+                joinAll(a, b)
+                delay(50)                                   // no subscribers → upstream stops
+
+                // Events
+                val events = MutableSharedFlow<String>()
+                val listener = launch { events.collect { println("event: $it") } }
+                delay(10)
+                events.emit("Saved!")
+                events.emit("Synced!")
+                delay(10)
+                listener.cancel()
+                scope.cancel()
+            }
+          </script>
+          <script type="text/plain" data-output>
+            A sees -1
+            B sees -1
+              sensor ON
+            A sees 20
+            B sees 20
+              sensor OFF
+            event: Saved!
+            event: Synced!
+          </script>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>SharingStarted</th><th>Upstream runs…</th><th>Use for</th></tr></thead>
+              <tbody>
+                <tr><td><code>Eagerly</code></td><td>immediately, forever (while scope lives)</td><td>Always-needed data</td></tr>
+                <tr><td><code>Lazily</code></td><td>from the first subscriber, forever</td><td>Expensive data needed once started</td></tr>
+                <tr><td><code>WhileSubscribed(5_000)</code></td><td>while someone collects, plus a 5 s grace period</td><td><b>Android UI state</b> — survives rotation (no restart), stops in background</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="doc-section" id="channels" data-title="Channels">
+          <div class="sec-head"><h2><span class="sec-num">14.7</span>Channels</h2></div>
+          <p>A <code>Channel</code> is a coroutine-safe queue: <code>send</code> suspends when full, <code>receive</code> suspends when empty. Each value is delivered to <b>exactly one</b> receiver (unlike SharedFlow, which broadcasts). Use channels for producer/consumer pipelines and work distribution; in app code, flows are usually the better fit.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Channels.kt" data-run>
+            import kotlinx.coroutines.*
+            import kotlinx.coroutines.channels.*
+
+            fun main() = runBlocking {
+                val jobs = Channel<Int>(capacity = 2)
+
+                launch {                                   // producer
+                    for (id in 1..4) {
+                        jobs.send(id)
+                        println("queued job $id")
+                    }
+                    jobs.close()                           // no more items
+                }
+
+                val results = mutableListOf<String>()
+                coroutineScope {
+                    repeat(2) { worker ->                  // two consumers share the work
+                        launch {
+                            for (id in jobs) {             // iterate until the channel is closed
+                                delay(100)
+                                results += "w$worker:$id"
+                            }
+                        }
+                    }
+                }
+                println(results.sortedBy { it.substringAfter(":").toInt() }.map { it.substringAfter(":") })
+            }
+          </script>
+          <script type="text/plain" data-output data-loose>
+            queued job 1
+            queued job 2
+            queued job 3
+            queued job 4
+            [1, 2, 3, 4]
+          </script>
+        </section>
+
+        <section class="doc-section" id="android-preview" data-title="Flow on Android">
+          <div class="sec-head"><h2><span class="sec-num">14.8</span>Preview: the Android data pipeline</h2></div>
+          <div class="flow" aria-label="Room to Compose pipeline">
+            <div class="fbox">Room DAO<small>Flow&lt;List&lt;TaskEntity&gt;&gt;</small></div><span class="farrow">→</span>
+            <div class="fbox">Repository<small>map to domain models</small></div><span class="farrow">→</span>
+            <div class="fbox">ViewModel<small>combine + stateIn</small></div><span class="farrow">→</span>
+            <div class="fbox">Compose<small>collectAsStateWithLifecycle()</small></div>
+          </div>
+          <script type="text/plain" data-code="kotlin" data-file="TasksViewModel.kt" data-numbered>
+            @HiltViewModel
+            class TasksViewModel @Inject constructor(repo: TaskRepository) : ViewModel() {
+                private val query = MutableStateFlow("")
+
+                val uiState: StateFlow<TasksUiState> =
+                    combine(repo.observeTasks(), query.debounce(300)) { tasks, q ->
+                        TasksUiState.Ready(tasks.filter { q.isBlank() || it.title.contains(q, ignoreCase = true) })
+                    }
+                    .catch<TasksUiState> { emit(TasksUiState.Error(it.message ?: "Unknown error")) }
+                    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TasksUiState.Loading)
+
+                fun onQueryChange(text: String) { query.value = text }
+            }
+
+            // In a composable:
+            // val state by viewModel.uiState.collectAsStateWithLifecycle()
+          </script>
+        </section>
+
+        <section class="doc-section" id="exercises" data-title="Exercises">
+          <div class="sec-head"><h2><span class="sec-num">14.9</span>Exercises</h2></div>
+          <details class="exercise">
+            <summary>Exercise 1 — Ticker <span class="badge green">Easy</span></summary>
+            <div class="ex-body">
+              <p>Write <code>fun ticker(periodMs: Long): Flow&lt;Int&gt;</code> that emits 0, 1, 2… forever. Collect only the first 5 values and print them as a list.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution" data-run>
+                import kotlinx.coroutines.*
+                import kotlinx.coroutines.flow.*
+
+                fun ticker(periodMs: Long): Flow<Int> = flow {
+                    var i = 0
+                    while (true) { emit(i++); delay(periodMs) }
+                }
+
+                fun main() = runBlocking {
+                    println(ticker(50).take(5).toList())     // take cancels the infinite flow
+                }
+              </script>
+              <script type="text/plain" data-output>
+                [0, 1, 2, 3, 4]
+              </script>
+            </div>
+          </details>
+          <details class="exercise">
+            <summary>Exercise 2 — Download progress <span class="badge blue">Medium</span></summary>
+            <div class="ex-body">
+              <p>Model a download as <code>Flow&lt;DownloadState&gt;</code> where <code>DownloadState</code> is sealed: <code>Progress(percent)</code>, <code>Done(file)</code>, <code>Failed(reason)</code>. Emit progress 0, 25, 50, 75, 100, then Done. Use <code>transformWhile</code> to stop collecting after a terminal state.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution" data-run>
+                import kotlinx.coroutines.*
+                import kotlinx.coroutines.flow.*
+
+                sealed interface DownloadState {
+                    data class Progress(val percent: Int) : DownloadState
+                    data class Done(val file: String) : DownloadState
+                    data class Failed(val reason: String) : DownloadState
+                }
+
+                fun download(name: String): Flow<DownloadState> = flow {
+                    for (p in 0..100 step 25) { emit(DownloadState.Progress(p)); delay(20) }
+                    emit(DownloadState.Done("/sdcard/$name"))
+                    emit(DownloadState.Progress(999))                 // should never be seen
+                }.catch { emit(DownloadState.Failed(it.message ?: "error")) }
+
+                fun main() = runBlocking {
+                    download("app.apk")
+                        .transformWhile { state ->
+                            emit(state)
+                            state is DownloadState.Progress            // continue only while in progress
+                        }
+                        .collect { println(it) }
+                }
+              </script>
+              <script type="text/plain" data-output>
+                Progress(percent=0)
+                Progress(percent=25)
+                Progress(percent=50)
+                Progress(percent=75)
+                Progress(percent=100)
+                Done(file=/sdcard/app.apk)
+              </script>
+            </div>
+          </details>
+          <details class="exercise">
+            <summary>Exercise 3 — Search ViewModel without Android <span class="badge amber">Challenge</span></summary>
+            <div class="ex-body">
+              <p>Build a <code>SearchModel(scope)</code> with <code>query: MutableStateFlow&lt;String&gt;</code> and <code>results: StateFlow&lt;List&lt;String&gt;&gt;</code>: debounce 200 ms, ignore queries shorter than 2 chars (empty results), use <code>flatMapLatest</code> to call a fake suspending search. Simulate typing.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution" data-run>
+                import kotlinx.coroutines.*
+                import kotlinx.coroutines.flow.*
+
+                val catalog = listOf("Kotlin", "Kotlin Coroutines", "Compose", "Coil", "Room")
+
+                suspend fun fakeSearch(q: String): List<String> {
+                    delay(50)
+                    return catalog.filter { it.contains(q, ignoreCase = true) }
+                }
+
+                @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
+                class SearchModel(scope: CoroutineScope) {
+                    val query = MutableStateFlow("")
+                    val results: StateFlow<List<String>> = query
+                        .debounce(200)
+                        .map { it.trim() }
+                        .distinctUntilChanged()
+                        .flatMapLatest { q -> if (q.length < 2) flowOf(emptyList()) else flow { emit(fakeSearch(q)) } }
+                        .stateIn(scope, SharingStarted.Eagerly, emptyList())
+                }
+
+                fun main() = runBlocking {
+                    val scope = CoroutineScope(coroutineContext + Job())
+                    val model = SearchModel(scope)
+                    val ui = launch { model.results.collect { println("results: $it") } }
+                    for (typed in listOf("c", "co", "com")) { model.query.value = typed; delay(50) }
+                    delay(400)
+                    model.query.value = "ko"
+                    delay(400)
+                    ui.cancel(); scope.cancel()
+                }
+              </script>
+              <script type="text/plain" data-output>
+                results: []
+                results: [Compose]
+                results: [Kotlin, Kotlin Coroutines]
+              </script>
+            </div>
+          </details>
+        </section>
+
+        <section class="doc-section" id="quiz" data-title="Quiz">
+          <div class="sec-head"><h2><span class="sec-num">14.10</span>Quiz</h2></div>
+          <script type="application/json" data-quiz>
+          [
+            {"q": "When does the code inside `flow { … }` run?", "options": ["Immediately when created", "Each time a terminal operator (e.g. collect) is called", "Once, on first collection, then cached", "On Dispatchers.IO"], "answer": 1, "explain": "Flows are cold: every collector triggers a new execution."},
+            {"q": "Which is best for holding screen UI state in a ViewModel?", "options": ["Channel", "MutableSharedFlow with replay 0", "StateFlow", "A cold flow"], "answer": 2, "explain": "StateFlow always has a current value, which new collectors (e.g. after rotation) receive immediately."},
+            {"q": "Users type a query; you want to cancel the previous network search when a new query arrives. Which operator?", "options": ["flatMapConcat", "flatMapMerge", "flatMapLatest", "zip"], "answer": 2, "explain": "flatMapLatest cancels the previous inner flow."},
+            {"q": "Where should `.flowOn(Dispatchers.IO)` go to run a blocking producer off the main thread?", "options": ["Before the producer", "After the producer (it affects the upstream)", "Inside collect", "It isn't needed"], "answer": 1, "explain": "flowOn changes the context of operators ABOVE it."},
+            {"q": "Why `SharingStarted.WhileSubscribed(5_000)` on Android?", "options": ["To make the flow cold", "The upstream survives short gaps like configuration changes but stops when the app is in the background", "It's required by Compose", "It delays the first value by 5 s"], "answer": 1, "explain": "Rotation unsubscribes for well under 5 s, so work isn't restarted; going to the background stops it after 5 s."},
+            {"q": "`MutableStateFlow(1)` is set to 1 again. Do collectors receive a new emission?", "options": ["Yes", "No — StateFlow skips values equal to the current one", "Only with replay", "It throws"], "answer": 1, "explain": "StateFlow is conflated and uses equality (distinctUntilChanged semantics)."}
+          ]
+          </script>
+        </section>
+
+        <section class="doc-section" id="references" data-title="Further reading">
+          <div class="sec-head"><h2><span class="sec-num">14.11</span>Further reading</h2></div>
+          <ul>
+            <li><a href="https://kotlinlang.org/docs/flow.html" target="_blank" rel="noopener">Kotlin docs — Asynchronous Flow</a></li>
+            <li><a href="https://developer.android.com/kotlin/flow" target="_blank" rel="noopener">Kotlin flows on Android</a> · <a href="https://developer.android.com/kotlin/flow/stateflow-and-sharedflow" target="_blank" rel="noopener">StateFlow and SharedFlow</a></li>
+            <li><a href="https://kotlinlang.org/docs/channels.html" target="_blank" rel="noopener">Channels</a></li>
+          </ul>
+        </section>
+
+        <div id="pager"></div>
+      </div>
+    </main>
+  </div>
+  <div id="site-footer"></div>
+  <script src="assets/js/core.js?v=__BUILD__"></script>
+</body>
+</html>

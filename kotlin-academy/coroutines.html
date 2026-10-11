@@ -1,0 +1,584 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Coroutines — Kotlin Academy</title>
+  <meta name="description" content="Kotlin coroutines in depth: suspend functions, launch and async, structured concurrency, scopes, dispatchers, withContext, cancellation, timeouts, exception handling, supervisors and shared state.">
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <meta name="color-scheme" content="dark light">
+  <link rel="stylesheet" href="assets/css/main.css?v=__BUILD__">
+  <script>try{var t=localStorage.getItem("ka-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body data-page="coroutines">
+  <div id="site-header"></div>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="content">
+      <div class="content-inner">
+
+        <header class="page-hero">
+          <nav class="crumbs"><a href="index.html">Home</a><span>/</span><span>Advanced Kotlin</span><span>/</span><span>Lesson 13</span></nav>
+          <div class="eyebrow">Lesson 13 · Advanced Kotlin</div>
+          <h1>Coroutines</h1>
+          <p class="lead">Apps constantly wait — for the network, the disk, a timer. Coroutines let you write that waiting code as if it were simple sequential code, without blocking threads and without callback pyramids. On Android they're the standard way to do anything asynchronous.</p>
+          <div class="page-meta"><span>⏱ 75 min</span><span>🎯 Advanced</span><span>📦 kotlinx-coroutines 1.10</span></div>
+          <div class="objectives">
+            <h4>You will be able to</h4>
+            <ul>
+              <li>Explain what <code>suspend</code> really means</li>
+              <li>Start coroutines with <code>launch</code> and <code>async</code></li>
+              <li>Apply structured concurrency with scopes</li>
+              <li>Switch threads with dispatchers and <code>withContext</code></li>
+              <li>Cancel work and use timeouts correctly</li>
+              <li>Handle exceptions with supervisors and handlers</li>
+            </ul>
+          </div>
+        </header>
+
+        <section class="doc-section" id="why" data-title="Why coroutines">
+          <div class="sec-head"><h2><span class="sec-num">13.1</span>Why coroutines?</h2></div>
+          <p>Android's <b>main thread</b> draws the UI. If it's blocked for more than a few milliseconds the app stutters; after ~5 seconds the system shows “App Not Responding”. So slow work (network, database) must happen elsewhere — and the result must come back to the main thread. Historically that meant threads + callbacks:</p>
+          <div class="compare">
+            <div><div class="cmp-label c-red">Callbacks</div>
+              <script type="text/plain" data-code="kotlin" data-file="Callbacks.kt">
+                fun showProfile(id: String) {
+                    api.loadUser(id) { user ->
+                        api.loadFriends(user) { friends ->
+                            db.save(friends) { ok ->
+                                runOnUiThread {
+                                    render(user, friends)
+                                }
+                            }   // + error handling at
+                        }       //   every level…
+                    }
+                }
+              </script>
+            </div>
+            <div><div class="cmp-label c-green">Coroutines</div>
+              <script type="text/plain" data-code="kotlin" data-file="Coroutines.kt">
+                suspend fun showProfile(id: String) {
+                    val user = api.loadUser(id)
+                    val friends = api.loadFriends(user)
+                    db.save(friends)
+                    render(user, friends)
+                    // one try/catch handles
+                    // errors from every step
+                }
+              </script>
+            </div>
+          </div>
+          <p class="mt">A coroutine is a <b>suspendable computation</b>. When it waits, it <em>suspends</em>: it saves its state and frees the thread to do other work. When the result arrives, it <em>resumes</em> — possibly on another thread. Coroutines are extremely cheap: you can run 100,000 of them where 100,000 threads would exhaust memory.</p>
+          <div class="callout analogy">
+            <div class="ci">🎭</div>
+            <div><span class="ct">Analogy</span>
+              <p>A thread is a <b>waiter</b>; a coroutine is a <b>table's order</b>. A blocking waiter stands at the kitchen door until the dish is ready. A suspending waiter puts the order in, serves other tables, and comes back when the kitchen rings the bell. Same number of waiters, many more tables served.</p>
+            </div>
+          </div>
+          <div class="callout note">
+            <div class="ci">📦</div>
+            <div><span class="ct">Setup</span>
+              <p>The <code>suspend</code> keyword is part of the language; the builders (<code>launch</code>, <code>async</code>…) come from the <code>kotlinx-coroutines-core</code> library. Android projects get it via <code>androidx.lifecycle</code>; in a plain Gradle project add <code>implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")</code>. The ▶ Run playground has it built in.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="suspend" data-title="suspend functions">
+          <div class="sec-head"><h2><span class="sec-num">13.2</span><code>suspend</code> functions &amp; <code>runBlocking</code></h2></div>
+          <p>A <code>suspend</code> function can pause without blocking its thread. It can only be called from another suspend function or from a <b>coroutine builder</b>. <code>delay()</code> is the suspending equivalent of <code>Thread.sleep()</code>.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Suspend.kt" data-run>
+            import kotlinx.coroutines.*
+
+            suspend fun fetchUser(id: Int): String {
+                delay(300)                      // simulates network latency; suspends, doesn't block
+                return "User#$id"
+            }
+
+            suspend fun fetchScore(user: String): Int {
+                delay(200)
+                return user.length * 10
+            }
+
+            // runBlocking bridges normal code and coroutines: it blocks the current thread
+            // until everything inside finishes. Use it in main() and tests — never on Android's main thread.
+            fun main() = runBlocking {
+                println("Loading…")
+                val user = fetchUser(7)         // reads like normal sequential code
+                val score = fetchScore(user)
+                println("$user has score $score")
+            }
+          </script>
+          <script type="text/plain" data-output>
+            Loading…
+            User#7 has score 60
+          </script>
+          <div class="callout note">
+            <div class="ci">🔬</div>
+            <div><span class="ct">Under the hood</span>
+              <p>The compiler transforms every suspend function into a <b>state machine</b> and adds a hidden <code>Continuation</code> parameter — a callback that knows where to resume. You write sequential code; the compiler writes the callbacks. That's why calling a suspend function from regular code is a compile error: there's no continuation to pass.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="builders" data-title="launch & async">
+          <div class="sec-head"><h2><span class="sec-num">13.3</span>Builders: <code>launch</code> and <code>async</code></h2></div>
+          <div class="grid grid-2">
+            <div class="glass card"><h4><code>launch { }</code> → <code>Job</code></h4><p class="small">Fire-and-forget: starts a coroutine that doesn't return a result. The <code>Job</code> lets you <code>join()</code> (wait) or <code>cancel()</code> it.</p></div>
+            <div class="glass card"><h4><code>async { }</code> → <code>Deferred&lt;T&gt;</code></h4><p class="small">Starts a coroutine that computes a value. Call <code>await()</code> to get it (suspends until ready). Use it for <b>parallel</b> work.</p></div>
+          </div>
+          <script type="text/plain" data-code="kotlin" data-file="Builders.kt" data-run>
+            import kotlinx.coroutines.*
+            import kotlin.system.measureTimeMillis
+
+            suspend fun loadPrice(item: String): Int { delay(1000); return item.length * 100 }
+
+            fun main() = runBlocking {
+                // launch: concurrent, no result
+                val job = launch {
+                    repeat(3) { i ->
+                        println("  background tick $i")
+                        delay(100)
+                    }
+                }
+                println("launched, doing other work")
+                job.join()                                     // wait for it to finish
+                println("job done")
+
+                // Sequential: ~2 s
+                val seq = measureTimeMillis {
+                    val a = loadPrice("coffee")
+                    val b = loadPrice("tea")
+                    println("sequential total ${a + b}")
+                }
+                // Parallel with async: ~1 s
+                val par = measureTimeMillis {
+                    val a = async { loadPrice("coffee") }
+                    val b = async { loadPrice("tea") }
+                    println("parallel total ${a.await() + b.await()}")
+                }
+                println("sequential ≈ ${(seq + 500) / 1000}s, parallel ≈ ${(par + 500) / 1000}s")
+            }
+          </script>
+          <script type="text/plain" data-output>
+            launched, doing other work
+              background tick 0
+              background tick 1
+              background tick 2
+            job done
+            sequential total 900
+            parallel total 900
+            sequential ≈ 2s, parallel ≈ 1s
+          </script>
+          <p class="small muted">Notice “launched, doing other work” prints <em>before</em> the first tick: <code>launch</code> schedules the coroutine, and it starts once the current one suspends (here at <code>join()</code>).</p>
+        </section>
+
+        <section class="doc-section" id="structured" data-title="Structured concurrency">
+          <div class="sec-head"><h2><span class="sec-num">13.4</span>Structured concurrency &amp; scopes</h2></div>
+          <p>Every coroutine runs in a <code>CoroutineScope</code>, and coroutines started inside another become its <b>children</b>. This tree gives three guarantees:</p>
+          <ol>
+            <li>A parent <b>waits</b> for all its children to finish.</li>
+            <li>Cancelling a parent <b>cancels</b> all its children.</li>
+            <li>If a child <b>fails</b>, the parent and its other children are cancelled and the error propagates up.</li>
+          </ol>
+          <p>So no coroutine can leak: when the scope ends, everything in it is done. On Android, <code>viewModelScope</code> is cancelled when the ViewModel is cleared and <code>lifecycleScope</code> when the Activity/Fragment is destroyed — your work automatically stops when the screen goes away.</p>
+          <figure class="diagram">
+            <svg viewBox="0 0 640 200" width="640" role="img" aria-label="Coroutine parent-child tree">
+              <g font-family="Inter, sans-serif" font-size="13" text-anchor="middle">
+                <rect x="220" y="10" width="200" height="44" rx="10" fill="rgba(169,139,255,.15)" stroke="#a98bff"/>
+                <text x="320" y="30" fill="currentColor" font-weight="700">viewModelScope</text><text x="320" y="46" fill="#9a98a8" font-size="11">cancelled in onCleared()</text>
+                <rect x="40" y="90" width="170" height="44" rx="10" fill="rgba(108,184,255,.13)" stroke="#6cb8ff"/>
+                <text x="125" y="117" fill="currentColor">launch { refresh() }</text>
+                <rect x="430" y="90" width="170" height="44" rx="10" fill="rgba(108,184,255,.13)" stroke="#6cb8ff"/>
+                <text x="515" y="117" fill="currentColor">launch { observe() }</text>
+                <rect x="10" y="150" width="110" height="40" rx="10" fill="rgba(61,220,151,.13)" stroke="#3ddc97"/>
+                <text x="65" y="175" fill="currentColor">async { users }</text>
+                <rect x="140" y="150" width="110" height="40" rx="10" fill="rgba(61,220,151,.13)" stroke="#3ddc97"/>
+                <text x="195" y="175" fill="currentColor">async { tasks }</text>
+                <path d="M300 54L135 90M340 54L505 90M110 134L70 150M140 134L190 150" stroke="#9a98a8" stroke-width="1.5"/>
+              </g>
+            </svg>
+            <figcaption>Cancellation flows down the tree; failures propagate up.</figcaption>
+          </figure>
+          <script type="text/plain" data-code="kotlin" data-file="Structured.kt" data-run>
+            import kotlinx.coroutines.*
+
+            // coroutineScope { } creates a child scope and suspends until ALL children finish.
+            // It's how a suspend function does parallel work safely.
+            suspend fun loadDashboard(): String = coroutineScope {
+                val users = async { delay(200); 12 }
+                val tasks = async { delay(100); 34 }
+                "users=${users.await()}, tasks=${tasks.await()}"
+            }
+
+            fun main() = runBlocking {
+                println(loadDashboard())
+
+                val parent = launch {
+                    launch { delay(1_000); println("child 1 finished") }   // never prints
+                    launch { delay(1_000); println("child 2 finished") }   // never prints
+                    println("children started")
+                }
+                delay(100)
+                parent.cancel()                       // cancels both children too
+                parent.join()
+                println("parent cancelled: ${parent.isCancelled}")
+            }
+          </script>
+          <script type="text/plain" data-output>
+            users=12, tasks=34
+            children started
+            parent cancelled: true
+          </script>
+          <div class="callout danger">
+            <div class="ci">🚫</div>
+            <div><span class="ct">Avoid <code>GlobalScope</code></span>
+              <p><code>GlobalScope.launch</code> creates a coroutine with no parent: nobody cancels it, nobody waits for it, and its errors go nowhere useful. It breaks structured concurrency and leaks work. Use the scope of the component that owns the work.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="dispatchers" data-title="Dispatchers & withContext">
+          <div class="sec-head"><h2><span class="sec-num">13.5</span>Dispatchers &amp; <code>withContext</code></h2></div>
+          <p>A <b>dispatcher</b> decides which thread(s) a coroutine runs on.</p>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>Dispatcher</th><th>Threads</th><th>Use for</th></tr></thead>
+              <tbody>
+                <tr><td><code>Dispatchers.Main</code></td><td>Android UI thread</td><td>Updating UI, calling suspend functions that are main-safe. Default for <code>viewModelScope</code>/<code>lifecycleScope</code>.</td></tr>
+                <tr><td><code>Dispatchers.IO</code></td><td>Large shared pool (64+)</td><td>Blocking I/O: files, legacy blocking network/database APIs.</td></tr>
+                <tr><td><code>Dispatchers.Default</code></td><td>One per CPU core</td><td>CPU-heavy work: sorting big lists, JSON parsing, image processing.</td></tr>
+                <tr><td><code>Dispatchers.Unconfined</code></td><td>Whatever thread resumes it</td><td>Rarely; special cases and tests.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p><code>withContext(dispatcher) { }</code> switches to another dispatcher for a block and returns its result — then you're back on the original thread. The golden rule on Android: <b>suspend functions should be main-safe</b>; each function that does blocking work moves itself off the main thread.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Dispatchers.kt" data-run>
+            import kotlinx.coroutines.*
+
+            fun threadName() = Thread.currentThread().name.substringBefore(" @").substringBefore("-worker")
+
+            // Main-safe: callers don't need to know this does blocking I/O
+            suspend fun readConfigFile(): String = withContext(Dispatchers.IO) {
+                println("  reading on ${threadName()}")
+                Thread.sleep(50)                         // pretend: blocking file read
+                "theme=dark"
+            }
+
+            suspend fun heavyCompute(n: Int): Long = withContext(Dispatchers.Default) {
+                println("  computing on ${threadName()}")
+                (1..n).sumOf { it.toLong() * it }
+            }
+
+            fun main() = runBlocking {
+                println("start on ${threadName()}")
+                val config = readConfigFile()
+                val result = heavyCompute(1_000)
+                println("back on ${threadName()}: $config, $result")
+            }
+          </script>
+          <script type="text/plain" data-output>
+            start on main
+              reading on DefaultDispatcher
+              computing on DefaultDispatcher
+            back on main: theme=dark, 333833500
+          </script>
+          <p class="small muted">IO and Default share threads (the pool is named <code>DefaultDispatcher-worker-N</code>), which makes switching between them cheap. Room and Retrofit's suspend functions are already main-safe, so you can call them directly from <code>viewModelScope</code>.</p>
+        </section>
+
+        <section class="doc-section" id="cancellation" data-title="Cancellation & timeouts">
+          <div class="sec-head"><h2><span class="sec-num">13.6</span>Cancellation &amp; timeouts</h2></div>
+          <p>Cancellation is <b>cooperative</b>: a coroutine is only cancelled at a suspension point (<code>delay</code>, <code>withContext</code>, <code>yield</code>…) or when it checks <code>isActive</code>/<code>ensureActive()</code>. A tight CPU loop that never suspends can't be cancelled.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Cancellation.kt" data-run>
+            import kotlinx.coroutines.*
+
+            fun main() = runBlocking {
+                val job = launch(Dispatchers.Default) {
+                    var i = 0
+                    try {
+                        while (true) {
+                            ensureActive()               // throws CancellationException if cancelled
+                            i++                          // CPU work without suspension points
+                        }
+                    } finally {
+                        // runs on cancellation: release resources here
+                        println("cleanup after cancellation (counted > 0: ${i > 0})")
+                    }
+                }
+                delay(50)
+                job.cancelAndJoin()
+                println("cancelled")
+
+                // Timeouts
+                val fast = withTimeoutOrNull(500) { delay(100); "fast result" }
+                val slow = withTimeoutOrNull(500) { delay(2_000); "slow result" }
+                println("$fast / $slow")
+                try {
+                    withTimeout(100) { delay(1_000) }
+                } catch (e: TimeoutCancellationException) {
+                    println("timed out: ${e.message}")
+                }
+            }
+          </script>
+          <script type="text/plain" data-output>
+            cleanup after cancellation (counted > 0: true)
+            cancelled
+            fast result / null
+            timed out: Timed out waiting for 100 ms
+          </script>
+          <div class="callout danger">
+            <div class="ci">🚫</div>
+            <div><span class="ct">Never swallow <code>CancellationException</code></span>
+              <p>Cancellation is implemented with a special exception. A blanket <code>catch (e: Exception)</code> around suspending code catches it and keeps the coroutine running as a “zombie”. Catch specific exceptions, or rethrow: <code>catch (e: Exception) { if (e is CancellationException) throw e; … }</code>. Note that <code>runCatching</code> also catches it — be careful using it with suspend calls.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="exceptions" data-title="Exception handling">
+          <div class="sec-head"><h2><span class="sec-num">13.7</span>Exception handling &amp; supervisors</h2></div>
+          <ul>
+            <li>Inside a coroutine, use normal <code>try/catch</code> around the suspend call that may fail — this is the right tool 90% of the time.</li>
+            <li>An uncaught exception in <code>launch</code> propagates to the parent and cancels its siblings. In <code>async</code>, it's thrown again at <code>await()</code> (and still cancels the parent).</li>
+            <li>When children should fail <b>independently</b> (e.g. loading several widgets), use <code>supervisorScope</code> or a <code>SupervisorJob</code>. <code>viewModelScope</code> uses a SupervisorJob.</li>
+            <li><code>CoroutineExceptionHandler</code> is a last-resort handler for uncaught exceptions in root <code>launch</code> coroutines (for logging/crash reporting).</li>
+          </ul>
+          <script type="text/plain" data-code="kotlin" data-file="Supervisor.kt" data-run>
+            import kotlinx.coroutines.*
+
+            suspend fun loadWidget(name: String, fail: Boolean): String {
+                delay(100)
+                if (fail) throw IllegalStateException("$name failed")
+                return "$name ✓"
+            }
+
+            fun main() = runBlocking {
+                // 1. Plain try/catch around a suspend call
+                try {
+                    loadWidget("weather", fail = true)
+                } catch (e: IllegalStateException) {
+                    println("caught: ${e.message}")
+                }
+
+                // 2. supervisorScope: one child's failure doesn't cancel the others
+                val handler = CoroutineExceptionHandler { _, e -> println("handler: ${e.message}") }
+                supervisorScope {
+                    launch(handler) { println(loadWidget("news", fail = true)) }
+                    launch { println(loadWidget("calendar", fail = false)) }
+                }
+
+                // 3. async in a supervisor: the error surfaces at await()
+                supervisorScope {
+                    val stocks = async { loadWidget("stocks", fail = true) }
+                    val sports = async { loadWidget("sports", fail = false) }
+                    println(sports.await())
+                    println(runCatching { stocks.await() }.exceptionOrNull()?.message)
+                }
+            }
+          </script>
+          <script type="text/plain" data-output>
+            caught: weather failed
+            handler: news failed
+            calendar ✓
+            sports ✓
+            stocks failed
+          </script>
+        </section>
+
+        <section class="doc-section" id="shared-state" data-title="Shared mutable state">
+          <div class="sec-head"><h2><span class="sec-num">13.8</span>Shared mutable state</h2></div>
+          <p>Coroutines on <code>Dispatchers.Default</code> run truly in parallel, so unsynchronized updates to shared variables lose writes. Options: confine the state to one thread, use atomics, or protect a critical section with a <code>Mutex</code> (a suspending lock — never use <code>synchronized</code> around suspend calls).</p>
+          <script type="text/plain" data-code="kotlin" data-file="SharedState.kt" data-run>
+            import kotlinx.coroutines.*
+            import kotlinx.coroutines.sync.Mutex
+            import kotlinx.coroutines.sync.withLock
+            import java.util.concurrent.atomic.AtomicInteger
+
+            suspend fun massiveRun(action: suspend () -> Unit) = coroutineScope {
+                repeat(100) { launch(Dispatchers.Default) { repeat(1_000) { action() } } }
+            }
+
+            fun main() = runBlocking {
+                var unsafe = 0
+                massiveRun { unsafe++ }
+                println("unsafe counter correct? ${unsafe == 100_000}")   // usually false!
+
+                val atomic = AtomicInteger()
+                massiveRun { atomic.incrementAndGet() }
+                println("atomic = ${atomic.get()}")
+
+                val mutex = Mutex()
+                var guarded = 0
+                massiveRun { mutex.withLock { guarded++ } }
+                println("mutex = $guarded")
+            }
+          </script>
+          <script type="text/plain" data-output data-loose>
+            unsafe counter correct? false
+            atomic = 100000
+            mutex = 100000
+          </script>
+        </section>
+
+        <section class="doc-section" id="android-preview" data-title="Coroutines on Android">
+          <div class="sec-head"><h2><span class="sec-num">13.9</span>Preview: coroutines on Android</h2></div>
+          <p>Here's how everything in this lesson shows up in a real ViewModel (you'll build this in lesson 18):</p>
+          <script type="text/plain" data-code="kotlin" data-file="ProfileViewModel.kt" data-numbered>
+            class ProfileViewModel(private val repo: ProfileRepository) : ViewModel() {
+
+                private val _state = MutableStateFlow<ProfileState>(ProfileState.Loading)
+                val state: StateFlow<ProfileState> = _state.asStateFlow()
+
+                fun load(userId: String) {
+                    viewModelScope.launch {                       // Main dispatcher, cancelled in onCleared()
+                        _state.value = ProfileState.Loading
+                        try {
+                            val (user, posts) = coroutineScope {  // parallel, structured
+                                val u = async { repo.user(userId) }   // repo functions are main-safe
+                                val p = async { repo.posts(userId) }
+                                u.await() to p.await()
+                            }
+                            _state.value = ProfileState.Ready(user, posts)
+                        } catch (e: IOException) {                // specific → cancellation still works
+                            _state.value = ProfileState.Error("Check your connection")
+                        }
+                    }
+                }
+            }
+          </script>
+        </section>
+
+        <section class="doc-section" id="exercises" data-title="Exercises">
+          <div class="sec-head"><h2><span class="sec-num">13.10</span>Exercises</h2></div>
+          <details class="exercise">
+            <summary>Exercise 1 — Parallel downloads <span class="badge green">Easy</span></summary>
+            <div class="ex-body">
+              <p>Simulate downloading 5 files (each takes <code>delay(300 * index)</code>) in parallel with <code>async</code>, and print the total size and that the elapsed time is less than the sum of delays.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution" data-run>
+                import kotlinx.coroutines.*
+                import kotlin.system.measureTimeMillis
+
+                suspend fun download(i: Int): Int { delay(300L * i); return i * 1024 }
+
+                fun main() = runBlocking {
+                    var total = 0
+                    val ms = measureTimeMillis {
+                        total = (1..5).map { i -> async { download(i) } }.awaitAll().sum()
+                    }
+                    println("total=$total bytes, faster than sequential: ${ms < 300 * 15}")
+                }
+              </script>
+              <script type="text/plain" data-output>
+                total=15360 bytes, faster than sequential: true
+              </script>
+            </div>
+          </details>
+          <details class="exercise">
+            <summary>Exercise 2 — Retry with exponential backoff <span class="badge blue">Medium</span></summary>
+            <div class="ex-body">
+              <p>Write <code>suspend fun &lt;T&gt; retryWithBackoff(times: Int, initialDelay: Long, block: suspend () -&gt; T): T</code> doubling the delay after each failure. Make sure cancellation isn't swallowed.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution" data-run>
+                import kotlinx.coroutines.*
+
+                suspend fun <T> retryWithBackoff(times: Int, initialDelay: Long, block: suspend () -> T): T {
+                    var wait = initialDelay
+                    repeat(times - 1) { attempt ->
+                        try {
+                            return block()
+                        } catch (e: CancellationException) {
+                            throw e                                   // never swallow cancellation
+                        } catch (e: Exception) {
+                            println("attempt ${attempt + 1} failed (${e.message}), retrying in ${wait}ms")
+                        }
+                        delay(wait)
+                        wait *= 2
+                    }
+                    return block()                                    // last attempt: let it throw
+                }
+
+                fun main() = runBlocking {
+                    var calls = 0
+                    val result = retryWithBackoff(times = 4, initialDelay = 100) {
+                        calls++
+                        if (calls < 3) throw RuntimeException("HTTP 503") else "OK after $calls calls"
+                    }
+                    println(result)
+                }
+              </script>
+              <script type="text/plain" data-output>
+                attempt 1 failed (HTTP 503), retrying in 100ms
+                attempt 2 failed (HTTP 503), retrying in 200ms
+                OK after 3 calls
+              </script>
+            </div>
+          </details>
+          <details class="exercise">
+            <summary>Exercise 3 — Fastest mirror wins <span class="badge amber">Challenge</span></summary>
+            <div class="ex-body">
+              <p>Query three “mirrors” with different latencies concurrently; return the first response and cancel the rest. Hint: <code>select</code> works, but a simpler route is a <code>Channel</code> or <code>CompletableDeferred</code> completed by whichever child finishes first, then <code>coroutineContext.cancelChildren()</code>.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution" data-run>
+                import kotlinx.coroutines.*
+
+                suspend fun mirror(name: String, latency: Long): String {
+                    try {
+                        delay(latency)
+                        return "$name (${latency}ms)"
+                    } catch (e: CancellationException) {
+                        println("  $name cancelled")
+                        throw e
+                    }
+                }
+
+                suspend fun fastest(vararg mirrors: Pair<String, Long>): String = coroutineScope {
+                    val winner = CompletableDeferred<String>()
+                    val jobs = mirrors.map { (name, ms) -> launch { winner.complete(mirror(name, ms)) } }
+                    val result = winner.await()
+                    jobs.forEach { it.cancel() }
+                    result
+                }
+
+                fun main() = runBlocking {
+                    println("winner: " + fastest("eu" to 300, "asia" to 120, "us" to 500))
+                }
+              </script>
+              <script type="text/plain" data-output>
+                  eu cancelled
+                  us cancelled
+                winner: asia (120ms)
+              </script>
+            </div>
+          </details>
+        </section>
+
+        <section class="doc-section" id="quiz" data-title="Quiz">
+          <div class="sec-head"><h2><span class="sec-num">13.11</span>Quiz</h2></div>
+          <script type="application/json" data-quiz>
+          [
+            {"q": "What does `delay(1000)` do to the thread it runs on?", "options": ["Blocks it for one second", "Nothing — the coroutine suspends and the thread is free for other work", "Kills it", "Moves to Dispatchers.IO"], "answer": 1, "explain": "That's the key difference from Thread.sleep."},
+            {"q": "You need two independent network results at the same time. Which is right?", "options": ["Two sequential calls", "`async` for each, then `await()` both — inside a scope", "`GlobalScope.launch` twice", "`runBlocking` on the main thread"], "answer": 1, "explain": "async + await gives parallel decomposition; the enclosing scope keeps it structured."},
+            {"q": "Which dispatcher should parse a 5 MB JSON string?", "options": ["Main", "IO", "Default", "Unconfined"], "answer": 2, "explain": "Parsing is CPU-bound → Default. IO is for blocking I/O."},
+            {"q": "What happens to a child coroutine when its parent is cancelled?", "options": ["It continues", "It's cancelled too", "It becomes a GlobalScope coroutine", "It restarts"], "answer": 1, "explain": "Structured concurrency: cancellation propagates down to children."},
+            {"q": "Why is `catch (e: Exception)` around suspend calls dangerous?", "options": ["It's slow", "It also catches CancellationException, so the coroutine may keep running after cancellation", "It doesn't compile", "It switches dispatcher"], "answer": 1, "explain": "Rethrow CancellationException or catch narrower types."},
+            {"q": "In which scope does one failing child NOT cancel its siblings?", "options": ["coroutineScope", "runBlocking", "supervisorScope", "withContext"], "answer": 2, "explain": "Supervisors let children fail independently."}
+          ]
+          </script>
+        </section>
+
+        <section class="doc-section" id="references" data-title="Further reading">
+          <div class="sec-head"><h2><span class="sec-num">13.12</span>Further reading</h2></div>
+          <ul>
+            <li><a href="https://kotlinlang.org/docs/coroutines-overview.html" target="_blank" rel="noopener">Kotlin docs — Coroutines guide</a></li>
+            <li><a href="https://developer.android.com/kotlin/coroutines" target="_blank" rel="noopener">Kotlin coroutines on Android</a> · <a href="https://developer.android.com/kotlin/coroutines/coroutines-best-practices" target="_blank" rel="noopener">Best practices</a></li>
+            <li><a href="https://kotlinlang.org/docs/exception-handling.html" target="_blank" rel="noopener">Coroutine exceptions handling</a></li>
+          </ul>
+        </section>
+
+        <div id="pager"></div>
+      </div>
+    </main>
+  </div>
+  <div id="site-footer"></div>
+  <script src="assets/js/core.js?v=__BUILD__"></script>
+</body>
+</html>

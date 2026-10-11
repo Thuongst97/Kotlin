@@ -1,0 +1,579 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DSLs, Testing & Multiplatform — Kotlin Academy</title>
+  <meta name="description" content="Master-level Kotlin: type-safe builders and DSLs with @DslMarker, annotations, reflection, modern Kotlin 2.x features, Java interop annotations, testing with kotlin.test, MockK, runTest and Turbine, and Kotlin Multiplatform.">
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <meta name="color-scheme" content="dark light">
+  <link rel="stylesheet" href="assets/css/main.css?v=__BUILD__">
+  <script>try{var t=localStorage.getItem("ka-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body data-page="advanced">
+  <div id="site-header"></div>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="content">
+      <div class="content-inner">
+
+        <header class="page-hero">
+          <nav class="crumbs"><a href="index.html">Home</a><span>/</span><span>Advanced Kotlin</span><span>/</span><span>Lesson 15</span></nav>
+          <div class="eyebrow">Lesson 15 · Master Kotlin</div>
+          <h1>DSLs, Testing &amp; Multiplatform</h1>
+          <p class="lead">The final language lesson. Build your own type-safe DSL, use annotations and reflection, adopt the newest Kotlin 2.x features, write professional tests for regular and coroutine code, and see how one Kotlin codebase can run on Android, iOS, desktop and the web.</p>
+          <div class="page-meta"><span>⏱ 60 min</span><span>🎯 Master</span><span>🧪 Testing-heavy</span></div>
+          <div class="objectives">
+            <h4>You will be able to</h4>
+            <ul>
+              <li>Design a type-safe builder DSL with <code>@DslMarker</code></li>
+              <li>Declare and read annotations; use basic reflection</li>
+              <li>Use Kotlin 2.x features: guards, <code>$$</code> strings…</li>
+              <li>Expose Kotlin APIs nicely to Java</li>
+              <li>Test with kotlin.test, MockK, <code>runTest</code>, Turbine</li>
+              <li>Explain Kotlin Multiplatform's <code>expect</code>/<code>actual</code></li>
+            </ul>
+          </div>
+        </header>
+
+        <section class="doc-section" id="dsl" data-title="Type-safe builders (DSLs)">
+          <div class="sec-head"><h2><span class="sec-num">15.1</span>Type-safe builders (DSLs)</h2></div>
+          <p>A <b>domain-specific language</b> is an API that reads like a description of the thing it builds. Kotlin DSLs are just regular code built from three features you already know: <b>lambdas with receivers</b>, <b>extension functions</b> and <b>trailing lambdas</b>. Gradle's <code>build.gradle.kts</code>, Ktor routing and Jetpack Compose are all Kotlin DSLs.</p>
+          <script type="text/plain" data-code="kotlin" data-file="WorkoutDsl.kt" data-run>
+            @DslMarker
+            annotation class WorkoutDsl                     // prevents calling outer-scope builders by accident
+
+            data class Exercise(val name: String, val sets: Int, val reps: Int, val restSec: Int)
+            data class Workout(val title: String, val exercises: List<Exercise>) {
+                val totalSets get() = exercises.sumOf { it.sets }
+            }
+
+            @WorkoutDsl
+            class ExerciseBuilder(private val name: String) {
+                var sets = 3
+                var reps = 10
+                var rest = 60
+                fun build() = Exercise(name, sets, reps, rest)
+            }
+
+            @WorkoutDsl
+            class WorkoutBuilder(private val title: String) {
+                private val exercises = mutableListOf<Exercise>()
+                fun exercise(name: String, configure: ExerciseBuilder.() -> Unit = {}) {
+                    exercises += ExerciseBuilder(name).apply(configure).build()
+                }
+                operator fun String.unaryPlus() = exercise(this)   // `+"Plank"` shorthand
+                fun build() = Workout(title, exercises.toList())
+            }
+
+            fun workout(title: String, configure: WorkoutBuilder.() -> Unit): Workout =
+                WorkoutBuilder(title).apply(configure).build()
+
+            fun main() {
+                val legDay = workout("Leg day") {
+                    exercise("Squat") {
+                        sets = 5
+                        reps = 5
+                        rest = 180
+                        // exercise("Nested?") { }   // ❌ with @DslMarker: can't reach the outer builder here
+                    }
+                    exercise("Lunge") { reps = 12 }
+                    +"Calf raise"
+                }
+                legDay.exercises.forEach { println("${it.name}: ${it.sets}×${it.reps}, rest ${it.restSec}s") }
+                println("Total sets: ${legDay.totalSets}")
+            }
+          </script>
+          <script type="text/plain" data-output>
+            Squat: 5×5, rest 180s
+            Lunge: 3×12, rest 60s
+            Calf raise: 3×10, rest 60s
+            Total sets: 11
+          </script>
+          <div class="callout tip">
+            <div class="ci">🏗️</div>
+            <div><span class="ct">DSL design checklist</span>
+              <ul>
+                <li>Builders are mutable; the <b>result</b> is immutable (data classes, read-only lists).</li>
+                <li>Mark builder classes with your own <code>@DslMarker</code> annotation to stop scope leaks.</li>
+                <li>Give properties sensible defaults so the simple case is short.</li>
+                <li>Validate in <code>build()</code> with <code>require</code>.</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="annotations" data-title="Annotations & reflection">
+          <div class="sec-head"><h2><span class="sec-num">15.2</span>Annotations &amp; reflection</h2></div>
+          <p><b>Annotations</b> attach metadata to code. Tools read them at compile time (Room's <code>@Entity</code>, Hilt's <code>@Inject</code>, kotlinx.serialization's <code>@Serializable</code> — processed by KSP or compiler plugins) or at runtime through <b>reflection</b>.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Annotations.kt" data-run>
+            @Target(AnnotationTarget.CLASS)
+            @Retention(AnnotationRetention.RUNTIME)          // keep it available at runtime
+            annotation class Table(val name: String)
+
+            @Target(AnnotationTarget.FIELD)
+            @Retention(AnnotationRetention.RUNTIME)
+            annotation class Column(val name: String = "", val primaryKey: Boolean = false)
+
+            @Table("users")
+            class User(
+                @field:Column(primaryKey = true) val id: Int,   // use-site target: put it on the JVM field
+                @field:Column("full_name") val name: String,
+                val cachedAvatar: String? = null,               // not a column
+            )
+
+            fun createTableSql(type: Class<*>): String {
+                val table = type.getAnnotation(Table::class.java)?.name ?: error("Not a table")
+                val columns = type.declaredFields.mapNotNull { field ->
+                    val col = field.getAnnotation(Column::class.java) ?: return@mapNotNull null
+                    val colName = col.name.ifEmpty { field.name }
+                    colName + (if (col.primaryKey) " PRIMARY KEY" else "")
+                }
+                return "CREATE TABLE $table (${columns.joinToString()})"
+            }
+
+            fun main() {
+                println(createTableSql(User::class.java))
+                // Lightweight reflection that needs no extra library:
+                val prop = User::name
+                println("${prop.name} = ${prop.get(User(1, "Ada"))}")
+                println(User::class.simpleName)
+            }
+          </script>
+          <script type="text/plain" data-output>
+            CREATE TABLE users (id PRIMARY KEY, full_name)
+            name = Ada
+            User
+          </script>
+          <div class="callout note">
+            <div class="ci">ℹ️</div>
+            <div><span class="ct">Use-site targets</span>
+              <p>A constructor <code>val</code> generates a parameter, a field, a getter (and maybe a setter). <code>@field:</code>, <code>@get:</code>, <code>@param:</code>, <code>@property:</code> choose where the annotation lands. Full reflection over Kotlin declarations (<code>KClass.memberProperties</code>, etc.) needs the <code>kotlin-reflect</code> library; on Android, prefer compile-time code generation (KSP) — it's faster and R8-friendly.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="modern" data-title="Modern Kotlin 2.x features">
+          <div class="sec-head"><h2><span class="sec-num">15.3</span>Modern Kotlin 2.x features</h2></div>
+          <p>Kotlin 2.0 introduced the <b>K2 compiler</b> (faster builds, smarter smart casts). Kotlin 2.2 made several long-awaited features stable. All of these compile with Kotlin 2.2+ without any flags:</p>
+          <script type="text/plain" data-code="kotlin" data-file="Modern.kt" data-run>
+            sealed interface Shape
+            data class Circle(val r: Double) : Shape
+            data class Rect(val w: Double, val h: Double) : Shape
+
+            // 1. Guard conditions in when: add `if` to a branch
+            fun describe(s: Shape) = when (s) {
+                is Circle if s.r == 0.0 -> "a point"
+                is Circle -> "circle r=${s.r}"
+                is Rect if s.w == s.h -> "square ${s.w}"
+                is Rect -> "rect ${s.w}x${s.h}"
+            }
+
+            fun main() {
+                println(describe(Circle(0.0)))
+                println(describe(Rect(2.0, 2.0)))
+                println(describe(Rect(2.0, 3.0)))
+
+                // 2. Multi-dollar interpolation: $$ means only $$name interpolates, a single $ is literal
+                val name = "Ada"
+                println($$"""{"name": "$$name", "price": "$9.99"}""")
+
+                // 3. Non-local break/continue inside inline lambdas
+                for (i in 1..5) {
+                    listOf(i).forEach {
+                        if (it == 3) continue
+                        if (it == 5) break
+                    }
+                    print(i)
+                }
+                println()
+
+                // 4. Smarter smart casts (K2): the compiler remembers checks stored in a val
+                val text: Any = "kotlin"
+                val isString = text is String
+                if (isString) println(text.uppercase())
+            }
+          </script>
+          <script type="text/plain" data-output>
+            a point
+            square 2.0
+            rect 2.0x3.0
+            {"name": "Ada", "price": "$9.99"}
+            124
+            KOTLIN
+          </script>
+          <p class="small muted">Keep an eye on <a href="https://kotlinlang.org/docs/whatsnew-eap.html" target="_blank" rel="noopener">What's new in Kotlin</a>: features like <b>context parameters</b> start as previews behind compiler flags before becoming stable.</p>
+        </section>
+
+        <section class="doc-section" id="interop" data-title="Java interop annotations">
+          <div class="sec-head"><h2><span class="sec-num">15.4</span>Designing for Java callers</h2></div>
+          <p>Libraries and large Android codebases often mix Kotlin and Java. A few annotations make your Kotlin API feel native from Java:</p>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>Annotation</th><th>Effect for Java</th></tr></thead>
+              <tbody>
+                <tr><td><code>@JvmStatic</code></td><td>Companion/object function becomes a real static method</td></tr>
+                <tr><td><code>@JvmField</code></td><td>Expose a property as a public field (no getter)</td></tr>
+                <tr><td><code>@JvmOverloads</code></td><td>Generate overloads for parameters with default values</td></tr>
+                <tr><td><code>@JvmName("…")</code></td><td>Rename the generated JVM method/class (e.g. <code>@file:JvmName("Strings")</code>)</td></tr>
+                <tr><td><code>@Throws(IOException::class)</code></td><td>Declare checked exceptions so Java can catch them</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <script type="text/plain" data-code="kotlin" data-file="Interop.kt">
+            @file:JvmName("TextUtils")              // Java: TextUtils.slugify(...) instead of InteropKt.slugify(...)
+
+            fun slugify(text: String, separator: Char = '-'): String =
+                text.lowercase().replace(Regex("[^a-z0-9]+"), separator.toString()).trim(separator)
+
+            class Logger private constructor(val tag: String) {
+                companion object {
+                    @JvmField val DEFAULT_TAG = "App"
+                    @JvmStatic fun create(tag: String = DEFAULT_TAG) = Logger(tag)   // Java: Logger.create("x")
+                }
+
+                @JvmOverloads
+                fun log(message: String, level: Int = 3, throwable: Throwable? = null) { /* … */ }
+
+                @Throws(java.io.IOException::class)
+                fun flushToDisk() { /* … */ }
+            }
+          </script>
+        </section>
+
+        <section class="doc-section" id="testing" data-title="Testing Kotlin code">
+          <div class="sec-head"><h2><span class="sec-num">15.5</span>Testing Kotlin code</h2></div>
+          <p>Tests prove your code works today and keeps working tomorrow. In a Gradle project, tests live in <code>src/test/kotlin</code> and run with <code>./gradlew test</code>. Set up once:</p>
+          <script type="text/plain" data-code="kts" data-file="build.gradle.kts">
+            dependencies {
+                testImplementation(kotlin("test"))                                     // assertions + JUnit integration
+                testImplementation("io.mockk:mockk:1.14.5")                            // mocking
+                testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
+                testImplementation("app.cash.turbine:turbine:1.2.1")                   // testing Flows
+            }
+
+            tasks.test {
+                useJUnitPlatform()
+            }
+          </script>
+          <h3>Unit tests with kotlin.test</h3>
+          <p>Structure every test as <b>Arrange → Act → Assert</b>. Backtick names let you write readable sentences:</p>
+          <script type="text/plain" data-code="kotlin" data-file="src/test/kotlin/PriceCalculatorTest.kt">
+            import kotlin.test.*
+
+            class PriceCalculator(private val taxRate: Double) {
+                fun total(prices: List<Long>, coupon: String? = null): Long {
+                    require(prices.all { it >= 0 }) { "Negative price" }
+                    val subtotal = prices.sum()
+                    val discounted = if (coupon == "HALF") subtotal / 2 else subtotal
+                    return discounted + Math.round(discounted * taxRate)
+                }
+            }
+
+            class PriceCalculatorTest {
+                private lateinit var calc: PriceCalculator
+
+                @BeforeTest
+                fun setUp() { calc = PriceCalculator(taxRate = 0.1) }
+
+                @Test
+                fun `adds tax to the subtotal`() {
+                    val total = calc.total(listOf(100, 200))      // Act
+                    assertEquals(330, total)                       // Assert
+                }
+
+                @Test
+                fun `HALF coupon halves the subtotal before tax`() {
+                    assertEquals(165, calc.total(listOf(100, 200), coupon = "HALF"))
+                }
+
+                @Test
+                fun `empty cart costs nothing`() {
+                    assertEquals(0, calc.total(emptyList()))
+                }
+
+                @Test
+                fun `negative prices are rejected`() {
+                    val e = assertFailsWith<IllegalArgumentException> { calc.total(listOf(-1)) }
+                    assertEquals("Negative price", e.message)
+                }
+            }
+          </script>
+          <h3>Mocking with MockK</h3>
+          <p>When the class under test depends on something slow or external (an API, a database), replace it with a <b>fake</b> (a tiny hand-written implementation — preferred) or a <b>mock</b> (behaviour defined per test):</p>
+          <script type="text/plain" data-code="kotlin" data-file="src/test/kotlin/WelcomeServiceTest.kt">
+            import io.mockk.*
+            import kotlin.test.*
+
+            interface UserApi { fun fetchName(id: Int): String }
+            interface Analytics { fun track(event: String) }
+
+            class WelcomeService(private val api: UserApi, private val analytics: Analytics) {
+                fun welcome(id: Int): String {
+                    val name = api.fetchName(id)
+                    analytics.track("welcome_shown")
+                    return "Welcome back, $name!"
+                }
+            }
+
+            class WelcomeServiceTest {
+                private val api = mockk<UserApi>()
+                private val analytics = mockk<Analytics>(relaxed = true)   // relaxed: returns defaults, records calls
+
+                @Test
+                fun `greets the user and tracks the event`() {
+                    every { api.fetchName(42) } returns "Ada"               // stub
+
+                    val text = WelcomeService(api, analytics).welcome(42)
+
+                    assertEquals("Welcome back, Ada!", text)
+                    verify(exactly = 1) { analytics.track("welcome_shown") } // verify interaction
+                }
+            }
+          </script>
+          <h3>Testing coroutines with <code>runTest</code></h3>
+          <p><code>runTest</code> runs suspend code with a <b>virtual clock</b>: <code>delay(10_000)</code> completes instantly while time still “advances”. Tests stay fast and deterministic.</p>
+          <script type="text/plain" data-code="kotlin" data-file="VirtualTime.kt">
+            import kotlinx.coroutines.*
+            import kotlinx.coroutines.test.*
+
+            suspend fun slowGreeting(): String {
+                delay(10_000)                       // 10 seconds…
+                return "hello"
+            }
+
+            @OptIn(ExperimentalCoroutinesApi::class)
+            fun main() = runTest {
+                val start = currentTime
+                val g = slowGreeting()
+                println("$g after ${currentTime - start} ms of virtual time")   // …but the test finishes in milliseconds
+            }
+          </script>
+          <script type="text/plain" data-output>
+            hello after 10000 ms of virtual time
+          </script>
+          <h3>Testing Flows with Turbine</h3>
+          <script type="text/plain" data-code="kotlin" data-file="src/test/kotlin/CounterViewModelTest.kt">
+            import app.cash.turbine.test
+            import kotlinx.coroutines.test.runTest
+            import kotlin.test.*
+
+            class CounterViewModelTest {
+                @Test
+                fun `emits incremented states`() = runTest {
+                    val vm = CounterViewModel()
+                    vm.state.test {                                   // Turbine: collect and assert one by one
+                        assertEquals(0, awaitItem().count)            // initial value
+                        vm.increment()
+                        assertEquals(1, awaitItem().count)
+                        vm.increment()
+                        assertEquals(2, awaitItem().count)
+                        cancelAndIgnoreRemainingEvents()
+                    }
+                }
+            }
+          </script>
+          <div class="callout tip">
+            <div class="ci">🧪</div>
+            <div><span class="ct">What makes code testable</span>
+              <p>Inject dependencies through constructors (lesson 08), depend on interfaces, inject <code>CoroutineDispatcher</code>s instead of hard-coding <code>Dispatchers.IO</code>, keep logic in pure functions and ViewModels rather than Activities. Testable code is almost always better-designed code.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="kmp" data-title="Kotlin Multiplatform">
+          <div class="sec-head"><h2><span class="sec-num">15.6</span>Kotlin Multiplatform (KMP)</h2></div>
+          <p>Kotlin Multiplatform lets you share code — typically business logic, networking (Ktor), storage (Room KMP, SQLDelight), and even UI with <b>Compose Multiplatform</b> — across Android, iOS, desktop and web, while keeping full access to each platform's native APIs. Google officially supports KMP for sharing business logic between Android and iOS.</p>
+          <div class="filetree"><span class="d">shared/src/</span>
+├── <span class="d">commonMain/kotlin/</span>     <span class="c"># pure Kotlin used by every platform</span>
+│   └── Greeting.kt
+├── <span class="d">androidMain/kotlin/</span>    <span class="c"># Android-specific `actual` implementations</span>
+│   └── Platform.android.kt
+└── <span class="d">iosMain/kotlin/</span>        <span class="c"># iOS-specific `actual` implementations</span>
+    └── Platform.ios.kt</div>
+          <p>Common code declares what it needs with <code>expect</code>; each platform provides an <code>actual</code>:</p>
+          <div class="compare">
+            <div><div class="cmp-label c-purple">commonMain</div>
+              <script type="text/plain" data-code="kotlin" data-file="Platform.kt">
+                expect fun platformName(): String
+
+                class Greeting {
+                    fun greet() = "Hello from ${platformName()}!"
+                }
+              </script>
+            </div>
+            <div><div class="cmp-label c-green">androidMain / iosMain</div>
+              <script type="text/plain" data-code="kotlin" data-file="Platform.android.kt / Platform.ios.kt">
+                // androidMain
+                actual fun platformName() =
+                    "Android ${android.os.Build.VERSION.SDK_INT}"
+
+                // iosMain
+                actual fun platformName() =
+                    UIDevice.currentDevice.systemName()
+              </script>
+            </div>
+          </div>
+          <p>Start a project with the <a href="https://kmp.jetbrains.com" target="_blank" rel="noopener">Kotlin Multiplatform wizard</a>. Everything you've learned — coroutines, Flow, sealed classes, DSLs — works the same in <code>commonMain</code>.</p>
+        </section>
+
+        <section class="doc-section" id="tooling" data-title="Code quality tooling">
+          <div class="sec-head"><h2><span class="sec-num">15.7</span>Professional habits &amp; tooling</h2></div>
+          <div class="grid grid-2">
+            <div class="glass card"><h4>Formatting &amp; linting</h4><p class="small"><b>ktlint</b> enforces the official code style; <b>detekt</b> finds code smells and complexity. Run both in CI.</p></div>
+            <div class="glass card"><h4>Explicit API mode</h4><p class="small">For libraries: <code>kotlin { explicitApi() }</code> forces visibility modifiers and return types on public declarations.</p></div>
+            <div class="glass card"><h4>Documentation</h4><p class="small">Write KDoc on public APIs and generate docs with <b>Dokka</b>.</p></div>
+            <div class="glass card"><h4>Benchmarks &amp; profiling</h4><p class="small">Measure before optimizing: <b>kotlinx-benchmark</b> (JMH) on the JVM, Jetpack <b>Macrobenchmark</b> on Android.</p></div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="exercises" data-title="Exercises">
+          <div class="sec-head"><h2><span class="sec-num">15.8</span>Exercises</h2></div>
+          <details class="exercise">
+            <summary>Exercise 1 — HTML DSL <span class="badge blue">Medium</span></summary>
+            <div class="ex-body">
+              <p>Build a small HTML DSL supporting <code>html { body { h1("…"); ul { li("…") } } }</code> that renders indented HTML. Use <code>@DslMarker</code>.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution" data-run>
+                @DslMarker annotation class HtmlDsl
+
+                @HtmlDsl
+                abstract class Tag(private val name: String) {
+                    private val children = mutableListOf<Any>()          // Tag or String
+                    protected fun <T : Tag> tag(t: T, init: T.() -> Unit): T { t.init(); children += t; return t }
+                    protected fun text(s: String) { children += s }
+                    fun render(indent: String = ""): String = buildString {
+                        appendLine("$indent<$name>")
+                        children.forEach { c ->
+                            if (c is Tag) append(c.render("$indent  ")) else appendLine("$indent  $c")
+                        }
+                        appendLine("$indent</$name>")
+                    }
+                }
+                class Html : Tag("html") { fun body(init: Body.() -> Unit) = tag(Body(), init) }
+                class Body : Tag("body") {
+                    fun h1(t: String) = tag(H1()) { textOf(t) }
+                    fun ul(init: Ul.() -> Unit) = tag(Ul(), init)
+                }
+                class H1 : Tag("h1") { fun textOf(t: String) = text(t) }
+                class Ul : Tag("ul") { fun li(t: String) = tag(Li()) { textOf(t) } }
+                class Li : Tag("li") { fun textOf(t: String) = text(t) }
+
+                fun html(init: Html.() -> Unit) = Html().apply(init)
+
+                fun main() {
+                    print(html {
+                        body {
+                            h1("Kotlin Academy")
+                            ul { li("Coroutines"); li("Compose") }
+                        }
+                    }.render())
+                }
+              </script>
+              <script type="text/plain" data-output>
+                <html>
+                  <body>
+                    <h1>
+                      Kotlin Academy
+                    </h1>
+                    <ul>
+                      <li>
+                        Coroutines
+                      </li>
+                      <li>
+                        Compose
+                      </li>
+                    </ul>
+                  </body>
+                </html>
+              </script>
+            </div>
+          </details>
+          <details class="exercise">
+            <summary>Exercise 2 — Test-first: a password validator <span class="badge blue">Medium</span></summary>
+            <div class="ex-body">
+              <p>Write the tests <em>first</em> for <code>validate(password): List&lt;Rule&gt;</code> returning the rules that failed (<code>TOO_SHORT</code>, <code>NO_DIGIT</code>, <code>NO_UPPERCASE</code>). Then implement until green.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution">
+                import kotlin.test.*
+
+                enum class Rule { TOO_SHORT, NO_DIGIT, NO_UPPERCASE }
+
+                fun validate(password: String): List<Rule> = buildList {
+                    if (password.length < 8) add(Rule.TOO_SHORT)
+                    if (password.none(Char::isDigit)) add(Rule.NO_DIGIT)
+                    if (password.none(Char::isUpperCase)) add(Rule.NO_UPPERCASE)
+                }
+
+                class ValidatorTest {
+                    @Test fun `strong password passes`() = assertEquals(emptyList(), validate("Kotlin2025"))
+                    @Test fun `reports every failed rule`() =
+                        assertEquals(listOf(Rule.TOO_SHORT, Rule.NO_DIGIT, Rule.NO_UPPERCASE), validate("abc"))
+                    @Test fun `exactly eight chars is long enough`() =
+                        assertFalse(Rule.TOO_SHORT in validate("Abcdefg1"))
+                }
+              </script>
+            </div>
+          </details>
+          <details class="exercise">
+            <summary>Exercise 3 — Test a debounced search with virtual time <span class="badge amber">Challenge</span></summary>
+            <div class="ex-body">
+              <p>First refactor lesson 14's <code>SearchModel</code> to receive its search function through the constructor — <code>class SearchModel(scope: CoroutineScope, search: suspend (String) -&gt; List&lt;String&gt;)</code> — so a test can pass a fake. Then write a <code>runTest</code> test that types three characters quickly, advances virtual time with <code>advanceTimeBy(250)</code>, and asserts that only <b>one</b> search was executed. Hint: pass the test's <code>backgroundScope</code> to the model and count calls in a fake search function.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution">
+                @OptIn(ExperimentalCoroutinesApi::class)
+                @Test
+                fun `debounce collapses fast typing into one search`() = runTest {
+                    var searches = 0
+                    val model = SearchModel(backgroundScope) { q -> searches++; listOf("result for $q") }
+                    backgroundScope.launch { model.results.collect {} }   // keep the StateFlow active
+
+                    model.query.value = "k"
+                    advanceTimeBy(50)
+                    model.query.value = "ko"
+                    advanceTimeBy(50)
+                    model.query.value = "kot"
+                    advanceTimeBy(250)                                    // past the 200 ms debounce
+                    runCurrent()
+
+                    assertEquals(1, searches)
+                    assertEquals(listOf("result for kot"), model.results.value)
+                }
+              </script>
+            </div>
+          </details>
+        </section>
+
+        <section class="doc-section" id="quiz" data-title="Quiz">
+          <div class="sec-head"><h2><span class="sec-num">15.9</span>Quiz</h2></div>
+          <script type="application/json" data-quiz>
+          [
+            {"q": "Which three features make Kotlin DSLs possible?", "options": ["Generics, annotations, reflection", "Lambdas with receivers, extension functions, trailing lambdas", "Coroutines, flows, channels", "Data, enum and sealed classes"], "answer": 1, "explain": "Combine them and you get `html { body { … } }`."},
+            {"q": "What does `@DslMarker` prevent?", "options": ["Compiling DSLs on Android", "Implicitly calling a builder function from an outer receiver inside a nested block", "Reflection", "Using lambdas"], "answer": 1, "explain": "It restricts implicit receivers to the innermost one with the same marker."},
+            {"q": "In `runTest`, what happens when code calls `delay(60_000)`?", "options": ["The test waits a minute", "Virtual time advances instantly", "It throws", "delay is ignored and time doesn't advance"], "answer": 1, "explain": "The test dispatcher skips delays while advancing `currentTime`."},
+            {"q": "Which annotation lets Java call `Logger.create()` instead of `Logger.Companion.create()`?", "options": ["@JvmField", "@JvmOverloads", "@JvmStatic", "@JvmName"], "answer": 2, "explain": "@JvmStatic generates a real static method on the containing class."},
+            {"q": "In Kotlin Multiplatform, where do you put an `actual fun`?", "options": ["commonMain", "A platform source set like androidMain or iosMain", "build.gradle.kts", "A test folder"], "answer": 1, "explain": "commonMain declares `expect`; each platform source set provides the `actual`."},
+            {"q": "MockK's `relaxed = true` means…", "options": ["The mock is slower", "Unstubbed calls return default values instead of throwing", "verify is disabled", "The mock is a spy"], "answer": 1, "explain": "Handy for collaborators you only want to verify, like an analytics tracker."}
+          ]
+          </script>
+        </section>
+
+        <section class="doc-section" id="references" data-title="Further reading">
+          <div class="sec-head"><h2><span class="sec-num">15.10</span>Further reading</h2></div>
+          <ul>
+            <li><a href="https://kotlinlang.org/docs/type-safe-builders.html" target="_blank" rel="noopener">Type-safe builders</a> · <a href="https://kotlinlang.org/docs/annotations.html" target="_blank" rel="noopener">Annotations</a> · <a href="https://kotlinlang.org/docs/reflection.html" target="_blank" rel="noopener">Reflection</a></li>
+            <li><a href="https://kotlinlang.org/docs/whatsnew22.html" target="_blank" rel="noopener">What's new in Kotlin 2.2</a></li>
+            <li><a href="https://kotlinlang.org/docs/java-to-kotlin-interop.html" target="_blank" rel="noopener">Calling Kotlin from Java</a></li>
+            <li><a href="https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-test/" target="_blank" rel="noopener">kotlinx-coroutines-test</a> · <a href="https://mockk.io" target="_blank" rel="noopener">MockK</a> · <a href="https://github.com/cashapp/turbine" target="_blank" rel="noopener">Turbine</a></li>
+            <li><a href="https://kotlinlang.org/docs/multiplatform.html" target="_blank" rel="noopener">Kotlin Multiplatform</a></li>
+          </ul>
+        </section>
+
+        <div id="pager"></div>
+      </div>
+    </main>
+  </div>
+  <div id="site-footer"></div>
+  <script src="assets/js/core.js?v=__BUILD__"></script>
+</body>
+</html>
