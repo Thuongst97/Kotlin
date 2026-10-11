@@ -1,0 +1,570 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Toolkit & Environment Setup — Kotlin Academy</title>
+  <meta name="description" content="Install and configure everything you need for Kotlin and Android: JDK, IntelliJ IDEA, Android Studio, Android SDK, emulator, real device and the Kotlin command-line compiler.">
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <meta name="color-scheme" content="dark light">
+  <link rel="stylesheet" href="assets/css/main.css?v=__BUILD__">
+  <script>try{var t=localStorage.getItem("ka-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body data-page="setup">
+  <div id="site-header"></div>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="content">
+      <div class="content-inner">
+
+        <header class="page-hero">
+          <nav class="crumbs"><a href="index.html">Home</a><span>/</span><span>Getting Started</span><span>/</span><span>Lesson 01</span></nav>
+          <div class="eyebrow">Lesson 01 · Getting Started</div>
+          <h1>Toolkit &amp; Environment Setup</h1>
+          <p class="lead">Before writing a single line of Kotlin, set up a professional workbench. By the end of this lesson you will have a JDK, IntelliJ IDEA, Android Studio, the Android SDK, an emulator and (optionally) a real phone — all wired together and verified.</p>
+          <div class="page-meta"><span>⏱ ~60 min (mostly downloads)</span><span>🎯 Beginner</span><span>💻 Windows · macOS · Linux</span></div>
+          <div class="objectives">
+            <h4>You will be able to</h4>
+            <ul>
+              <li>Explain what each tool (JDK, IDE, SDK, Gradle, emulator) does</li>
+              <li>Install IntelliJ IDEA and Android Studio on your OS</li>
+              <li>Download SDK packages with the SDK Manager</li>
+              <li>Create and boot an Android Virtual Device</li>
+              <li>Run apps on a real phone over USB or Wi-Fi</li>
+              <li>Fix the most common setup errors yourself</li>
+            </ul>
+          </div>
+        </header>
+
+        <section class="doc-section" id="overview" data-title="The toolkit at a glance">
+          <div class="sec-head"><h2><span class="sec-num">1.1</span>The toolkit at a glance</h2></div>
+          <p>Kotlin is a language; to <em>use</em> it you need a few tools that work together. Here is how the pieces fit, from the code you type to the app running on a phone:</p>
+          <div class="flow" aria-label="From source code to running app">
+            <div class="fbox">✍️ IDE<small>IntelliJ / Android Studio</small></div><span class="farrow">→</span>
+            <div class="fbox">🐘 Gradle<small>build automation</small></div><span class="farrow">→</span>
+            <div class="fbox">🧪 Kotlin compiler<small>kotlinc · K2</small></div><span class="farrow">→</span>
+            <div class="fbox">☕ JDK / Android SDK<small>libraries &amp; tools</small></div><span class="farrow">→</span>
+            <div class="fbox">📱 JVM / Android device<small>runs your code</small></div>
+          </div>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>Tool</th><th>What it is</th><th>Needed for</th></tr></thead>
+              <tbody>
+                <tr><td><b>JDK</b> (Java Development Kit)</td><td>The Java runtime (JVM) plus developer tools. Kotlin/JVM code runs on the JVM.</td><td>Lessons 02–15 (console Kotlin). Android Studio ships its own.</td></tr>
+                <tr><td><b>IntelliJ IDEA</b></td><td>JetBrains' IDE — the "home" of Kotlin. The free edition is all you need.</td><td>Pure Kotlin lessons, scripts, backend.</td></tr>
+                <tr><td><b>Android Studio</b></td><td>Google's official Android IDE, built on IntelliJ IDEA. Bundles a JDK (JetBrains Runtime).</td><td>Lessons 16–21 and the final project.</td></tr>
+                <tr><td><b>Android SDK</b></td><td>Platform libraries (<code>android.jar</code>), build tools, <code>adb</code>, emulator images.</td><td>Building &amp; running Android apps.</td></tr>
+                <tr><td><b>Gradle</b></td><td>The build system. Downloaded automatically by the Gradle Wrapper (<code>gradlew</code>) in every project.</td><td>Every real project.</td></tr>
+                <tr><td><b>Emulator / device</b></td><td>Where your Android app runs.</td><td>Android lessons.</td></tr>
+                <tr><td><b>Kotlin Playground</b></td><td>Run Kotlin in the browser at <a href="https://play.kotlinlang.org" target="_blank" rel="noopener">play.kotlinlang.org</a> — also embedded in this site (press <b>▶ Run</b>).</td><td>Quick experiments, zero install.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout tip">
+            <div class="ci">🚀</div>
+            <div><span class="ct">In a hurry?</span>
+              <p>You can do lessons 02–15 entirely in the browser using the <b>▶ Run</b> buttons. Install Android Studio before lesson 16. But installing everything now means you will also learn to use a real IDE, which is a skill in itself.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="requirements" data-title="System requirements">
+          <div class="sec-head"><h2><span class="sec-num">1.2</span>System requirements &amp; virtualization</h2></div>
+          <p>Android development is resource-hungry: the IDE, Gradle daemon and emulator each run in their own process. These are practical numbers, slightly above the official minimums:</p>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>Resource</th><th>Minimum</th><th>Comfortable</th></tr></thead>
+              <tbody>
+                <tr><td>OS</td><td>Windows 10 64-bit · macOS 12+ · 64-bit Linux (glibc 2.31+)</td><td>Windows 11 · latest macOS · Ubuntu 22.04+</td></tr>
+                <tr><td>RAM</td><td>8 GB</td><td><b>16 GB or more</b></td></tr>
+                <tr><td>Free disk</td><td>16 GB</td><td>32 GB+ on an SSD (SDK + emulator images + Gradle caches grow over time)</td></tr>
+                <tr><td>CPU</td><td>64-bit x86_64 with virtualization, or Apple Silicon (ARM)</td><td>Modern 8-core CPU</td></tr>
+                <tr><td>Screen</td><td>1280 × 800</td><td>1920 × 1080 or larger</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <h3>Check that hardware virtualization is enabled</h3>
+          <p>The Android Emulator runs a full virtual phone. Without hardware acceleration it is unusably slow (or refuses to start).</p>
+          <div class="tabs" data-group="os">
+            <div class="tab-list"><button data-tab="win">🪟 Windows</button><button data-tab="mac">🍎 macOS</button><button data-tab="linux">🐧 Linux</button></div>
+            <div class="tab-panel" data-panel="win">
+              <p>Open <b>Task Manager → Performance → CPU</b> and look for <b>Virtualization: Enabled</b>. If it says <em>Disabled</em>, reboot into your BIOS/UEFI and enable <b>Intel VT-x</b> / <b>AMD-V (SVM)</b>.</p>
+              <p>Then enable the <b>Windows Hypervisor Platform</b> (WHPX) feature, which the emulator uses for acceleration:</p>
+              <script type="text/plain" data-code="powershell" data-file="PowerShell (Run as Administrator)">
+                PS> Enable-WindowsOptionalFeature -Online -FeatureName HypervisorPlatform -All
+                # Reboot when asked. Check afterwards:
+                PS> Get-WindowsOptionalFeature -Online -FeatureName HypervisorPlatform
+              </script>
+              <p class="small muted">Alternative: install the <b>Android Emulator hypervisor driver</b> from the SDK Manager (SDK Tools tab) — useful on AMD machines where WHPX is unavailable.</p>
+            </div>
+            <div class="tab-panel" data-panel="mac">
+              <p>Nothing to do. macOS uses Apple's built-in <b>Hypervisor.framework</b>. On Apple Silicon (M1–M4) make sure you later pick <b>arm64-v8a</b> system images — they are fast; x86 images are not supported.</p>
+            </div>
+            <div class="tab-panel" data-panel="linux">
+              <p>The emulator uses <b>KVM</b>. Check support and install it (Ubuntu/Debian shown):</p>
+              <script type="text/plain" data-code="bash" data-file="Terminal">
+                $ egrep -c '(vmx|svm)' /proc/cpuinfo          # > 0 means the CPU supports it
+                $ sudo apt install qemu-kvm cpu-checker
+                $ kvm-ok                                    # "KVM acceleration can be used"
+                $ sudo adduser $USER kvm                    # then log out and back in
+              </script>
+              <p class="small muted">Android Studio also needs a few 32-bit libraries on some distributions; see the official Linux install notes if the emulator fails to start.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="jdk" data-title="Install a JDK">
+          <div class="sec-head"><h2><span class="sec-num">1.3</span>Install a JDK</h2></div>
+          <p>Kotlin/JVM programs compile to <b>JVM bytecode</b>, so you need a Java Development Kit to run them outside Android Studio. Use an <b>LTS</b> (long-term support) version: <b>JDK 21</b> is a safe choice; JDK 17 also works. We recommend the free <b>Eclipse Temurin</b> build from Adoptium.</p>
+          <div class="tabs" data-group="os">
+            <div class="tab-list"><button data-tab="win">🪟 Windows</button><button data-tab="mac">🍎 macOS</button><button data-tab="linux">🐧 Linux</button></div>
+            <div class="tab-panel" data-panel="win">
+              <p>Easiest: use <code>winget</code>, which is built into Windows 10/11.</p>
+              <script type="text/plain" data-code="powershell" data-file="PowerShell">
+                PS> winget install EclipseAdoptium.Temurin.21.JDK
+              </script>
+              <p>Or download the <code>.msi</code> installer from <a href="https://adoptium.net" target="_blank" rel="noopener">adoptium.net</a> and tick <b>“Set JAVA_HOME variable”</b> and <b>“Add to PATH”</b> during installation.</p>
+            </div>
+            <div class="tab-panel" data-panel="mac">
+              <p>With <a href="https://brew.sh" target="_blank" rel="noopener">Homebrew</a>:</p>
+              <script type="text/plain" data-code="bash" data-file="Terminal">
+                $ brew install --cask temurin@21
+              </script>
+              <p>Or download the <code>.pkg</code> from <a href="https://adoptium.net" target="_blank" rel="noopener">adoptium.net</a> (choose <b>aarch64</b> for Apple Silicon, <b>x64</b> for Intel).</p>
+            </div>
+            <div class="tab-panel" data-panel="linux">
+              <p>Use your package manager, or <a href="https://sdkman.io" target="_blank" rel="noopener">SDKMAN!</a> which lets you switch versions easily:</p>
+              <script type="text/plain" data-code="bash" data-file="Terminal">
+                # Ubuntu / Debian
+                $ sudo apt install openjdk-21-jdk
+
+                # …or with SDKMAN! (any distro, also macOS)
+                $ curl -s "https://get.sdkman.io" | bash
+                $ sdk install java 21-tem
+              </script>
+            </div>
+          </div>
+          <p>Verify the installation in a <b>new</b> terminal window:</p>
+          <script type="text/plain" data-code="bash" data-file="Terminal">
+            $ java -version
+          </script>
+          <script type="text/plain" data-output="Expected (version numbers will differ)">
+            openjdk version "21.0.x" …
+            OpenJDK Runtime Environment Temurin-21.0.x …
+          </script>
+          <div class="callout note">
+            <div class="ci">ℹ️</div>
+            <div><span class="ct">What is JAVA_HOME?</span>
+              <p><code>JAVA_HOME</code> is an environment variable that tells tools such as Gradle where the JDK lives. Installers usually set it. If a tool complains <em>“JAVA_HOME is not set”</em>, point it to the JDK folder (the one containing <code>bin/java</code>), e.g. <code>C:\Program Files\Eclipse Adoptium\jdk-21…</code> or <code>/Library/Java/JavaVirtualMachines/temurin-21.jdk/Contents/Home</code>.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="intellij" data-title="Install IntelliJ IDEA">
+          <div class="sec-head"><h2><span class="sec-num">1.4</span>Install IntelliJ IDEA</h2></div>
+          <p>For lessons 02–15 we write plain Kotlin programs with a <code>main</code> function. IntelliJ IDEA, made by JetBrains (the creators of Kotlin), has first-class Kotlin support built in — no plugin required.</p>
+          <ol class="steps">
+            <li><b>Install the JetBrains Toolbox App (recommended)</b>Download it from <a href="https://www.jetbrains.com/toolbox-app/" target="_blank" rel="noopener">jetbrains.com/toolbox-app</a>. Toolbox installs and updates IntelliJ IDEA (and Android Studio, if you like) with one click. Alternatively download IntelliJ IDEA directly from <a href="https://www.jetbrains.com/idea/download/" target="_blank" rel="noopener">jetbrains.com/idea</a> — the free edition covers everything in this course.</li>
+            <li><b>Create a Kotlin project</b><b>File → New → Project</b>, choose <b>Kotlin</b> on the left. Name it <code>kotlin-playground</code>, build system <b>Gradle</b>, Gradle DSL <b>Kotlin</b>, JDK <b>21</b> (IntelliJ can download one for you from this dropdown). Tick <em>Add sample code</em>.</li>
+            <li><b>Run the sample</b>Open <code>src/main/kotlin/Main.kt</code> and click the green ▶ gutter icon next to <code>fun main()</code>. The output appears in the <b>Run</b> tool window at the bottom.</li>
+            <li><b>Add more files</b>Right-click <code>src/main/kotlin → New → Kotlin Class/File → File</code>. Each file may have its own <code>main</code>; run whichever you want from its gutter icon.</li>
+          </ol>
+          <div class="filetree"><span class="d">kotlin-playground/</span>
+├── <span class="d">gradle/</span>                <span class="c"># Gradle wrapper files</span>
+├── <span class="d">src/</span>
+│   ├── <span class="d">main/kotlin/</span>
+│   │   └── Main.kt          <span class="c"># ← your code lives here</span>
+│   └── <span class="d">test/kotlin/</span>        <span class="c"># unit tests (lesson 15)</span>
+├── build.gradle.kts       <span class="c"># build script (Kotlin DSL)</span>
+├── settings.gradle.kts    <span class="c"># project name &amp; modules</span>
+└── gradlew / gradlew.bat  <span class="c"># run Gradle without installing it</span></div>
+        </section>
+
+        <section class="doc-section" id="android-studio" data-title="Install Android Studio">
+          <div class="sec-head"><h2><span class="sec-num">1.5</span>Install Android Studio</h2></div>
+          <p>Download the latest <b>stable</b> release from <a href="https://developer.android.com/studio" target="_blank" rel="noopener">developer.android.com/studio</a>. Avoid Canary/Beta builds while learning — tutorials and error messages match the stable channel.</p>
+          <div class="tabs" data-group="os">
+            <div class="tab-list"><button data-tab="win">🪟 Windows</button><button data-tab="mac">🍎 macOS</button><button data-tab="linux">🐧 Linux</button></div>
+            <div class="tab-panel" data-panel="win">
+              <ol>
+                <li>Run the downloaded <code>android-studio-*-windows.exe</code>.</li>
+                <li>Keep both components ticked: <b>Android Studio</b> and <b>Android Virtual Device</b>.</li>
+                <li>Use the default install folder (<code>C:\Program Files\Android\Android Studio</code>). Avoid paths with non-ASCII characters or spaces for the <b>SDK</b> folder later.</li>
+                <li>Finish, then launch Android Studio from the Start menu.</li>
+              </ol>
+              <p class="small muted">Prefer winget? <code>winget install Google.AndroidStudio</code></p>
+            </div>
+            <div class="tab-panel" data-panel="mac">
+              <ol>
+                <li>Open the downloaded <code>.dmg</code> — pick the <b>Mac with Apple chip</b> build on M-series Macs.</li>
+                <li>Drag <b>Android Studio</b> into <b>Applications</b>.</li>
+                <li>Launch it. If macOS warns that it was downloaded from the internet, click <b>Open</b>.</li>
+              </ol>
+              <p class="small muted">Prefer Homebrew? <code>brew install --cask android-studio</code></p>
+            </div>
+            <div class="tab-panel" data-panel="linux">
+              <script type="text/plain" data-code="bash" data-file="Terminal">
+                $ sudo tar -xzf android-studio-*-linux.tar.gz -C /opt
+                $ /opt/android-studio/bin/studio.sh
+                # Inside Android Studio: Tools → Create Desktop Entry… to get a launcher icon
+              </script>
+              <p class="small muted">On Ubuntu you can also use <code>sudo snap install android-studio --classic</code>.</p>
+            </div>
+          </div>
+          <h3>The Setup Wizard</h3>
+          <ol class="steps">
+            <li><b>Import settings</b>Choose <em>Do not import settings</em> on a fresh install.</li>
+            <li><b>Install type: Standard</b>Standard installs the recommended SDK platform, build tools, platform-tools (<code>adb</code>) and the emulator. Choose <em>Custom</em> only if you want to change the SDK location.</li>
+            <li><b>Pick a theme</b>Darcula or Light — your call.</li>
+            <li><b>Accept the licenses</b>Click each license on the left and choose <b>Accept</b>. The <em>Finish</em> button stays disabled until all are accepted.</li>
+            <li><b>Wait for the downloads</b>This fetches 1–3 GB. When it says <em>Finish</em>, you land on the Welcome screen.</li>
+          </ol>
+          <div class="callout warn">
+            <div class="ci">⚠️</div>
+            <div><span class="ct">Remember your SDK path</span>
+              <p>The wizard shows the <b>Android SDK Location</b>. Defaults: Windows <code>%LOCALAPPDATA%\Android\Sdk</code>, macOS <code>~/Library/Android/sdk</code>, Linux <code>~/Android/Sdk</code>. You will need it to configure <code>ANDROID_HOME</code> below.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="sdk" data-title="The Android SDK">
+          <div class="sec-head"><h2><span class="sec-num">1.6</span>Tour of the Android SDK &amp; SDK Manager</h2></div>
+          <p>Open <b>Tools → SDK Manager</b> (or <b>More Actions → SDK Manager</b> on the Welcome screen). It has two important tabs:</p>
+          <div class="grid grid-2">
+            <div class="glass card"><h4>SDK Platforms</h4><p class="small">One entry per Android version (API level). Each contains <code>android.jar</code> — the APIs you compile against. Install the <b>latest stable API</b>; the final project uses <code>compileSdk = 36</code> (Android 16). Tick <em>Show Package Details</em> to also pick emulator system images.</p></div>
+            <div class="glass card"><h4>SDK Tools</h4><p class="small">Versioned tools shared by all platforms. Make sure these are installed: <b>Android SDK Build-Tools</b>, <b>Android SDK Platform-Tools</b> (<code>adb</code>, <code>fastboot</code>), <b>Android Emulator</b>, <b>Android SDK Command-line Tools (latest)</b>.</p></div>
+          </div>
+          <div class="filetree"><span class="d">Sdk/</span>
+├── <span class="d">build-tools/36.x.x/</span>     <span class="c"># aapt2, d8, apksigner, zipalign</span>
+├── <span class="d">cmdline-tools/latest/</span>   <span class="c"># sdkmanager, avdmanager</span>
+├── <span class="d">emulator/</span>               <span class="c"># the Android Emulator</span>
+├── <span class="d">platform-tools/</span>         <span class="c"># adb, fastboot</span>
+├── <span class="d">platforms/android-36/</span>   <span class="c"># android.jar for API 36</span>
+└── <span class="d">system-images/</span>          <span class="c"># emulator OS images</span></div>
+          <h3>Put <code>adb</code> on your PATH</h3>
+          <p>Not required for Android Studio itself, but very handy: <code>adb</code> lets you install apps, read logs and open a shell on the device from any terminal.</p>
+          <div class="tabs" data-group="os">
+            <div class="tab-list"><button data-tab="win">🪟 Windows</button><button data-tab="mac">🍎 macOS</button><button data-tab="linux">🐧 Linux</button></div>
+            <div class="tab-panel" data-panel="win">
+              <script type="text/plain" data-code="powershell" data-file="PowerShell">
+                PS> [Environment]::SetEnvironmentVariable("ANDROID_HOME", "$env:LOCALAPPDATA\Android\Sdk", "User")
+                PS> $p = [Environment]::GetEnvironmentVariable("Path", "User")
+                PS> [Environment]::SetEnvironmentVariable("Path", "$p;$env:LOCALAPPDATA\Android\Sdk\platform-tools", "User")
+                # Open a NEW terminal, then:
+                PS> adb version
+              </script>
+            </div>
+            <div class="tab-panel" data-panel="mac">
+              <script type="text/plain" data-code="bash" data-file="~/.zshrc">
+                export ANDROID_HOME="$HOME/Library/Android/sdk"
+                export PATH="$PATH:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator"
+              </script>
+              <p>Then run <code>source ~/.zshrc</code> and <code>adb version</code>.</p>
+            </div>
+            <div class="tab-panel" data-panel="linux">
+              <script type="text/plain" data-code="bash" data-file="~/.bashrc">
+                export ANDROID_HOME="$HOME/Android/Sdk"
+                export PATH="$PATH:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator"
+              </script>
+              <p>Then run <code>source ~/.bashrc</code> and <code>adb version</code>.</p>
+            </div>
+          </div>
+          <div class="callout note">
+            <div class="ci">🧠</div>
+            <div><span class="ct">compileSdk vs minSdk vs targetSdk</span>
+              <dl class="kv">
+                <dt>compileSdk</dt><dd>Which <code>android.jar</code> you compile against — the newest APIs you can <em>call</em>.</dd>
+                <dt>minSdk</dt><dd>The oldest Android version that can install your app. Lower = more devices, more compatibility code.</dd>
+                <dt>targetSdk</dt><dd>The version whose <em>behaviour</em> you have tested against. Google Play requires a recent value each year.</dd>
+              </dl>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="emulator" data-title="Create an emulator">
+          <div class="sec-head"><h2><span class="sec-num">1.7</span>Create an Android Virtual Device (emulator)</h2></div>
+          <ol class="steps">
+            <li><b>Open the Device Manager</b><b>View → Tool Windows → Device Manager</b> (or the phone icon in the right toolbar), then click <b>+ → Create Virtual Device</b>.</li>
+            <li><b>Pick hardware</b>Choose a phone profile such as <b>Pixel 8</b> or <b>Medium Phone</b>. Profiles with the Play Store icon include Google Play services.</li>
+            <li><b>Pick a system image</b>Choose the newest stable API with <b>Google APIs</b> or <b>Google Play</b>. ABI: <b>x86_64</b> on Intel/AMD, <b>arm64-v8a</b> on Apple Silicon. Click the download icon next to it.</li>
+            <li><b>Verify configuration</b>Name it (e.g. <em>Pixel 8 API 36</em>). Under <em>Additional settings</em> you can raise RAM or internal storage if your machine has plenty.</li>
+            <li><b>Boot it</b>Press ▶ next to the device. The first boot takes a minute; later boots use a <em>Quick Boot</em> snapshot and take seconds.</li>
+          </ol>
+          <p>You can also manage emulators from the terminal:</p>
+          <script type="text/plain" data-code="bash" data-file="Terminal">
+            $ emulator -list-avds               # list created devices
+            $ emulator -avd Pixel_8_API_36      # boot one
+            $ adb devices                       # should show emulator-5554  device
+          </script>
+          <div class="callout tip">
+            <div class="ci">💡</div>
+            <div><span class="ct">Emulator tips</span>
+              <ul>
+                <li>The <b>⋯ Extended controls</b> panel simulates GPS location, battery level, phone calls, SMS, camera and rotating the device.</li>
+                <li>Drag an <code>.apk</code> file onto the emulator window to install it; drag any file to copy it to <code>Download/</code>.</li>
+                <li>Use <b>Cold Boot</b> (Device Manager → ⋮) if the emulator gets into a weird state; <b>Wipe Data</b> resets it to factory.</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="device" data-title="Use a real device">
+          <div class="sec-head"><h2><span class="sec-num">1.8</span>Run on a real Android device</h2></div>
+          <p>A physical phone is faster than any emulator and shows real-world performance, touch feel and sensors.</p>
+          <h3>Step 1 — Enable Developer options</h3>
+          <ol>
+            <li>Open <b>Settings → About phone</b>.</li>
+            <li>Tap <b>Build number</b> seven times (on some brands it is under <em>Software information</em>). You'll see “You are now a developer!”.</li>
+            <li>Go back to <b>Settings → System → Developer options</b> and turn on <b>USB debugging</b>.</li>
+          </ol>
+          <h3>Step 2 — Connect</h3>
+          <div class="tabs" data-group="conn">
+            <div class="tab-list"><button data-tab="usb">🔌 USB cable</button><button data-tab="wifi">📶 Wi-Fi (Android 11+)</button></div>
+            <div class="tab-panel" data-panel="usb">
+              <ol>
+                <li>Plug the phone in with a <b>data</b> cable (some cheap cables only charge).</li>
+                <li>On the phone, accept the <b>“Allow USB debugging?”</b> dialog and tick <em>Always allow from this computer</em>.</li>
+                <li>Windows only: if the phone does not appear, install the <b>Google USB Driver</b> (SDK Manager → SDK Tools) for Pixels, or your phone maker's USB driver.</li>
+                <li>Linux only: you may need udev rules — install <code>android-sdk-platform-tools-common</code> on Ubuntu/Debian, then add yourself to the <code>plugdev</code> group.</li>
+              </ol>
+            </div>
+            <div class="tab-panel" data-panel="wifi">
+              <ol>
+                <li>Computer and phone must be on the <b>same Wi-Fi network</b>.</li>
+                <li>On the phone: <b>Developer options → Wireless debugging → On</b>.</li>
+                <li>In Android Studio's device dropdown choose <b>Pair Devices Using Wi-Fi</b>, then on the phone tap <b>Pair device with QR code</b> and scan.</li>
+                <li>Or pair from the terminal with a pairing code:</li>
+              </ol>
+              <script type="text/plain" data-code="bash" data-file="Terminal">
+                $ adb pair 192.168.1.42:37115      # ip:port + code shown under "Pair device with pairing code"
+                $ adb connect 192.168.1.42:41063   # ip:port shown on the Wireless debugging screen
+              </script>
+            </div>
+          </div>
+          <h3>Step 3 — Verify</h3>
+          <script type="text/plain" data-code="bash" data-file="Terminal">
+            $ adb devices
+          </script>
+          <script type="text/plain" data-output="Expected">
+            List of devices attached
+            R5CT1234ABC	device
+          </script>
+          <p>If the state says <code>unauthorized</code>, unlock the phone and accept the debugging prompt. If it still fails, use <b>Developer options → Revoke USB debugging authorizations</b> and reconnect.</p>
+        </section>
+
+        <section class="doc-section" id="cli" data-title="Kotlin on the command line">
+          <div class="sec-head"><h2><span class="sec-num">1.9</span>The Kotlin command-line compiler (optional)</h2></div>
+          <p>Useful for quick scripts and to understand what an IDE does behind the scenes.</p>
+          <div class="tabs" data-group="os">
+            <div class="tab-list"><button data-tab="win">🪟 Windows</button><button data-tab="mac">🍎 macOS</button><button data-tab="linux">🐧 Linux</button></div>
+            <div class="tab-panel" data-panel="win">
+              <script type="text/plain" data-code="powershell" data-file="PowerShell">
+                # With Scoop (https://scoop.sh)
+                PS> scoop install kotlin
+                # Or: download kotlin-compiler-*.zip from the Kotlin GitHub releases,
+                # unzip it and add its bin\ folder to PATH.
+              </script>
+            </div>
+            <div class="tab-panel" data-panel="mac">
+              <script type="text/plain" data-code="bash" data-file="Terminal">
+                $ brew install kotlin
+              </script>
+            </div>
+            <div class="tab-panel" data-panel="linux">
+              <script type="text/plain" data-code="bash" data-file="Terminal">
+                $ sdk install kotlin        # with SDKMAN!
+                # or: sudo snap install kotlin --classic
+              </script>
+            </div>
+          </div>
+          <p>Create <code>hello.kt</code>, compile it into a self-contained JAR and run it:</p>
+          <script type="text/plain" data-code="kotlin" data-file="hello.kt">
+            fun main() {
+                println("Hello from the command line!")
+            }
+          </script>
+          <script type="text/plain" data-code="bash" data-file="Terminal">
+            $ kotlinc hello.kt -include-runtime -d hello.jar
+            $ java -jar hello.jar
+            Hello from the command line!
+
+            # Kotlin scripts (.main.kts) run without a separate compile step:
+            $ kotlin script.main.kts
+          </script>
+        </section>
+
+        <section class="doc-section" id="first-app" data-title="Your first Android project">
+          <div class="sec-head"><h2><span class="sec-num">1.10</span>Create and run your first Android project</h2></div>
+          <p>Let's prove the whole toolchain works end to end.</p>
+          <ol class="steps">
+            <li><b>New Project</b>On the Welcome screen click <b>New Project</b> and choose the <b>Empty Activity</b> template (the one with the Compose logo).</li>
+            <li><b>Configure</b>
+              <dl class="kv">
+                <dt>Name</dt><dd><code>HelloAndroid</code></dd>
+                <dt>Package name</dt><dd><code>com.example.helloandroid</code> — the app's unique ID; use a domain you own for real apps.</dd>
+                <dt>Save location</dt><dd>A folder without spaces or special characters.</dd>
+                <dt>Minimum SDK</dt><dd><b>API 26</b> (“Android 8.0”) — the wizard shows what percentage of devices that covers.</dd>
+                <dt>Build configuration language</dt><dd><b>Kotlin DSL (build.gradle.kts)</b> — recommended.</dd>
+              </dl>
+            </li>
+            <li><b>Wait for Gradle sync</b>The status bar shows progress. The first sync downloads Gradle and dependencies and can take several minutes. Subsequent syncs are fast thanks to caches.</li>
+            <li><b>Run</b>Select your emulator or phone in the device dropdown in the toolbar and press the green <b>▶ Run 'app'</b> (<kbd>Shift</kbd>+<kbd>F10</kbd> / <kbd>Ctrl</kbd>+<kbd>R</kbd> on macOS). You should see <em>“Hello Android!”</em>.</li>
+            <li><b>Change something</b>Open <code>MainActivity.kt</code>, change the greeting text and press <b>Apply Code Changes</b> (⚡) or Run again. You just shipped your first change!</li>
+          </ol>
+          <script type="text/plain" data-code="kotlin" data-file="app/src/main/java/com/example/helloandroid/MainActivity.kt" data-numbered>
+            class MainActivity : ComponentActivity() {
+                override fun onCreate(savedInstanceState: Bundle?) {
+                    super.onCreate(savedInstanceState)
+                    enableEdgeToEdge()
+                    setContent {                       // Compose UI starts here
+                        HelloAndroidTheme {
+                            Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                                Greeting(
+                                    name = "Kotlin learner",   //!
+                                    modifier = Modifier.padding(innerPadding)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            @Composable
+            fun Greeting(name: String, modifier: Modifier = Modifier) {
+                Text(text = "Hello $name!", modifier = modifier)
+            }
+          </script>
+          <p>Don't worry about understanding this yet — lesson 16 dissects every file of an Android project and lesson 17 teaches Compose.</p>
+        </section>
+
+        <section class="doc-section" id="productivity" data-title="IDE productivity">
+          <div class="sec-head"><h2><span class="sec-num">1.11</span>IDE productivity: shortcuts &amp; settings</h2></div>
+          <p>IntelliJ IDEA and Android Studio share the same keymap. Learn these ten and you'll be faster than most developers:</p>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>Action</th><th>Windows / Linux</th><th>macOS</th></tr></thead>
+              <tbody>
+                <tr><td>Search everywhere</td><td><kbd>Shift</kbd> <kbd>Shift</kbd></td><td><kbd>⇧</kbd> <kbd>⇧</kbd></td></tr>
+                <tr><td>Find any action / setting</td><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>A</kbd></td><td><kbd>⌘</kbd>+<kbd>⇧</kbd>+<kbd>A</kbd></td></tr>
+                <tr><td>Quick fix / show intentions 💡</td><td><kbd>Alt</kbd>+<kbd>Enter</kbd></td><td><kbd>⌥</kbd>+<kbd>↩</kbd></td></tr>
+                <tr><td>Go to declaration</td><td><kbd>Ctrl</kbd>+<kbd>B</kbd> / <kbd>Ctrl</kbd>+click</td><td><kbd>⌘</kbd>+<kbd>B</kbd> / <kbd>⌘</kbd>+click</td></tr>
+                <tr><td>Rename everywhere</td><td><kbd>Shift</kbd>+<kbd>F6</kbd></td><td><kbd>⇧</kbd>+<kbd>F6</kbd></td></tr>
+                <tr><td>Reformat code</td><td><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>L</kbd></td><td><kbd>⌘</kbd>+<kbd>⌥</kbd>+<kbd>L</kbd></td></tr>
+                <tr><td>Optimize imports</td><td><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>O</kbd></td><td><kbd>⌃</kbd>+<kbd>⌥</kbd>+<kbd>O</kbd></td></tr>
+                <tr><td>Recent files</td><td><kbd>Ctrl</kbd>+<kbd>E</kbd></td><td><kbd>⌘</kbd>+<kbd>E</kbd></td></tr>
+                <tr><td>Comment line</td><td><kbd>Ctrl</kbd>+<kbd>/</kbd></td><td><kbd>⌘</kbd>+<kbd>/</kbd></td></tr>
+                <tr><td>Convert Java file to Kotlin</td><td><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd></td><td><kbd>⌘</kbd>+<kbd>⌥</kbd>+<kbd>⇧</kbd>+<kbd>K</kbd></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <h3>Recommended settings</h3>
+          <ul>
+            <li><b>Settings → Editor → General → Auto Import</b>: tick <em>Add unambiguous imports on the fly</em> and <em>Optimize imports on the fly</em>.</li>
+            <li><b>Settings → Editor → Inlay Hints → Kotlin</b>: enable type hints — they show inferred types, which is a superb learning aid.</li>
+            <li><b>Settings → Tools → Actions on Save</b>: enable <em>Reformat code</em> and <em>Optimize imports</em>.</li>
+            <li><b>Tools → Kotlin → Show Kotlin Bytecode → Decompile</b> lets you see the Java equivalent of any Kotlin file — a great way to understand what the compiler generates.</li>
+          </ul>
+        </section>
+
+        <section class="doc-section" id="troubleshooting" data-title="Troubleshooting">
+          <div class="sec-head"><h2><span class="sec-num">1.12</span>Troubleshooting common setup errors</h2></div>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>Symptom</th><th>Likely cause</th><th>Fix</th></tr></thead>
+              <tbody>
+                <tr><td><em>Gradle sync failed: Could not resolve …</em></td><td>No internet, proxy or firewall</td><td>Check <b>Settings → HTTP Proxy</b>; retry with <b>File → Sync Project with Gradle Files</b>. Behind a company proxy, also configure <code>~/.gradle/gradle.properties</code>.</td></tr>
+                <tr><td><em>SDK location not found</em></td><td><code>local.properties</code> missing</td><td>Open the project from Android Studio (it writes the file), or add <code>sdk.dir=/path/to/Sdk</code>.</td></tr>
+                <tr><td><em>Unsupported class file major version 65</em> / JDK mismatch</td><td>Gradle running on a different JDK than expected</td><td><b>Settings → Build Tools → Gradle → Gradle JDK</b>: pick the bundled <em>jbr-21</em>.</td></tr>
+                <tr><td>Emulator: <em>x86_64 emulation requires hardware acceleration</em></td><td>Virtualization disabled</td><td>Enable VT-x/AMD-V in BIOS and WHPX / KVM (section 1.2).</td></tr>
+                <tr><td>Emulator is extremely slow or black</td><td>Low RAM, software graphics</td><td>Close other apps; in AVD settings set <em>Graphics: Hardware</em>; use a smaller screen device.</td></tr>
+                <tr><td><code>adb devices</code> shows nothing</td><td>Charge-only cable, missing driver, USB mode</td><td>Try another cable/port; install the OEM driver; set USB mode to <em>File transfer</em>.</td></tr>
+                <tr><td><em>INSTALL_FAILED_UPDATE_INCOMPATIBLE</em></td><td>An app with the same ID but different signature is installed</td><td><code>adb uninstall com.example.app</code>, then run again.</td></tr>
+                <tr><td>Build runs out of memory</td><td>Gradle heap too small</td><td>Add <code>org.gradle.jvmargs=-Xmx4g</code> to <code>gradle.properties</code>.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout tip">
+            <div class="ci">🩺</div>
+            <div><span class="ct">The universal fix list</span>
+              <p>When something is weird and you don't know why, try in this order: <b>1.</b> Sync Project with Gradle Files → <b>2.</b> Build → Clean Project → <b>3.</b> File → Invalidate Caches → Invalidate and Restart → <b>4.</b> delete the project's <code>.gradle/</code> and <code>build/</code> folders → <b>5.</b> read the <em>full</em> error in the Build window (click the top-most red line).</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="exercises" data-title="Exercises">
+          <div class="sec-head"><h2><span class="sec-num">1.13</span>Exercises</h2></div>
+          <details class="exercise">
+            <summary>Exercise 1 — Environment checklist <span class="badge green">Easy</span></summary>
+            <div class="ex-body">
+              <p>Run each command in a new terminal and write down the version it prints: <code>java -version</code>, <code>adb version</code>, <code>kotlinc -version</code> (if you installed it). Then in Android Studio open <b>Help → About</b> and note the IDE version.</p>
+              <p class="muted small">There's no single right answer — the goal is to confirm every tool is on your PATH. If a command is “not recognized”, revisit the PATH steps above and open a <em>new</em> terminal.</p>
+            </div>
+          </details>
+          <details class="exercise">
+            <summary>Exercise 2 — Two devices at once <span class="badge blue">Medium</span></summary>
+            <div class="ex-body">
+              <p>Create a second AVD with a <b>tablet</b> profile and a <em>different</em> API level. Boot both, then run <em>HelloAndroid</em> on each from the device dropdown. Use <code>adb -s &lt;serial&gt; shell getprop ro.build.version.release</code> to print each device's Android version.</p>
+              <script type="text/plain" data-code="bash" data-file="Solution">
+                $ adb devices
+                emulator-5554	device
+                emulator-5556	device
+                $ adb -s emulator-5554 shell getprop ro.build.version.release
+                16
+                $ adb -s emulator-5556 shell getprop ro.build.version.release
+                14
+              </script>
+            </div>
+          </details>
+          <details class="exercise">
+            <summary>Exercise 3 — Read the build output <span class="badge amber">Challenge</span></summary>
+            <div class="ex-body">
+              <p>In <em>HelloAndroid</em>, open the <b>Terminal</b> tool window and build a debug APK with the Gradle wrapper. Find the generated APK file and install it manually with <code>adb</code>.</p>
+              <script type="text/plain" data-code="bash" data-file="Solution">
+                $ ./gradlew assembleDebug          # Windows: gradlew.bat assembleDebug
+                BUILD SUCCESSFUL in 41s
+                $ ls app/build/outputs/apk/debug/
+                app-debug.apk
+                $ adb install -r app/build/outputs/apk/debug/app-debug.apk
+                Success
+              </script>
+              <p class="small muted"><code>-r</code> reinstalls while keeping the app's data. This is exactly what the ▶ button does for you.</p>
+            </div>
+          </details>
+        </section>
+
+        <section class="doc-section" id="quiz" data-title="Quiz">
+          <div class="sec-head"><h2><span class="sec-num">1.14</span>Quiz</h2></div>
+          <script type="application/json" data-quiz>
+          [
+            {"q": "Which statement about Android Studio and the JDK is true?", "options": ["You must install a JDK before Android Studio will start", "Android Studio bundles a JDK (JetBrains Runtime) that Gradle can use", "Android apps run on the desktop JDK", "Kotlin does not need the JVM at all on Android"], "answer": 1, "explain": "Android Studio ships the JetBrains Runtime; select it as the Gradle JDK. A separate JDK is only needed for command-line Kotlin and IntelliJ projects (IntelliJ can download one too)."},
+            {"q": "What does `minSdk` control?", "options": ["Which APIs you compile against", "The oldest Android version that can install the app", "The Gradle version", "The emulator's RAM"], "answer": 1, "explain": "`compileSdk` controls which APIs you can call; `minSdk` decides the oldest supported Android version; `targetSdk` declares the behaviour you've tested against."},
+            {"q": "Your emulator refuses to start with a hardware-acceleration error on Windows. What should you check first?", "options": ["Reinstall Android Studio", "That virtualization is enabled in BIOS and Windows Hypervisor Platform is on", "Increase the Gradle heap", "Switch to an arm64 image"], "answer": 1, "explain": "The emulator requires VT-x/AMD-V plus a hypervisor (WHPX or the Android Emulator hypervisor driver) on Windows."},
+            {"q": "`adb devices` lists your phone as `unauthorized`. Why?", "options": ["USB debugging is off", "You haven't accepted the RSA key prompt on the phone", "The cable is charge-only", "ANDROID_HOME is wrong"], "answer": 1, "explain": "The device is visible (so cable and debugging are fine) but you haven't approved this computer. Unlock the phone and tap Allow."},
+            {"q": "Why does every project contain `gradlew` (the Gradle Wrapper)?", "options": ["It is the Kotlin compiler", "It downloads and runs the exact Gradle version the project expects, so you don't install Gradle globally", "It replaces adb", "It only exists for Windows"], "answer": 1, "explain": "The wrapper pins a Gradle version in `gradle/wrapper/gradle-wrapper.properties`, giving reproducible builds on every machine and CI."}
+          ]
+          </script>
+        </section>
+
+        <section class="doc-section" id="references" data-title="Further reading">
+          <div class="sec-head"><h2><span class="sec-num">1.15</span>Further reading</h2></div>
+          <ul>
+            <li><a href="https://developer.android.com/studio/install" target="_blank" rel="noopener">Install Android Studio (official)</a></li>
+            <li><a href="https://developer.android.com/studio/run/managing-avds" target="_blank" rel="noopener">Create and manage virtual devices</a></li>
+            <li><a href="https://developer.android.com/studio/run/emulator-acceleration" target="_blank" rel="noopener">Configure hardware acceleration for the emulator</a></li>
+            <li><a href="https://developer.android.com/studio/run/device" target="_blank" rel="noopener">Run apps on a hardware device</a></li>
+            <li><a href="https://kotlinlang.org/docs/command-line.html" target="_blank" rel="noopener">Kotlin command-line compiler</a></li>
+            <li><a href="https://www.jetbrains.com/help/idea/mastering-keyboard-shortcuts.html" target="_blank" rel="noopener">Mastering IntelliJ IDEA keyboard shortcuts</a></li>
+          </ul>
+        </section>
+
+        <div id="pager"></div>
+      </div>
+    </main>
+  </div>
+  <div id="site-footer"></div>
+  <script src="assets/js/core.js?v=__BUILD__"></script>
+</body>
+</html>

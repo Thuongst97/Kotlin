@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hello, Kotlin! — Kotlin Academy</title>
+  <meta name="description" content="Write and run your first Kotlin program, understand how Kotlin is compiled for the JVM and Android, and learn four ways to run Kotlin code.">
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <meta name="color-scheme" content="dark light">
+  <link rel="stylesheet" href="assets/css/main.css?v=__BUILD__">
+  <script>try{var t=localStorage.getItem("ka-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body data-page="hello">
+  <div id="site-header"></div>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="content">
+      <div class="content-inner">
+
+        <header class="page-hero">
+          <nav class="crumbs"><a href="index.html">Home</a><span>/</span><span>Getting Started</span><span>/</span><span>Lesson 02</span></nav>
+          <div class="eyebrow">Lesson 02 · Getting Started</div>
+          <h1>Hello, Kotlin!</h1>
+          <p class="lead">Write your first program, take it apart line by line, and see what really happens between pressing ▶ and seeing text on the screen — on the JVM and on Android.</p>
+          <div class="page-meta"><span>⏱ 30 min</span><span>🎯 Beginner</span><span>🧩 Prerequisite: lesson 01 (or just a browser)</span></div>
+          <div class="objectives">
+            <h4>You will be able to</h4>
+            <ul>
+              <li>Write and run a Kotlin program with <code>main</code></li>
+              <li>Use <code>println</code>, <code>print</code> and comments</li>
+              <li>Read input with <code>readln()</code></li>
+              <li>Explain how Kotlin compiles for JVM and Android</li>
+              <li>Read and fix basic compiler errors</li>
+              <li>Say why Android chose Kotlin</li>
+            </ul>
+          </div>
+        </header>
+
+        <section class="doc-section" id="first-program" data-title="Your first program">
+          <div class="sec-head"><h2><span class="sec-num">2.1</span>Your first program</h2></div>
+          <p>Every Kotlin application starts at a function called <code>main</code>. Press <b>▶ Run</b> to execute it right here in the browser — then try changing the text and running it again.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Hello.kt" data-run>
+            fun main() {
+                println("Hello, Kotlin!")
+            }
+          </script>
+          <script type="text/plain" data-output>
+            Hello, Kotlin!
+          </script>
+          <p>Three lines, and every one of them matters:</p>
+          <dl class="kv">
+            <dt><code>fun</code></dt><dd>The keyword that declares a <b>function</b> — a named block of code.</dd>
+            <dt><code>main()</code></dt><dd>The name of the function. <code>main</code> is special: it is the <b>entry point</b> the runtime calls first. The empty <code>()</code> means it takes no parameters.</dd>
+            <dt><code>{ … }</code></dt><dd>Curly braces delimit the function's <b>body</b>.</dd>
+            <dt><code>println("…")</code></dt><dd>Calls the standard-library function that prints text followed by a new line. Text in double quotes is a <b>String</b>.</dd>
+          </dl>
+          <div class="callout java">
+            <div class="ci">☕</div>
+            <div><span class="ct">Coming from Java</span>
+              <p>No class, no <code>public static void</code>, no <code>String[] args</code>, no <code>System.out</code>, no semicolons. Kotlin allows <b>top-level functions</b> — functions that live directly in a file. The compiler wraps them in a class called <code>HelloKt</code> for the JVM behind the scenes.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="anatomy" data-title="Statements, printing & comments">
+          <div class="sec-head"><h2><span class="sec-num">2.2</span>Statements, printing &amp; comments</h2></div>
+          <p>A program is a list of <b>statements</b> executed top to bottom. Each statement normally sits on its own line; semicolons are optional (use one only to put two statements on a single line).</p>
+          <script type="text/plain" data-code="kotlin" data-file="Printing.kt" data-run>
+            /*
+             * A block comment can span several lines.
+             * Unlike Java, Kotlin block comments can be nested.
+             */
+            fun main() {
+                // A line comment: the compiler ignores everything after //
+                print("Kotlin ")         // print: no line break
+                print("is ")
+                println("fun.")          // println: adds a line break
+                println()                // an empty line
+                println(40 + 2)          // println accepts any value, not just text
+                println("2 + 2 = ${2 + 2}") // ${…} inserts an expression into a string
+            }
+          </script>
+          <script type="text/plain" data-output>
+            Kotlin is fun.
+
+            42
+            2 + 2 = 4
+          </script>
+          <h3>Documentation comments (KDoc)</h3>
+          <p>Comments starting with <code>/**</code> are <b>KDoc</b>. IDEs show them when you hover over the function, and tools like <a href="https://kotlinlang.org/docs/dokka-introduction.html" target="_blank" rel="noopener">Dokka</a> turn them into HTML docs. Use Markdown inside and <code>[name]</code> to link to parameters or other symbols.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Greeter.kt">
+            /**
+             * Builds a friendly greeting.
+             *
+             * @param name the person to greet; must not be blank.
+             * @return a greeting such as `"Hello, Ada!"`.
+             */
+            fun greet(name: String): String = "Hello, $name!"
+          </script>
+        </section>
+
+        <section class="doc-section" id="args" data-title="main with arguments">
+          <div class="sec-head"><h2><span class="sec-num">2.3</span><code>main</code> with command-line arguments</h2></div>
+          <p><code>main</code> can optionally receive the command-line arguments as an array of strings:</p>
+          <script type="text/plain" data-code="kotlin" data-file="Args.kt">
+            fun main(args: Array<String>) {
+                println("You passed ${args.size} argument(s)")
+                for (arg in args) {
+                    println("- $arg")
+                }
+            }
+          </script>
+          <script type="text/plain" data-code="bash" data-file="Terminal">
+            $ kotlinc Args.kt -include-runtime -d args.jar
+            $ java -jar args.jar red green
+            You passed 2 argument(s)
+            - red
+            - green
+          </script>
+          <p class="small muted">In IntelliJ, set arguments via <b>Run → Edit Configurations → Program arguments</b>.</p>
+        </section>
+
+        <section class="doc-section" id="input" data-title="Reading input">
+          <div class="sec-head"><h2><span class="sec-num">2.4</span>Reading user input</h2></div>
+          <p>Use <code>readln()</code> to read one line from standard input. It returns a <code>String</code>; convert it with functions like <code>toInt()</code>.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Age.kt">
+            fun main() {
+                print("What's your name? ")
+                val name = readln()
+                print("How old are you? ")
+                val age = readln().toInt()
+                println("Hi $name! Next year you'll be ${age + 1}.")
+            }
+          </script>
+          <script type="text/plain" data-output="Sample session (input in bold in your terminal)">
+            What's your name? Ada
+            How old are you? 36
+            Hi Ada! Next year you'll be 37.
+          </script>
+          <div class="callout warn">
+            <div class="ci">⚠️</div>
+            <div><span class="ct">What if the user types “abc”?</span>
+              <p><code>"abc".toInt()</code> throws a <code>NumberFormatException</code> and the program crashes. In lesson 06 you'll learn the safe version, <code>toIntOrNull()</code>, which returns <code>null</code> instead. Also note: the browser Playground has no keyboard input, so run input examples in IntelliJ or the terminal.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="compilation" data-title="How Kotlin runs">
+          <div class="sec-head"><h2><span class="sec-num">2.5</span>What happens when you press ▶</h2></div>
+          <p>Kotlin is a <b>compiled, statically typed</b> language. The compiler checks your entire program for type errors <em>before</em> it runs, then translates it for a target platform:</p>
+          <figure class="diagram">
+            <svg viewBox="0 0 760 250" width="760" role="img" aria-label="Kotlin compilation pipeline to JVM and Android">
+              <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#a98bff"/></marker></defs>
+              <g font-family="Inter, sans-serif" font-size="13" text-anchor="middle">
+                <rect x="10" y="95" width="120" height="56" rx="10" fill="rgba(169,139,255,.15)" stroke="#a98bff"/>
+                <text x="70" y="119" fill="currentColor" font-weight="700">Hello.kt</text><text x="70" y="138" fill="#9a98a8" font-size="11">source code</text>
+                <rect x="170" y="95" width="140" height="56" rx="10" fill="rgba(255,138,76,.13)" stroke="#ff8a4c"/>
+                <text x="240" y="119" fill="currentColor" font-weight="700">Kotlin compiler</text><text x="240" y="138" fill="#9a98a8" font-size="11">K2: parse · check types</text>
+                <rect x="350" y="30" width="150" height="56" rx="10" fill="rgba(108,184,255,.13)" stroke="#6cb8ff"/>
+                <text x="425" y="54" fill="currentColor" font-weight="700">HelloKt.class</text><text x="425" y="73" fill="#9a98a8" font-size="11">JVM bytecode</text>
+                <rect x="560" y="30" width="190" height="56" rx="10" fill="rgba(108,184,255,.13)" stroke="#6cb8ff"/>
+                <text x="655" y="54" fill="currentColor" font-weight="700">JVM (desktop/server)</text><text x="655" y="73" fill="#9a98a8" font-size="11">java -jar · IntelliJ ▶</text>
+                <rect x="350" y="160" width="150" height="56" rx="10" fill="rgba(61,220,132,.13)" stroke="#3ddc84"/>
+                <text x="425" y="184" fill="currentColor" font-weight="700">D8 → classes.dex</text><text x="425" y="203" fill="#9a98a8" font-size="11">Dalvik bytecode, in APK</text>
+                <rect x="560" y="160" width="190" height="56" rx="10" fill="rgba(61,220,132,.13)" stroke="#3ddc84"/>
+                <text x="655" y="184" fill="currentColor" font-weight="700">ART on Android</text><text x="655" y="203" fill="#9a98a8" font-size="11">JIT + AOT compiled</text>
+                <path d="M130 123H166" stroke="#a98bff" stroke-width="2" marker-end="url(#ar)"/>
+                <path d="M310 115L346 64" stroke="#a98bff" stroke-width="2" marker-end="url(#ar)"/>
+                <path d="M500 58H556" stroke="#a98bff" stroke-width="2" marker-end="url(#ar)"/>
+                <path d="M425 86V156" stroke="#a98bff" stroke-width="2" stroke-dasharray="4 4" marker-end="url(#ar)"/>
+                <path d="M500 188H556" stroke="#a98bff" stroke-width="2" marker-end="url(#ar)"/>
+                <text x="465" y="125" fill="#9a98a8" font-size="11">Android build</text>
+              </g>
+            </svg>
+            <figcaption>Kotlin/JVM: source → bytecode → JVM. On Android, the bytecode is further converted to DEX and run by the Android Runtime (ART).</figcaption>
+          </figure>
+          <p>Kotlin also targets other platforms with the <em>same language</em>:</p>
+          <div class="grid grid-4">
+            <div class="glass card"><h4>Kotlin/JVM</h4><p class="small">Android, servers (Ktor, Spring), desktop. 100% interoperable with Java.</p></div>
+            <div class="glass card"><h4>Kotlin/Native</h4><p class="small">Native binaries for iOS, macOS, Linux, Windows — no JVM.</p></div>
+            <div class="glass card"><h4>Kotlin/JS</h4><p class="small">Compiles to JavaScript for browsers and Node.js.</p></div>
+            <div class="glass card"><h4>Kotlin/Wasm</h4><p class="small">WebAssembly, used by Compose Multiplatform for the web.</p></div>
+          </div>
+          <div class="callout note">
+            <div class="ci">🔍</div>
+            <div><span class="ct">See it yourself</span>
+              <p>In IntelliJ: <b>Tools → Kotlin → Show Kotlin Bytecode</b>, then click <b>Decompile</b>. You'll see that <code>fun main()</code> became <code>public static final void main()</code> inside <code>public final class HelloKt</code>.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="ways" data-title="Four ways to run Kotlin">
+          <div class="sec-head"><h2><span class="sec-num">2.6</span>Four ways to run Kotlin</h2></div>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>Way</th><th>Best for</th><th>How</th></tr></thead>
+              <tbody>
+                <tr><td>🌐 Kotlin Playground</td><td>Quick experiments, sharing snippets</td><td>Press <b>▶ Run</b> on this site or visit <a href="https://play.kotlinlang.org" target="_blank" rel="noopener">play.kotlinlang.org</a></td></tr>
+                <tr><td>🧠 IntelliJ IDEA</td><td>Lessons 02–15, real projects</td><td>Gutter ▶ next to <code>main</code>, or <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F10</kbd> / <kbd>⌃</kbd>+<kbd>⇧</kbd>+<kbd>R</kbd></td></tr>
+                <tr><td>⌨️ Command line</td><td>Understanding the toolchain, CI</td><td><code>kotlinc file.kt -include-runtime -d app.jar &amp;&amp; java -jar app.jar</code></td></tr>
+                <tr><td>📜 Scripts (<code>.main.kts</code>)</td><td>Automation, replacing bash/Python scripts</td><td><code>kotlin tool.main.kts</code> — top-level statements run directly</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <script type="text/plain" data-code="kotlin" data-file="count-files.main.kts">
+            // A Kotlin script: no main() needed, statements run top to bottom.
+            import java.io.File
+
+            val dir = File(args.firstOrNull() ?: ".")
+            val files = dir.listFiles().orEmpty()
+            println("${dir.absolutePath} contains ${files.size} entries")
+            files.sortedBy { it.name }.forEach { println("  ${it.name}") }
+          </script>
+        </section>
+
+        <section class="doc-section" id="errors" data-title="Reading compiler errors">
+          <div class="sec-head"><h2><span class="sec-num">2.7</span>Reading compiler errors</h2></div>
+          <p>Errors are not failures — they are the compiler helping you. Each message tells you <b>where</b> (file:line:column) and <b>what</b>. Here are the three you'll see most as a beginner:</p>
+          <script type="text/plain" data-code="kotlin" data-file="Broken.kt">
+            fun main() {
+                printn("Hi")            // typo
+                val year: Int = "2025"  // wrong type
+                println(score)          // never declared
+            }
+          </script>
+          <script type="text/plain" data-output="Compiler output">
+            Broken.kt:2:5: error: unresolved reference 'printn'.
+            Broken.kt:3:21: error: initializer type mismatch: expected 'Int', actual 'String'.
+            Broken.kt:4:13: error: unresolved reference 'score'.
+          </script>
+          <ul>
+            <li><b>Unresolved reference</b> — a name the compiler doesn't know: a typo, a missing import, or a variable declared later / in another scope.</li>
+            <li><b>Type mismatch</b> — you gave a value of one type where another was expected. <code>"2025"</code> is a <code>String</code>; <code>2025</code> is an <code>Int</code>.</li>
+            <li>Fix errors <b>from the top down</b>: one mistake often causes several follow-up errors.</li>
+          </ul>
+          <div class="callout tip">
+            <div class="ci">💡</div>
+            <div><span class="ct">Let the IDE fix it</span>
+              <p>Put the caret on red-underlined code and press <kbd>Alt</kbd>+<kbd>Enter</kbd> (<kbd>⌥</kbd>+<kbd>↩</kbd>). For unresolved references the IDE offers to import, create or rename the symbol.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="why-kotlin" data-title="Why Kotlin?">
+          <div class="sec-head"><h2><span class="sec-num">2.8</span>Why Kotlin?</h2></div>
+          <p>Kotlin was created by JetBrains (first stable release 2016). In 2019 Google announced Android development would be <b>Kotlin-first</b>: new Jetpack libraries, documentation and samples are written for Kotlin, and Jetpack Compose is Kotlin-only.</p>
+          <div class="grid grid-2">
+            <div class="glass card"><h4 class="c-purple">Concise</h4><p class="small">Data classes, type inference, lambdas and smart casts remove boilerplate — typically far fewer lines than equivalent Java.</p></div>
+            <div class="glass card"><h4 class="c-green">Safe</h4><p class="small">Null safety is built into the type system, eliminating most <code>NullPointerException</code>s at compile time.</p></div>
+            <div class="glass card"><h4 class="c-blue">Interoperable</h4><p class="small">Call any Java library from Kotlin and vice versa. Migrate a codebase one file at a time.</p></div>
+            <div class="glass card"><h4 class="c-orange">Modern concurrency</h4><p class="small">Coroutines make asynchronous code look sequential — no callback hell.</p></div>
+          </div>
+          <p class="mt">A taste of the difference — the same model class in Java and Kotlin:</p>
+          <div class="compare">
+            <div><div class="cmp-label c-orange">Java</div>
+              <script type="text/plain" data-code="java" data-file="User.java">
+                public final class User {
+                    private final String name;
+                    private final int age;
+
+                    public User(String name, int age) {
+                        this.name = name;
+                        this.age = age;
+                    }
+                    public String getName() { return name; }
+                    public int getAge() { return age; }
+
+                    @Override public boolean equals(Object o) { /* 8 lines… */ }
+                    @Override public int hashCode() { /* … */ }
+                    @Override public String toString() { /* … */ }
+                }
+              </script>
+            </div>
+            <div><div class="cmp-label c-purple">Kotlin</div>
+              <script type="text/plain" data-code="kotlin" data-file="User.kt">
+                data class User(val name: String, val age: Int)
+
+                // equals(), hashCode(), toString(), copy()
+                // and getters are all generated for you.
+              </script>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="exercises" data-title="Exercises">
+          <div class="sec-head"><h2><span class="sec-num">2.9</span>Exercises</h2></div>
+          <details class="exercise">
+            <summary>Exercise 1 — Business card <span class="badge green">Easy</span></summary>
+            <div class="ex-body">
+              <p>Print a three-line business card with your name, your role and a favourite programming quote, surrounded by a border of <code>*</code> characters.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution" data-run>
+                fun main() {
+                    println("******************************")
+                    println("* Ada Lovelace               *")
+                    println("* Kotlin Developer           *")
+                    println("* \"Talk is cheap.\"           *")
+                    println("******************************")
+                }
+              </script>
+              <p class="small muted">Note <code>\"</code>: a backslash <em>escapes</em> a double quote inside a string.</p>
+            </div>
+          </details>
+          <details class="exercise">
+            <summary>Exercise 2 — Fix the program <span class="badge blue">Medium</span></summary>
+            <div class="ex-body">
+              <p>This program has three errors. Find and fix them without running it first, then verify.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Task">
+                fun main {
+                    println("Sum: " + 1 + 2)
+                    Println("Done")
+                    val total: Int = "3"
+                }
+              </script>
+              <script type="text/plain" data-code="kotlin" data-file="Solution" data-run>
+                fun main() {                      // 1. functions need parentheses
+                    println("Sum: " + (1 + 2))    // bonus: without (), this printed "Sum: 12"
+                    println("Done")               // 2. Kotlin is case-sensitive
+                    val total: Int = 3            // 3. an Int, not a String
+                    println(total)
+                }
+              </script>
+              <script type="text/plain" data-output>
+                Sum: 3
+                Done
+                3
+              </script>
+            </div>
+          </details>
+          <details class="exercise">
+            <summary>Exercise 3 — Interactive calculator <span class="badge amber">Challenge</span></summary>
+            <div class="ex-body">
+              <p>In IntelliJ (not the Playground), ask the user for two whole numbers and print their sum, difference, product and integer quotient.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution">
+                fun main() {
+                    print("First number: ")
+                    val a = readln().toInt()
+                    print("Second number: ")
+                    val b = readln().toInt()
+                    println("$a + $b = ${a + b}")
+                    println("$a - $b = ${a - b}")
+                    println("$a * $b = ${a * b}")
+                    println("$a / $b = ${a / b}")   // crashes if b == 0 — we'll handle that later
+                }
+              </script>
+            </div>
+          </details>
+        </section>
+
+        <section class="doc-section" id="quiz" data-title="Quiz">
+          <div class="sec-head"><h2><span class="sec-num">2.10</span>Quiz</h2></div>
+          <script type="application/json" data-quiz>
+          [
+            {"q": "What is the entry point of a Kotlin/JVM application?", "options": ["The first class in the file", "A top-level function named `main`", "A function annotated with `@Start`", "Whatever function is declared first"], "answer": 1, "explain": "The runtime looks for `main` — either `fun main()` or `fun main(args: Array<String>)`."},
+            {"q": "What does this print?", "code": "fun main() {\n    print(\"A\")\n    println(\"B\")\n    print(\"C\")\n}", "options": ["A, B and C on three lines", "`AB` then `C` on the next line", "`ABC`", "`A` then `BC`"], "answer": 1, "explain": "`print` does not add a newline; `println` does. So \"A\" and \"B\" share a line, then \"C\" starts the next line."},
+            {"q": "On Android, what finally executes your Kotlin code?", "options": ["The desktop JVM", "A Kotlin interpreter", "The Android Runtime (ART), after the bytecode is converted to DEX", "The browser"], "answer": 2, "explain": "Kotlin compiles to JVM bytecode, D8 converts it to DEX, and ART runs it (with JIT and ahead-of-time compilation)."},
+            {"q": "Which statement about semicolons in Kotlin is correct?", "options": ["They are mandatory at the end of each statement", "They are forbidden", "They are optional; needed only to separate statements on the same line", "They end a function"], "answer": 2, "explain": "Line breaks end statements. A `;` is only needed for `a(); b()` on one line."},
+            {"q": "`readln().toInt()` receives the input `twelve`. What happens?", "options": ["Returns 12", "Returns 0", "Returns null", "Throws NumberFormatException"], "answer": 3, "explain": "`toInt()` throws for invalid numbers. `toIntOrNull()` returns null instead — you'll use it in the null-safety lesson."}
+          ]
+          </script>
+        </section>
+
+        <section class="doc-section" id="references" data-title="Further reading">
+          <div class="sec-head"><h2><span class="sec-num">2.11</span>Further reading</h2></div>
+          <ul>
+            <li><a href="https://kotlinlang.org/docs/basic-syntax.html" target="_blank" rel="noopener">Kotlin docs — Basic syntax</a></li>
+            <li><a href="https://kotlinlang.org/docs/kotlin-tour-hello-world.html" target="_blank" rel="noopener">Kotlin tour — Hello world</a></li>
+            <li><a href="https://kotlinlang.org/docs/custom-script-deps-tutorial.html" target="_blank" rel="noopener">Kotlin scripting</a></li>
+            <li><a href="https://developer.android.com/kotlin/first" target="_blank" rel="noopener">Android's Kotlin-first approach</a></li>
+          </ul>
+        </section>
+
+        <div id="pager"></div>
+      </div>
+    </main>
+  </div>
+  <div id="site-footer"></div>
+  <script src="assets/js/core.js?v=__BUILD__"></script>
+</body>
+</html>

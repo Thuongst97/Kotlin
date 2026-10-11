@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kotlin Academy — Learn Kotlin from Zero to Master</title>
+  <meta name="description" content="A free, hands-on course that takes you from installing Android Studio to mastering Kotlin coroutines, Jetpack Compose and app architecture — ending with a complete Android app.">
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <meta name="color-scheme" content="dark light">
+  <link rel="stylesheet" href="assets/css/main.css?v=__BUILD__">
+  <script>try{var t=localStorage.getItem("ka-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body data-page="home" class="landing">
+  <div id="site-header"></div>
+
+  <main>
+    <!-- ======================= HERO ======================= -->
+    <section class="hero">
+      <div class="hero-inner">
+        <div>
+          <div class="eyebrow">Free course · Kotlin 2.x · Android · Jetpack Compose</div>
+          <h1>Learn <span class="grad">Kotlin</span> from scratch to master — and ship a real Android app.</h1>
+          <p class="lead">A step-by-step path that starts with installing your tools and ends with a production-style Android app. Every lesson has runnable examples, exercises with solutions and a quiz.</p>
+          <div class="hero-cta">
+            <a class="btn primary" id="continue-btn" href="setup.html">Start with lesson 01 →</a>
+            <a class="btn" href="final-project.html">🏁 See the final project</a>
+          </div>
+          <div class="hero-stats">
+            <div><b>21</b><span>lessons</span></div>
+            <div><b>200+</b><span>code examples</span></div>
+            <div><b>60+</b><span>exercises &amp; quiz questions</span></div>
+            <div><b>1</b><span>complete Android app</span></div>
+          </div>
+        </div>
+        <div class="hero-code">
+          <script type="text/plain" data-code="kotlin" data-file="TaskViewModel.kt">
+            @HiltViewModel
+            class TaskViewModel @Inject constructor(
+                private val repo: TaskRepository
+            ) : ViewModel() {
+
+                val tasks: StateFlow<List<Task>> = repo.observeTasks()
+                    .map { list -> list.sortedBy { it.dueAt } }
+                    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+                fun toggle(task: Task) = viewModelScope.launch {
+                    repo.update(task.copy(done = !task.done))
+                }
+            }
+          </script>
+          <p class="muted small" style="text-align:center;margin-top:12px">↑ By the end of the course you'll write — and fully understand — code like this.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= ROADMAP ======================= -->
+    <section class="l-section alt">
+      <div class="l-inner">
+        <div class="l-head">
+          <div class="eyebrow">The roadmap</div>
+          <h2>Six stages from zero to master</h2>
+          <p class="muted">No programming experience required. If you already know Java, Python or JavaScript you will move faster — look for the <span class="c-orange">Coming from Java</span> boxes.</p>
+        </div>
+        <div class="roadmap">
+          <a class="rm-stage" href="setup.html"><span class="rm-n">STAGE 1</span><span class="badge green rm-lvl">Start</span><h4>Set up</h4><p>JDK, IntelliJ IDEA, Android Studio, SDK, emulator, real device.</p></a>
+          <a class="rm-stage" href="basics.html"><span class="rm-n">STAGE 2</span><span class="badge green rm-lvl">Beginner</span><h4>Fundamentals</h4><p>Types, control flow, functions, null safety, collections.</p></a>
+          <a class="rm-stage" href="classes.html"><span class="rm-n">STAGE 3</span><span class="badge blue rm-lvl">Intermediate</span><h4>OOP &amp; FP</h4><p>Classes, sealed/data types, lambdas, generics, idioms.</p></a>
+          <a class="rm-stage" href="coroutines.html"><span class="rm-n">STAGE 4</span><span class="badge amber rm-lvl">Advanced</span><h4>Async &amp; DSLs</h4><p>Coroutines, Flow, DSLs, testing, Multiplatform.</p></a>
+          <a class="rm-stage" href="android-basics.html"><span class="rm-n">STAGE 5</span><span class="badge amber rm-lvl">Advanced</span><h4>Android</h4><p>Compose, MVVM, Hilt, Room, Retrofit, WorkManager.</p></a>
+          <a class="rm-stage" href="final-project.html"><span class="rm-n">STAGE 6</span><span class="badge red rm-lvl">Master</span><h4>Ship it</h4><p>Build, test and publish the TaskFlow app.</p></a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= LESSONS ======================= -->
+    <section class="l-section">
+      <div class="l-inner">
+        <div class="l-head">
+          <div class="eyebrow">Curriculum</div>
+          <h2>All lessons</h2>
+        </div>
+        <div class="home-progress">
+          <span class="small"><b id="hp-pct">0%</b></span>
+          <div class="hp-bar"><div id="hp-bar"></div></div>
+          <span class="muted small" id="hp-count"></span>
+        </div>
+        <div id="module-grid"></div>
+      </div>
+    </section>
+
+    <!-- ======================= FEATURES ======================= -->
+    <section class="l-section alt">
+      <div class="l-inner">
+        <div class="l-head">
+          <div class="eyebrow">How you learn</div>
+          <h2>Learn by doing, not by reading</h2>
+        </div>
+        <div class="grid grid-2">
+          <div class="feature glass card"><div class="fi">▶️</div><div><h4>Run code in the browser</h4><p>Press <b>▶ Run</b> on any example to open it in the official Kotlin Playground. Edit it, break it, run it again — no install needed for the language lessons.</p></div></div>
+          <div class="feature glass card"><div class="fi">🏋️</div><div><h4>Exercises with solutions</h4><p>Every lesson ends with graded exercises (easy → hard). Try first, then open the solution and compare.</p></div></div>
+          <div class="feature glass card"><div class="fi">❓</div><div><h4>Quizzes with explanations</h4><p>Check your understanding instantly. Each answer explains <em>why</em> — the wrong answers are where you learn the most.</p></div></div>
+          <div class="feature glass card"><div class="fi">☕</div><div><h4>“Coming from Java” notes</h4><p>Side-by-side translations show what Kotlin replaces and why, so Java developers can map existing knowledge.</p></div></div>
+          <div class="feature glass card"><div class="fi">🤖</div><div><h4>Modern Android only</h4><p>Jetpack Compose, Kotlin DSL Gradle with version catalogs, coroutines and Flow, Hilt, Room and type-safe navigation.</p></div></div>
+          <div class="feature glass card"><div class="fi">🏁</div><div><h4>A complete final project</h4><p>Build TaskFlow step by step over eight milestones. The full source is in the repository so you can compare your work.</p></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= HOW TO STUDY ======================= -->
+    <section class="l-section">
+      <div class="l-inner">
+        <div class="grid grid-2" style="align-items:start">
+          <div>
+            <div class="eyebrow">Study plan</div>
+            <h2>How long will it take?</h2>
+            <p>Roughly <strong>40–60 hours</strong> including exercises and the final project. A sustainable pace:</p>
+            <div class="table-wrap">
+              <table class="t">
+                <thead><tr><th>Pace</th><th>Per week</th><th>Finish in</th></tr></thead>
+                <tbody>
+                  <tr><td>Relaxed</td><td>3–4 h</td><td>~4 months</td></tr>
+                  <tr><td>Steady</td><td>7–8 h</td><td>~8 weeks</td></tr>
+                  <tr><td>Bootcamp</td><td>20+ h</td><td>~3 weeks</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="callout tip" style="margin-top:0">
+            <div class="ci">💡</div>
+            <div><span class="ct">The golden rules</span>
+              <ol>
+                <li><b>Type the code yourself.</b> Copy-pasting skips the part where your brain learns.</li>
+                <li><b>Break things on purpose.</b> Remove a <code>?</code>, rename a variable, read the compiler error.</li>
+                <li><b>Do the exercises before the solutions.</b> Struggling for 10 minutes is the lesson.</li>
+                <li><b>Build something of your own</b> after stage 3 — even a tiny command-line tool.</li>
+                <li><b>Mark lessons complete</b> to track progress (saved in your browser).</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="l-section" style="padding-top:0">
+      <div class="l-inner">
+        <div class="cta-band">
+          <h2>Ready to write your first line of Kotlin?</h2>
+          <p class="muted">Start by setting up your toolkit, or jump straight into the language with the in-browser playground.</p>
+          <div class="hero-cta" style="justify-content:center">
+            <a class="btn primary" href="setup.html">01 · Toolkit &amp; Environment →</a>
+            <a class="btn" href="hello.html">👋 Skip to Hello, Kotlin!</a>
+            <a class="btn" href="cheatsheet.html">📋 Cheat sheet</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="site-footer"></div>
+  <script src="assets/js/core.js?v=__BUILD__"></script>
+</body>
+</html>
