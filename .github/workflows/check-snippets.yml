@@ -1,0 +1,44 @@
+name: Check lesson code examples
+
+on:
+  push:
+    paths:
+      - "kotlin-academy/**"
+      - "tools/check_snippets.py"
+      - ".github/workflows/check-snippets.yml"
+  pull_request:
+    paths:
+      - "kotlin-academy/**"
+  workflow_dispatch:
+
+jobs:
+  snippets:
+    runs-on: ubuntu-latest
+    env:
+      KOTLIN: "2.2.21"
+      COROUTINES: "1.10.2"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Download the Kotlin compiler and libraries from Maven Central
+        run: |
+          mkdir -p kotlin-lib && cd kotlin-lib
+          M=https://repo1.maven.org/maven2
+          for path in \
+            org/jetbrains/kotlin/kotlin-compiler-embeddable/$KOTLIN/kotlin-compiler-embeddable-$KOTLIN.jar \
+            org/jetbrains/kotlin/kotlin-stdlib/$KOTLIN/kotlin-stdlib-$KOTLIN.jar \
+            org/jetbrains/kotlin/kotlin-reflect/$KOTLIN/kotlin-reflect-$KOTLIN.jar \
+            org/jetbrains/kotlin/kotlin-script-runtime/$KOTLIN/kotlin-script-runtime-$KOTLIN.jar \
+            org/jetbrains/kotlin/kotlin-daemon-embeddable/$KOTLIN/kotlin-daemon-embeddable-$KOTLIN.jar \
+            org/jetbrains/intellij/deps/trove4j/1.0.20200330/trove4j-1.0.20200330.jar \
+            org/jetbrains/annotations/13.0/annotations-13.0.jar \
+            org/jetbrains/kotlinx/kotlinx-coroutines-core-jvm/$COROUTINES/kotlinx-coroutines-core-jvm-$COROUTINES.jar \
+            org/jetbrains/kotlinx/kotlinx-coroutines-test-jvm/$COROUTINES/kotlinx-coroutines-test-jvm-$COROUTINES.jar
+          do
+            curl -sSfL --retry 4 --retry-delay 5 -O "$M/$path"
+          done
+      - name: Compile and run every runnable example
+        run: python3 tools/check_snippets.py --kotlin-lib kotlin-lib

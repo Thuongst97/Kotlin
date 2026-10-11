@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TaskFlow</string>
+
+    <string name="tasks_title">TaskFlow</string>
+    <string name="add_task">Add task</string>
+    <string name="search_tasks">Search tasks</string>
+    <string name="clear_search">Clear search</string>
+    <string name="settings">Settings</string>
+    <string name="import_samples">Import sample tasks</string>
+    <string name="filter_all">All (%1$d)</string>
+    <string name="filter_active">Active (%1$d)</string>
+    <string name="filter_done">Done (%1$d)</string>
+    <string name="progress_summary">%1$d of %2$d done</string>
+    <string name="empty_title">Nothing to do… yet</string>
+    <string name="empty_body">Tap + to add your first task, or import a few samples.</string>
+    <string name="empty_search">No tasks match “%1$s”</string>
+    <string name="task_deleted">Task deleted</string>
+    <string name="undo">Undo</string>
+    <string name="imported_count">Imported %1$d tasks</string>
+    <string name="import_failed">Couldn\'t import tasks. Check your connection.</string>
+    <string name="delete_task">Delete task</string>
+    <string name="mark_done">Mark as done</string>
+    <string name="due_on">Due %1$s</string>
+    <string name="overdue">Overdue</string>
+
+    <string name="new_task">New task</string>
+    <string name="edit_task">Edit task</string>
+    <string name="save">Save</string>
+    <string name="back">Back</string>
+    <string name="title_label">Title</string>
+    <string name="title_error">Please enter a title</string>
+    <string name="notes_label">Notes</string>
+    <string name="priority">Priority</string>
+    <string name="priority_low">Low</string>
+    <string name="priority_medium">Medium</string>
+    <string name="priority_high">High</string>
+    <string name="due_date">Due date</string>
+    <string name="no_due_date">No due date</string>
+    <string name="pick_date">Pick date</string>
+    <string name="clear">Clear</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
+    <string name="remind_me">Remind me at 9:00 on the due date</string>
+    <string name="remind_needs_date">Set a due date to enable reminders</string>
+
+    <string name="appearance">Appearance</string>
+    <string name="theme_system">System default</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="dynamic_color">Dynamic color (Android 12+)</string>
+    <string name="sort_by">Sort tasks by</string>
+    <string name="sort_due">Due date</string>
+    <string name="sort_priority">Priority</string>
+    <string name="sort_created">Newest first</string>
+    <string name="about">About</string>
+    <string name="version">Version %1$s</string>
+
+    <string name="reminder_channel_name">Task reminders</string>
+    <string name="reminder_channel_description">Notifications for tasks that are due</string>
+    <string name="reminder_title">Task due today</string>
+</resources>

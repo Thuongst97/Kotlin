@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The window theme only matters before Compose draws its first frame. -->
+    <style name="Theme.TaskFlow" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>
