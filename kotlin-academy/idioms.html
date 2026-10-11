@@ -1,0 +1,529 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Errors, Delegation & Idioms — Kotlin Academy</title>
+  <meta name="description" content="Kotlin error handling with exceptions, require/check and Result; class and property delegation; operator overloading; destructuring; type aliases and everyday idioms.">
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <meta name="color-scheme" content="dark light">
+  <link rel="stylesheet" href="assets/css/main.css?v=__BUILD__">
+  <script>try{var t=localStorage.getItem("ka-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body data-page="idioms">
+  <div id="site-header"></div>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="content">
+      <div class="content-inner">
+
+        <header class="page-hero">
+          <nav class="crumbs"><a href="index.html">Home</a><span>/</span><span>Object-Oriented &amp; Functional</span><span>/</span><span>Lesson 12</span></nav>
+          <div class="eyebrow">Lesson 12 · Writing Idiomatic Kotlin</div>
+          <h1>Errors, Delegation &amp; Idioms</h1>
+          <p class="lead">The difference between code that works and code that's a pleasure to maintain. Handle failures deliberately, reuse behaviour with delegation, and learn the idioms experienced Kotlin developers reach for every day.</p>
+          <div class="page-meta"><span>⏱ 50 min</span><span>🎯 Intermediate</span><span>▶ All examples are runnable</span></div>
+          <div class="objectives">
+            <h4>You will be able to</h4>
+            <ul>
+              <li>Throw, catch and define exceptions</li>
+              <li>Validate with <code>require</code>, <code>check</code>, <code>error</code></li>
+              <li>Model failures with <code>Result</code> and <code>runCatching</code></li>
+              <li>Close resources safely with <code>use</code></li>
+              <li>Delegate with <code>by</code> (classes and properties)</li>
+              <li>Overload operators and destructure your own types</li>
+            </ul>
+          </div>
+        </header>
+
+        <section class="doc-section" id="exceptions" data-title="Exceptions">
+          <div class="sec-head"><h2><span class="sec-num">12.1</span>Exceptions</h2></div>
+          <p>Exceptions signal that something went wrong and unwind the call stack until caught. In Kotlin, <code>try</code> is an <b>expression</b>, and there are <b>no checked exceptions</b> — the compiler never forces you to catch or declare them.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Exceptions.kt" data-run>
+            class InsufficientFundsException(val needed: Long) :
+                Exception("Insufficient funds: need $needed more")        // custom exception
+
+            fun withdraw(balance: Long, amount: Long): Long {
+                if (amount > balance) throw InsufficientFundsException(amount - balance)
+                return balance - amount
+            }
+
+            fun main() {
+                // try as an expression: the value of the try or the catch block
+                val number = try { "42x".toInt() } catch (e: NumberFormatException) { -1 }
+                println(number)
+
+                try {
+                    withdraw(100, 250)
+                } catch (e: InsufficientFundsException) {
+                    println("${e.message} (needed=${e.needed})")
+                } catch (e: Exception) {                    // more general handlers go last
+                    println("Unexpected: $e")
+                } finally {
+                    println("finally always runs")          // cleanup
+                }
+            }
+          </script>
+          <script type="text/plain" data-output>
+            -1
+            Insufficient funds: need 150 more (needed=150)
+            finally always runs
+          </script>
+          <div class="callout warn">
+            <div class="ci">⚠️</div>
+            <div><span class="ct">Catch narrowly</span>
+              <p>Catch the specific exceptions you can actually handle. Catching <code>Exception</code> or <code>Throwable</code> everywhere hides bugs — and in coroutines it can swallow <code>CancellationException</code>, breaking cancellation (lesson 13).</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="preconditions" data-title="require, check & error">
+          <div class="sec-head"><h2><span class="sec-num">12.2</span>Preconditions: <code>require</code>, <code>check</code>, <code>error</code></h2></div>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>Function</th><th>Use for</th><th>Throws</th></tr></thead>
+              <tbody>
+                <tr><td><code>require(cond) { msg }</code></td><td>Validating <b>arguments</b> from the caller</td><td><code>IllegalArgumentException</code></td></tr>
+                <tr><td><code>requireNotNull(x) { msg }</code></td><td>Argument must not be null; returns it non-null</td><td><code>IllegalArgumentException</code></td></tr>
+                <tr><td><code>check(cond) { msg }</code></td><td>Validating the object's <b>state</b></td><td><code>IllegalStateException</code></td></tr>
+                <tr><td><code>checkNotNull(x) { msg }</code></td><td>State must not be null</td><td><code>IllegalStateException</code></td></tr>
+                <tr><td><code>error(msg)</code></td><td>Unreachable or invalid situation</td><td><code>IllegalStateException</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <script type="text/plain" data-code="kotlin" data-file="Preconditions.kt" data-run>
+            class Download(private val url: String) {
+                private var started = false
+
+                init { require(url.startsWith("https://")) { "Only HTTPS allowed: $url" } }
+
+                fun start() {
+                    check(!started) { "Download already started" }
+                    started = true
+                    println("Downloading $url")
+                }
+            }
+
+            fun main() {
+                val d = Download("https://example.com/file.zip")
+                d.start()
+                println(runCatching { d.start() }.exceptionOrNull())
+                println(runCatching { Download("http://insecure") }.exceptionOrNull())
+            }
+          </script>
+          <script type="text/plain" data-output>
+            Downloading https://example.com/file.zip
+            java.lang.IllegalStateException: Download already started
+            java.lang.IllegalArgumentException: Only HTTPS allowed: http://insecure
+          </script>
+        </section>
+
+        <section class="doc-section" id="result" data-title="Result & runCatching">
+          <div class="sec-head"><h2><span class="sec-num">12.3</span><code>Result</code> &amp; <code>runCatching</code></h2></div>
+          <p><code>Result&lt;T&gt;</code> holds either a value or an exception. <code>runCatching { }</code> runs a block and captures whatever it returns or throws. It makes failure an ordinary value that callers can't forget about.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Result.kt" data-run>
+            fun parseAge(text: String): Result<Int> = runCatching {
+                val age = text.trim().toInt()
+                require(age in 0..150) { "Unrealistic age $age" }
+                age
+            }
+
+            fun main() {
+                for (input in listOf("36", "abc", "200")) {
+                    parseAge(input)
+                        .onSuccess { println("✅ $input → $it") }
+                        .onFailure { println("❌ $input → ${it::class.simpleName}: ${it.message}") }
+                }
+
+                println(parseAge("41").map { it + 1 }.getOrNull())
+                println(parseAge("x").getOrElse { 0 })
+                println(parseAge("x").getOrDefault(18))
+                val text = parseAge("7").fold(
+                    onSuccess = { "age is $it" },
+                    onFailure = { "invalid" },
+                )
+                println(text)
+            }
+          </script>
+          <script type="text/plain" data-output>
+            ✅ 36 → 36
+            ❌ abc → NumberFormatException: For input string: "abc"
+            ❌ 200 → IllegalArgumentException: Unrealistic age 200
+            42
+            0
+            18
+            age is 7
+          </script>
+          <div class="callout tip">
+            <div class="ci">🧭</div>
+            <div><span class="ct">Exceptions, Result, null or sealed class?</span>
+              <ul>
+                <li><b>Programming errors</b> (bugs, broken invariants) → throw (<code>require</code>/<code>check</code>). Let them crash in development.</li>
+                <li><b>“Not found” with no further detail</b> → return <code>null</code> (<code>findUser(id): User?</code>).</li>
+                <li><b>Expected failures from I/O</b> (network, parsing) → <code>Result</code> at the boundary.</li>
+                <li><b>Domain failures the UI must distinguish</b> → your own <code>sealed</code> type (<code>LoginResult.WrongPassword</code>, <code>.Locked</code>…).</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="use" data-title="Resources with use">
+          <div class="sec-head"><h2><span class="sec-num">12.4</span>Closing resources with <code>use</code></h2></div>
+          <p>Files, streams, database cursors and sockets must be closed even when an exception happens. <code>use { }</code> works on anything <code>Closeable</code>/<code>AutoCloseable</code> and closes it for you — Kotlin's version of Java's try-with-resources.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Use.kt" data-run>
+            class Connection(val name: String) : AutoCloseable {
+                init { println("open $name") }
+                fun query(sql: String): String {
+                    if ("DROP" in sql) throw IllegalStateException("Forbidden query")
+                    return "result of '$sql'"
+                }
+                override fun close() = println("close $name")
+            }
+
+            fun main() {
+                val r = Connection("db1").use { it.query("SELECT 1") }
+                println(r)
+                runCatching {
+                    Connection("db2").use { it.query("DROP TABLE users") }
+                }.onFailure { println("failed: ${it.message}") }   // db2 was still closed
+            }
+          </script>
+          <script type="text/plain" data-output>
+            open db1
+            close db1
+            result of 'SELECT 1'
+            open db2
+            close db2
+            failed: Forbidden query
+          </script>
+        </section>
+
+        <section class="doc-section" id="class-delegation" data-title="Class delegation">
+          <div class="sec-head"><h2><span class="sec-num">12.5</span>Class delegation with <code>by</code></h2></div>
+          <p>Want to implement an interface by forwarding most calls to an existing object and overriding only a few? <code>class X(inner: I) : I by inner</code> generates all the forwarding methods. Composition with no boilerplate.</p>
+          <script type="text/plain" data-code="kotlin" data-file="ClassDelegation.kt" data-run>
+            // A MutableList that counts how many items were ever added
+            class CountingList<T>(
+                private val inner: MutableList<T> = mutableListOf(),
+            ) : MutableList<T> by inner {                         // every List method forwards to inner
+                var addedCount = 0
+                    private set
+
+                override fun add(element: T): Boolean {          // …except the ones we override
+                    addedCount++
+                    return inner.add(element)
+                }
+
+                override fun addAll(elements: Collection<T>): Boolean {
+                    addedCount += elements.size
+                    return inner.addAll(elements)
+                }
+            }
+
+            fun main() {
+                val list = CountingList<String>()
+                list.add("a")
+                list.addAll(listOf("b", "c"))
+                list.removeAt(0)                                  // forwarded automatically
+                println("${list.toList()} size=${list.size} added=${list.addedCount}")
+                // Note: toString/equals/hashCode are NOT delegated — printing `list` itself
+                // would show CountingList@1b6d… Override them too if you need them.
+            }
+          </script>
+          <script type="text/plain" data-output>
+            [b, c] size=2 added=3
+          </script>
+        </section>
+
+        <section class="doc-section" id="property-delegation" data-title="Property delegates">
+          <div class="sec-head"><h2><span class="sec-num">12.6</span>Delegated properties</h2></div>
+          <p><code>val x by something</code> hands the property's get/set logic to a delegate object. The standard library provides <code>lazy</code> (lesson 06), <code>observable</code>, <code>vetoable</code> and map-backed properties — and you can write your own. Compose's <code>var count by remember { mutableStateOf(0) }</code> is exactly this feature.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Delegates.kt" data-run>
+            import kotlin.properties.Delegates
+            import kotlin.properties.ReadWriteProperty
+            import kotlin.reflect.KProperty
+
+            class Settings(map: Map<String, Any?>) {
+                val theme: String by map                          // read from the map by property name
+                val fontSize: Int by map
+
+                var volume: Int by Delegates.vetoable(50) { _, _, new -> new in 0..100 }   // reject invalid
+
+                var username: String by Delegates.observable("guest") { prop, old, new ->
+                    println("${prop.name}: $old → $new")
+                }
+
+                var nickname: String by Trimmed()                 // custom delegate
+            }
+
+            class Trimmed : ReadWriteProperty<Any?, String> {
+                private var value = ""
+                override fun getValue(thisRef: Any?, property: KProperty<*>) = value
+                override fun setValue(thisRef: Any?, property: KProperty<*>, value: String) {
+                    this.value = value.trim()
+                }
+            }
+
+            fun main() {
+                val s = Settings(mapOf("theme" to "dark", "fontSize" to 16))
+                println("${s.theme} ${s.fontSize}")
+                s.volume = 80
+                s.volume = 300                                    // vetoed: stays 80
+                println(s.volume)
+                s.username = "ada"
+                s.nickname = "   Countess   "
+                println("[${s.nickname}]")
+            }
+          </script>
+          <script type="text/plain" data-output>
+            dark 16
+            80
+            username: guest → ada
+            [Countess]
+          </script>
+        </section>
+
+        <section class="doc-section" id="operators" data-title="Operator overloading">
+          <div class="sec-head"><h2><span class="sec-num">12.7</span>Operator overloading &amp; destructuring</h2></div>
+          <p>Mark a function <code>operator</code> with a predefined name and Kotlin maps the symbol to it: <code>a + b</code> → <code>a.plus(b)</code>, <code>a[i]</code> → <code>a.get(i)</code>, <code>x in c</code> → <code>c.contains(x)</code>, <code>f()</code> → <code>f.invoke()</code>, <code>a &lt; b</code> → <code>a.compareTo(b) &lt; 0</code>, <code>val (x, y) = p</code> → <code>component1()</code>, <code>component2()</code>.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Operators.kt" data-run>
+            data class Vec(val x: Double, val y: Double) {
+                operator fun plus(o: Vec) = Vec(x + o.x, y + o.y)
+                operator fun minus(o: Vec) = Vec(x - o.x, y - o.y)
+                operator fun times(k: Double) = Vec(x * k, y * k)
+                operator fun unaryMinus() = Vec(-x, -y)
+                val length get() = kotlin.math.hypot(x, y)
+            }
+            operator fun Double.times(v: Vec) = v * this          // allow 2.0 * v as well
+
+            class Matrix(private val rows: Int, private val cols: Int) {
+                private val data = DoubleArray(rows * cols)
+                operator fun get(r: Int, c: Int) = data[r * cols + c]
+                operator fun set(r: Int, c: Int, value: Double) { data[r * cols + c] = value }
+                operator fun contains(value: Double): Boolean = data.any { it == value }
+            }
+
+            class Greeter(private val greeting: String) {
+                operator fun invoke(name: String) = "$greeting, $name!"
+            }
+
+            fun main() {
+                val a = Vec(1.0, 2.0)
+                val b = Vec(3.0, 4.0)
+                println(a + b)
+                println(b - a)
+                println(2.0 * a)
+                println(-a)
+                println(b.length)
+                val (x, y) = a + b                                 // data class → componentN
+                println("x=$x y=$y")
+
+                val m = Matrix(2, 2)
+                m[0, 1] = 7.5                                     // set(0, 1, 7.5)
+                println(m[0, 1])
+                println(7.5 in m)
+
+                val hello = Greeter("Hello")
+                println(hello("Kotlin"))                          // invoke
+            }
+          </script>
+          <script type="text/plain" data-output>
+            Vec(x=4.0, y=6.0)
+            Vec(x=2.0, y=2.0)
+            Vec(x=2.0, y=4.0)
+            Vec(x=-1.0, y=-2.0)
+            5.0
+            x=4.0 y=6.0
+            7.5
+            true
+            Hello, Kotlin!
+          </script>
+          <div class="callout warn">
+            <div class="ci">⚠️</div>
+            <div><span class="ct">Overload only where the meaning is obvious</span>
+              <p><code>vector + vector</code> and <code>money + money</code> are great. <code>user + group</code> is a puzzle. If a reader has to look up what <code>+</code> means, use a named function.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="idioms" data-title="Everyday idioms">
+          <div class="sec-head"><h2><span class="sec-num">12.8</span>Everyday idioms</h2></div>
+          <script type="text/plain" data-code="kotlin" data-file="Idioms.kt" data-run>
+            typealias UserId = String                              // a readable name for an existing type
+            typealias Callback = (Result<String>) -> Unit
+
+            fun fetch(id: UserId, done: Callback) = done(Result.success("user $id"))
+
+            fun main() {
+                // takeIf / takeUnless: keep a value only if a condition holds
+                val input = "  kotlin "
+                val name = input.trim().takeIf { it.length >= 3 } ?: "default"
+                println(name)
+
+                // Swap two variables
+                var a = 1
+                var b = 2
+                a = b.also { b = a }
+                println("a=$a b=$b")
+
+                // when + Pair for two-dimensional decisions
+                val (isMember, total) = true to 120
+                val discount = when {
+                    isMember && total > 100 -> 15
+                    isMember -> 5
+                    else -> 0
+                }
+                println("discount=$discount%")
+
+                // Default values with ifEmpty / ifBlank
+                println("".ifEmpty { "(empty)" })
+                println(listOf<Int>().ifEmpty { listOf(0) })
+
+                // Repeat a string, check ranges, format numbers
+                println("=".repeat(10))
+                println(String.format("%,d", 1234567))
+
+                fetch("42") { result -> println(result.getOrThrow()) }
+
+                // Single-line TODOs that compile but crash if reached
+                fun notReadyYet(): Int = TODO("Implement in v2")
+                println(runCatching { notReadyYet() }.exceptionOrNull()?.message)
+            }
+          </script>
+          <script type="text/plain" data-output>
+            kotlin
+            a=2 b=1
+            discount=15%
+            (empty)
+            [0]
+            ==========
+            1,234,567
+            user 42
+            An operation is not implemented: Implement in v2
+          </script>
+        </section>
+
+        <section class="doc-section" id="exercises" data-title="Exercises">
+          <div class="sec-head"><h2><span class="sec-num">12.9</span>Exercises</h2></div>
+          <details class="exercise">
+            <summary>Exercise 1 — Safe division <span class="badge green">Easy</span></summary>
+            <div class="ex-body">
+              <p>Write <code>fun safeDivide(a: Int, b: Int): Result&lt;Int&gt;</code> that fails with a clear message on division by zero. Print results for (10, 2) and (1, 0) using <code>fold</code>.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution" data-run>
+                fun safeDivide(a: Int, b: Int): Result<Int> =
+                    if (b == 0) Result.failure(ArithmeticException("Cannot divide $a by zero"))
+                    else Result.success(a / b)
+
+                fun main() {
+                    for ((a, b) in listOf(10 to 2, 1 to 0)) {
+                        println(safeDivide(a, b).fold({ "= $it" }, { "error: ${it.message}" }))
+                    }
+                }
+              </script>
+              <script type="text/plain" data-output>
+                = 5
+                error: Cannot divide 1 by zero
+              </script>
+            </div>
+          </details>
+          <details class="exercise">
+            <summary>Exercise 2 — Money type <span class="badge blue">Medium</span></summary>
+            <div class="ex-body">
+              <p>Create <code>data class Money(val cents: Long, val currency: String)</code> with <code>plus</code> (requires same currency), <code>times(Int)</code>, <code>compareTo</code> and a nice <code>toString</code>. Sum a list of Money with <code>reduce</code>.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution" data-run>
+                data class Money(val cents: Long, val currency: String) : Comparable<Money> {
+                    operator fun plus(o: Money): Money {
+                        require(currency == o.currency) { "Currency mismatch: $currency vs ${o.currency}" }
+                        return Money(cents + o.cents, currency)
+                    }
+                    operator fun times(n: Int) = Money(cents * n, currency)
+                    override fun compareTo(other: Money): Int {
+                        require(currency == other.currency)
+                        return cents.compareTo(other.cents)
+                    }
+                    override fun toString() = "%d.%02d %s".format(cents / 100, cents % 100, currency)
+                }
+
+                fun main() {
+                    val prices = listOf(Money(350, "USD"), Money(275, "USD") * 2, Money(99, "USD"))
+                    println(prices.reduce(Money::plus))
+                    println(prices.max())
+                    println(runCatching { Money(1, "USD") + Money(1, "EUR") }.exceptionOrNull()?.message)
+                }
+              </script>
+              <script type="text/plain" data-output>
+                9.99 USD
+                5.50 USD
+                Currency mismatch: USD vs EUR
+              </script>
+            </div>
+          </details>
+          <details class="exercise">
+            <summary>Exercise 3 — Logging delegate <span class="badge amber">Challenge</span></summary>
+            <div class="ex-body">
+              <p>Write a reusable delegate <code>fun &lt;T&gt; logged(initial: T): ReadWriteProperty&lt;Any?, T&gt;</code> that prints every read and write with the property name.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution" data-run>
+                import kotlin.properties.ReadWriteProperty
+                import kotlin.reflect.KProperty
+
+                fun <T> logged(initial: T) = object : ReadWriteProperty<Any?, T> {
+                    private var value = initial
+                    override fun getValue(thisRef: Any?, property: KProperty<*>): T {
+                        println("get ${property.name} = $value")
+                        return value
+                    }
+                    override fun setValue(thisRef: Any?, property: KProperty<*>, value: T) {
+                        println("set ${property.name}: ${this.value} → $value")
+                        this.value = value
+                    }
+                }
+
+                class Player { var score by logged(0) }
+
+                fun main() {
+                    val p = Player()
+                    p.score += 10
+                }
+              </script>
+              <script type="text/plain" data-output>
+                get score = 0
+                set score: 0 → 10
+              </script>
+            </div>
+          </details>
+        </section>
+
+        <section class="doc-section" id="quiz" data-title="Quiz">
+          <div class="sec-head"><h2><span class="sec-num">12.10</span>Quiz</h2></div>
+          <script type="application/json" data-quiz>
+          [
+            {"q": "Which function should validate a function ARGUMENT?", "options": ["check", "require", "error", "assert"], "answer": 1, "explain": "`require` → IllegalArgumentException for bad arguments; `check` → IllegalStateException for bad state."},
+            {"q": "What does `runCatching { \"x\".toInt() }.getOrNull()` return?", "options": ["0", "null", "Throws NumberFormatException", "\"x\""], "answer": 1, "explain": "runCatching captures the exception into a failed Result; getOrNull returns null for failures."},
+            {"q": "Does Kotlin force you to catch `IOException`?", "options": ["Yes, like Java", "No — Kotlin has no checked exceptions", "Only in Android", "Only with @Throws"], "answer": 1, "explain": "Kotlin has no checked exceptions. `@Throws` exists only to inform Java callers."},
+            {"q": "`class Repo(api: Api) : Api by api` means…", "options": ["Repo inherits from Api's class", "Repo implements Api by forwarding all calls to `api`, unless overridden", "Api is lazily created", "It's a syntax error"], "answer": 1, "explain": "Class delegation generates forwarding methods."},
+            {"q": "Which operator function makes `cart[\"apple\"]` work?", "options": ["`operator fun invoke`", "`operator fun get(key: String)`", "`operator fun contains`", "`operator fun index`"], "answer": 1, "explain": "Indexed access maps to get/set."},
+            {"q": "What guarantees that a file is closed even if reading throws?", "options": ["finally only", "`file.bufferedReader().use { … }`", "Garbage collection", "`lazy`"], "answer": 1, "explain": "`use` closes the resource in all cases (and correctly handles exceptions during close)."}
+          ]
+          </script>
+        </section>
+
+        <section class="doc-section" id="references" data-title="Further reading">
+          <div class="sec-head"><h2><span class="sec-num">12.11</span>Further reading</h2></div>
+          <ul>
+            <li><a href="https://kotlinlang.org/docs/exceptions.html" target="_blank" rel="noopener">Exceptions</a> · <a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-result/" target="_blank" rel="noopener">Result API</a></li>
+            <li><a href="https://kotlinlang.org/docs/delegation.html" target="_blank" rel="noopener">Delegation</a> · <a href="https://kotlinlang.org/docs/delegated-properties.html" target="_blank" rel="noopener">Delegated properties</a></li>
+            <li><a href="https://kotlinlang.org/docs/operator-overloading.html" target="_blank" rel="noopener">Operator overloading</a> · <a href="https://kotlinlang.org/docs/idioms.html" target="_blank" rel="noopener">Idioms</a></li>
+          </ul>
+        </section>
+
+        <div id="pager"></div>
+      </div>
+    </main>
+  </div>
+  <div id="site-footer"></div>
+  <script src="assets/js/core.js?v=__BUILD__"></script>
+</body>
+</html>

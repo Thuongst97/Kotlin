@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Classes, Objects & Interfaces — Kotlin Academy</title>
+  <meta name="description" content="Kotlin object-oriented programming: classes, primary and secondary constructors, properties with getters and setters, visibility, inheritance, abstract classes and interfaces.">
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <meta name="color-scheme" content="dark light">
+  <link rel="stylesheet" href="assets/css/main.css?v=__BUILD__">
+  <script>try{var t=localStorage.getItem("ka-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body data-page="classes">
+  <div id="site-header"></div>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="content">
+      <div class="content-inner">
+
+        <header class="page-hero">
+          <nav class="crumbs"><a href="index.html">Home</a><span>/</span><span>Object-Oriented &amp; Functional</span><span>/</span><span>Lesson 08</span></nav>
+          <div class="eyebrow">Lesson 08 · Object-Oriented Kotlin</div>
+          <h1>Classes, Objects &amp; Interfaces</h1>
+          <p class="lead">Classes bundle data and behaviour into your own types. Kotlin keeps the good parts of object-oriented programming and removes the ceremony: constructors and properties in one line, classes <code>final</code> by default, and interfaces that can carry default behaviour.</p>
+          <div class="page-meta"><span>⏱ 60 min</span><span>🎯 Intermediate</span><span>▶ All examples are runnable</span></div>
+          <div class="objectives">
+            <h4>You will be able to</h4>
+            <ul>
+              <li>Declare classes with primary constructors</li>
+              <li>Use <code>init</code> blocks and secondary constructors</li>
+              <li>Write custom getters/setters and backing fields</li>
+              <li>Control access with visibility modifiers</li>
+              <li>Build hierarchies with <code>open</code>, <code>abstract</code>, <code>override</code></li>
+              <li>Design with interfaces and composition</li>
+            </ul>
+          </div>
+        </header>
+
+        <section class="doc-section" id="basics" data-title="Classes & constructors">
+          <div class="sec-head"><h2><span class="sec-num">8.1</span>Classes &amp; the primary constructor</h2></div>
+          <p>A <b>class</b> is a blueprint; an <b>object</b> (instance) is a thing built from it. The <b>primary constructor</b> sits right after the class name. Prefixing a parameter with <code>val</code> or <code>var</code> turns it into a <b>property</b>.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Basics.kt" data-run>
+            class Dog(val name: String, var age: Int) {     // properties declared in the constructor
+                fun bark() = println("$name says Woof!")
+                fun birthday() {
+                    age++                                    // methods can change var properties
+                    println("$name is now $age")
+                }
+            }
+
+            fun main() {
+                val rex = Dog("Rex", 3)                      // no `new` keyword
+                rex.bark()
+                rex.birthday()
+                println(rex.name)                            // property access, no getName()
+                rex.age = 10                                 // var → has a setter
+                // rex.name = "Max"                          // ❌ val → no setter
+                println(rex)                                 // default toString: Dog@1a2b3c — data classes fix this
+            }
+          </script>
+          <script type="text/plain" data-output data-loose>
+            Rex says Woof!
+            Rex is now 4
+            Rex
+            Dog@7a81197d
+          </script>
+          <div class="callout java">
+            <div class="ci">☕</div>
+            <div><span class="ct">Coming from Java</span>
+              <p>That one line <code>class Dog(val name: String, var age: Int)</code> replaces a Java class with two fields, a constructor, two getters and one setter. Properties compile to a private field plus <code>getName()</code>/<code>getAge()</code>/<code>setAge()</code> — which is exactly what Java code calling your Kotlin class sees.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="init" data-title="init & secondary constructors">
+          <div class="sec-head"><h2><span class="sec-num">8.2</span><code>init</code> blocks, defaults &amp; secondary constructors</h2></div>
+          <p>Validation or setup logic goes in an <code>init</code> block, which runs as part of the primary constructor. Default values usually make secondary constructors unnecessary — but they exist when you need them.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Init.kt" data-run>
+            class Temperature(val celsius: Double, val label: String = "now") {
+                val fahrenheit: Double = celsius * 9 / 5 + 32     // property initialized from a param
+
+                init {
+                    require(celsius >= -273.15) { "Below absolute zero: $celsius" }
+                    println("Created $label: $celsius °C")
+                }
+
+                // Secondary constructor must delegate to the primary with this(...)
+                constructor(fahrenheit: Int) : this((fahrenheit - 32) * 5.0 / 9, "from °F")
+            }
+
+            fun main() {
+                val t1 = Temperature(21.5)
+                val t2 = Temperature(98)                           // calls the secondary constructor
+                println("%.1f °F / %.1f °C".format(t1.fahrenheit, t2.celsius))
+                try {
+                    Temperature(-300.0)
+                } catch (e: IllegalArgumentException) {
+                    println("Rejected: ${e.message}")
+                }
+            }
+          </script>
+          <script type="text/plain" data-output>
+            Created now: 21.5 °C
+            Created from °F: 36.666666666666664 °C
+            70.7 °F / 36.7 °C
+            Rejected: Below absolute zero: -300.0
+          </script>
+          <p class="small muted">Initialization order: primary constructor parameters → property initializers and <code>init</code> blocks, top to bottom in the class body → secondary constructor body.</p>
+        </section>
+
+        <section class="doc-section" id="properties" data-title="Properties, getters & setters">
+          <div class="sec-head"><h2><span class="sec-num">8.3</span>Properties: getters, setters &amp; backing fields</h2></div>
+          <p>Properties can have custom accessors. Inside a setter, <code>field</code> refers to the stored value (the <b>backing field</b>). A property with only a getter and no stored value is a <b>computed property</b>.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Properties.kt" data-run>
+            class Rectangle(var width: Double, var height: Double) {
+                val area: Double                       // computed on every access, no storage
+                    get() = width * height
+
+                val isSquare get() = width == height   // type inferred from getter
+            }
+
+            class Account(val owner: String) {
+                var balance: Long = 0
+                    private set                        // readable everywhere, writable only inside
+
+                var nickname: String = owner
+                    set(value) {
+                        field = value.trim().ifEmpty { owner }   // `field` = backing field
+                    }
+
+                fun deposit(amount: Long) {
+                    require(amount > 0) { "Deposit must be positive" }
+                    balance += amount
+                }
+            }
+
+            fun main() {
+                val r = Rectangle(3.0, 4.0)
+                println("${r.area} ${r.isSquare}")
+                r.width = 4.0
+                println("${r.area} ${r.isSquare}")          // recomputed
+
+                val acc = Account("Ada")
+                acc.deposit(500)
+                // acc.balance = 1_000_000                  // ❌ Cannot assign: the setter is private
+                acc.nickname = "   "
+                println("${acc.nickname} has ${acc.balance}")
+            }
+          </script>
+          <script type="text/plain" data-output>
+            12.0 false
+            16.0 true
+            Ada has 500
+          </script>
+        </section>
+
+        <section class="doc-section" id="visibility" data-title="Visibility modifiers">
+          <div class="sec-head"><h2><span class="sec-num">8.4</span>Visibility modifiers</h2></div>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>Modifier</th><th>Class member is visible…</th><th>Top-level declaration is visible…</th></tr></thead>
+              <tbody>
+                <tr><td><code>public</code> (default)</td><td>everywhere</td><td>everywhere</td></tr>
+                <tr><td><code>internal</code></td><td>inside the same <b>module</b> (Gradle module)</td><td>inside the same module</td></tr>
+                <tr><td><code>protected</code></td><td>in the class and its subclasses</td><td>— (not allowed)</td></tr>
+                <tr><td><code>private</code></td><td>inside the class only</td><td>inside the same file</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout tip">
+            <div class="ci">💡</div>
+            <div><span class="ct">Minimize the surface</span>
+              <p>Start everything <code>private</code> and widen only when needed. In multi-module Android projects, <code>internal</code> is excellent for hiding implementation classes (e.g. a <code>RoomTaskDao</code>) while exposing only interfaces.</p>
+            </div>
+          </div>
+          <div class="callout java">
+            <div class="ci">☕</div>
+            <div><span class="ct">Coming from Java</span>
+              <p>Kotlin's default is <code>public</code>, not package-private, and there is no package-private visibility at all. <code>internal</code> is the closest replacement.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="inheritance" data-title="Inheritance">
+          <div class="sec-head"><h2><span class="sec-num">8.5</span>Inheritance: <code>open</code> and <code>override</code></h2></div>
+          <p>Classes are <b>final by default</b>. To allow subclassing, mark the class <code>open</code>; to allow a member to be overridden, mark it <code>open</code> too. Overriding members must say <code>override</code>.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Inheritance.kt" data-run>
+            open class Vehicle(val brand: String) {
+                open val wheels: Int = 4
+                open fun describe(): String = "$brand with $wheels wheels"
+                fun honk() = println("Beep!")                   // final: can't be overridden
+            }
+
+            class Motorbike(brand: String, val cc: Int) : Vehicle(brand) {   // call super constructor
+                override val wheels = 2
+                override fun describe(): String = super.describe() + ", ${cc}cc"
+            }
+
+            open class Car(brand: String) : Vehicle(brand) {
+                final override fun describe() = "Car: " + super.describe()  // stop further overriding
+            }
+
+            fun main() {
+                val garage: List<Vehicle> = listOf(Vehicle("Generic"), Motorbike("Honda", 150), Car("VinFast"))
+                for (v in garage) println(v.describe())        // polymorphism: the runtime type decides
+                garage[1].honk()
+                println(garage[1] is Motorbike)
+            }
+          </script>
+          <script type="text/plain" data-output>
+            Generic with 4 wheels
+            Honda with 2 wheels, 150cc
+            Car: VinFast with 4 wheels
+            Beep!
+            true
+          </script>
+          <div class="callout warn">
+            <div class="ci">⚠️</div>
+            <div><span class="ct">Don't call open members from constructors</span>
+              <p>The base class initializes <em>before</em> the subclass. If the base constructor calls an <code>open</code> function that the subclass overrides, the override runs while the subclass's properties are still uninitialized (even non-null ones may be null at that moment). The IDE warns about this — listen to it.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="abstract" data-title="Abstract classes">
+          <div class="sec-head"><h2><span class="sec-num">8.6</span>Abstract classes</h2></div>
+          <p>An <code>abstract</code> class can't be instantiated; it's a partial implementation meant to be completed by subclasses. Abstract members have no body and are implicitly <code>open</code>.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Abstract.kt" data-run>
+            import kotlin.math.PI
+
+            abstract class Shape(val name: String) {
+                abstract fun area(): Double                       // must be implemented
+                open fun describe() = "$name with area ${"%.2f".format(area())}"
+            }
+
+            class Circle(val r: Double) : Shape("Circle") {
+                override fun area() = PI * r * r
+            }
+
+            class Rect(val w: Double, val h: Double) : Shape("Rectangle") {
+                override fun area() = w * h
+            }
+
+            fun main() {
+                val shapes = listOf(Circle(1.0), Rect(2.0, 3.5), Circle(0.5))
+                shapes.forEach { println(it.describe()) }
+                println("Total area: ${"%.2f".format(shapes.sumOf { it.area() })}")
+                // Shape("x")                                    // ❌ Cannot create an instance of an abstract class
+            }
+          </script>
+          <script type="text/plain" data-output>
+            Circle with area 3.14
+            Rectangle with area 7.00
+            Circle with area 0.79
+            Total area: 10.93
+          </script>
+        </section>
+
+        <section class="doc-section" id="interfaces" data-title="Interfaces">
+          <div class="sec-head"><h2><span class="sec-num">8.7</span>Interfaces</h2></div>
+          <p>An <b>interface</b> is a contract: a set of members a type promises to provide. Interfaces may contain default implementations and abstract properties, but no state (no backing fields). A class can implement many interfaces but extend only one class.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Interfaces.kt" data-run>
+            interface Drawable {
+                fun draw(): String
+            }
+
+            interface Clickable {
+                val label: String                               // abstract property
+                fun click() = "Clicked $label"                 // default implementation
+                fun showOff() = "I'm clickable"
+            }
+
+            interface Focusable {
+                fun showOff() = "I'm focusable"
+            }
+
+            class Button(override val label: String) : Drawable, Clickable, Focusable {
+                override fun draw() = "[ $label ]"
+                // Both interfaces define showOff() → we must resolve the conflict explicitly
+                override fun showOff() = super<Clickable>.showOff() + " & " + super<Focusable>.showOff()
+            }
+
+            fun render(items: List<Drawable>) = items.joinToString(" ") { it.draw() }
+
+            fun main() {
+                val ok = Button("OK")
+                println(render(listOf(ok, Button("Cancel"))))
+                println(ok.click())
+                println(ok.showOff())
+                val c: Clickable = ok                           // usable through any of its interfaces
+                println(c is Focusable)
+            }
+          </script>
+          <script type="text/plain" data-output>
+            [ OK ] [ Cancel ]
+            Clicked OK
+            I'm clickable & I'm focusable
+            true
+          </script>
+          <h3>Functional (SAM) interfaces</h3>
+          <p>An interface with exactly one abstract method can be declared <code>fun interface</code>, which lets callers implement it with a lambda:</p>
+          <script type="text/plain" data-code="kotlin" data-file="FunInterface.kt" data-run>
+            fun interface Validator {
+                fun validate(input: String): Boolean
+            }
+
+            fun main() {
+                val notBlank = Validator { it.isNotBlank() }          // lambda → Validator
+                val isEmail = Validator { "@" in it && "." in it }
+                val rules = listOf(notBlank, isEmail)
+                println(rules.all { it.validate("ada@example.com") })
+                println(rules.all { it.validate("  ") })
+            }
+          </script>
+          <script type="text/plain" data-output>
+            true
+            false
+          </script>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th></th><th>Abstract class</th><th>Interface</th></tr></thead>
+              <tbody>
+                <tr><td>State (fields)</td><td>✅ yes</td><td>❌ no (only abstract or computed properties)</td></tr>
+                <tr><td>Constructor</td><td>✅ yes</td><td>❌ no</td></tr>
+                <tr><td>Multiple inheritance</td><td>❌ one superclass</td><td>✅ many interfaces</td></tr>
+                <tr><td>Use when</td><td>Sharing state + code among closely related types</td><td>Defining capabilities / contracts (repository, listener, strategy)</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="doc-section" id="composition" data-title="Composition over inheritance">
+          <div class="sec-head"><h2><span class="sec-num">8.8</span>Composition over inheritance</h2></div>
+          <p>Deep inheritance trees become rigid: a change in a base class ripples into every subclass. Most modern Kotlin code — and Android architecture — prefers <b>composition</b>: build objects from smaller collaborators passed through the constructor, typed by interfaces.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Composition.kt" data-run>
+            interface Logger { fun log(msg: String) }
+            interface Clock { fun now(): Long }
+
+            class ConsoleLogger : Logger { override fun log(msg: String) = println("LOG: $msg") }
+            class FixedClock(private val time: Long) : Clock { override fun now() = time }
+
+            // OrderService *has* a logger and a clock instead of *being* one.
+            class OrderService(private val logger: Logger, private val clock: Clock) {
+                fun place(item: String) {
+                    logger.log("Order '$item' at ${clock.now()}")
+                }
+            }
+
+            fun main() {
+                // Swap implementations freely — e.g. a fake clock in tests
+                val service = OrderService(ConsoleLogger(), FixedClock(1_700_000_000))
+                service.place("book")
+            }
+          </script>
+          <script type="text/plain" data-output>
+            LOG: Order 'book' at 1700000000
+          </script>
+          <div class="callout analogy">
+            <div class="ci">🎭</div>
+            <div><span class="ct">Analogy</span>
+              <p>Inheritance is like a family tree — you're stuck with your ancestors. Composition is like a band — you can swap the drummer without rebuilding the band. This idea, passing dependencies in through the constructor, is called <b>dependency injection</b>; lesson 18 automates it with Hilt.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="exercises" data-title="Exercises">
+          <div class="sec-head"><h2><span class="sec-num">8.9</span>Exercises</h2></div>
+          <details class="exercise">
+            <summary>Exercise 1 — Bank account <span class="badge green">Easy</span></summary>
+            <div class="ex-body">
+              <p>Create <code>BankAccount(owner: String)</code> with a balance that can only change through <code>deposit</code> and <code>withdraw</code>. Withdrawing more than the balance must fail by returning <code>false</code>. Keep a read-only list of transaction descriptions.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution" data-run>
+                class BankAccount(val owner: String) {
+                    var balance = 0L
+                        private set
+                    private val _history = mutableListOf<String>()
+                    val history: List<String> get() = _history
+
+                    fun deposit(amount: Long) {
+                        require(amount > 0)
+                        balance += amount
+                        _history += "+$amount"
+                    }
+
+                    fun withdraw(amount: Long): Boolean {
+                        if (amount <= 0 || amount > balance) return false
+                        balance -= amount
+                        _history += "-$amount"
+                        return true
+                    }
+                }
+
+                fun main() {
+                    val acc = BankAccount("Linh")
+                    acc.deposit(100)
+                    println(acc.withdraw(30))
+                    println(acc.withdraw(500))
+                    println("${acc.owner}: ${acc.balance} ${acc.history}")
+                }
+              </script>
+              <script type="text/plain" data-output>
+                true
+                false
+                Linh: 70 [+100, -30]
+              </script>
+            </div>
+          </details>
+          <details class="exercise">
+            <summary>Exercise 2 — Employees &amp; payroll <span class="badge blue">Medium</span></summary>
+            <div class="ex-body">
+              <p>Create an abstract <code>Employee(name)</code> with abstract <code>monthlyPay(): Double</code>. Implement <code>Salaried(name, annual)</code> and <code>Hourly(name, rate, hours)</code> (overtime above 160 hours pays 1.5×). Print a payroll sorted by pay.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution" data-run>
+                abstract class Employee(val name: String) {
+                    abstract fun monthlyPay(): Double
+                    override fun toString() = "$name: ${"%.2f".format(monthlyPay())}"
+                }
+
+                class Salaried(name: String, private val annual: Double) : Employee(name) {
+                    override fun monthlyPay() = annual / 12
+                }
+
+                class Hourly(name: String, private val rate: Double, private val hours: Int) : Employee(name) {
+                    override fun monthlyPay(): Double {
+                        val regular = minOf(hours, 160)
+                        val overtime = maxOf(hours - 160, 0)
+                        return regular * rate + overtime * rate * 1.5
+                    }
+                }
+
+                fun main() {
+                    val staff = listOf(Salaried("Ada", 60_000.0), Hourly("Bob", 20.0, 170), Hourly("Chi", 25.0, 100))
+                    staff.sortedByDescending { it.monthlyPay() }.forEach(::println)
+                }
+              </script>
+              <script type="text/plain" data-output>
+                Ada: 5000.00
+                Bob: 3500.00
+                Chi: 2500.00
+              </script>
+            </div>
+          </details>
+          <details class="exercise">
+            <summary>Exercise 3 — Pluggable notifications <span class="badge amber">Challenge</span></summary>
+            <div class="ex-body">
+              <p>Design a <code>Notifier</code> interface and two implementations (<code>EmailNotifier</code>, <code>SmsNotifier</code>). Create a <code>CompositeNotifier</code> that forwards to a list of notifiers, and a <code>QuietHoursNotifier</code> that wraps another notifier and drops messages during quiet hours (22–7). Use composition only — no inheritance between implementations.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution" data-run>
+                interface Notifier { fun send(to: String, msg: String) }
+
+                class EmailNotifier : Notifier {
+                    override fun send(to: String, msg: String) = println("📧 $to: $msg")
+                }
+                class SmsNotifier : Notifier {
+                    override fun send(to: String, msg: String) = println("📱 $to: $msg")
+                }
+                class CompositeNotifier(private val targets: List<Notifier>) : Notifier {
+                    override fun send(to: String, msg: String) = targets.forEach { it.send(to, msg) }
+                }
+                class QuietHoursNotifier(private val inner: Notifier, private val hour: () -> Int) : Notifier {
+                    override fun send(to: String, msg: String) {
+                        val h = hour()
+                        if (h >= 22 || h < 7) println("🤫 suppressed at $h:00") else inner.send(to, msg)
+                    }
+                }
+
+                fun main() {
+                    val all = CompositeNotifier(listOf(EmailNotifier(), SmsNotifier()))
+                    QuietHoursNotifier(all) { 14 }.send("ada", "Build passed")
+                    QuietHoursNotifier(all) { 23 }.send("ada", "Build failed")
+                }
+              </script>
+              <script type="text/plain" data-output>
+                📧 ada: Build passed
+                📱 ada: Build passed
+                🤫 suppressed at 23:00
+              </script>
+              <p class="small muted">This is the <b>Decorator</b> pattern (QuietHours) plus the <b>Composite</b> pattern — both are natural with interfaces and constructor injection.</p>
+            </div>
+          </details>
+        </section>
+
+        <section class="doc-section" id="quiz" data-title="Quiz">
+          <div class="sec-head"><h2><span class="sec-num">8.10</span>Quiz</h2></div>
+          <script type="application/json" data-quiz>
+          [
+            {"q": "What does `class User(name: String)` (no val/var) create?", "options": ["A property `name`", "A constructor parameter only — not accessible as `user.name`", "A compile error", "A private property"], "answer": 1, "explain": "Without `val`/`var` it's just a parameter, usable in initializers and init blocks."},
+            {"q": "Why does `class B : A()` fail when `A` is declared `class A`?", "options": ["Missing semicolon", "Classes are final by default; A must be `open`", "B must be abstract", "A needs an interface"], "answer": 1, "explain": "Kotlin follows 'design for inheritance or prohibit it' — opt in with `open`."},
+            {"q": "Inside a custom setter, what is `field`?", "options": ["The property's backing field", "A reserved keyword for data classes", "The setter's parameter", "The class instance"], "answer": 0, "explain": "Writing `balance = value` inside the setter would call the setter recursively; `field` writes the stored value."},
+            {"q": "Which visibility makes a member visible to the whole Gradle module but not outside?", "options": ["protected", "private", "internal", "public"], "answer": 2, "explain": "`internal` = module-wide."},
+            {"q": "A class implements two interfaces that both provide a default `showOff()`. What must it do?", "options": ["Nothing; the first interface wins", "Override `showOff()` and optionally call `super<A>.showOff()`", "It can't implement both", "Mark one interface `open`"], "answer": 1, "explain": "The compiler forces you to resolve the ambiguity explicitly."},
+            {"q": "Which is a valid reason to prefer an interface over an abstract class?", "options": ["You need a constructor", "You need to store state", "A type should be able to have several of these capabilities", "You want final methods"], "answer": 2, "explain": "A class can implement many interfaces but extend only one class."}
+          ]
+          </script>
+        </section>
+
+        <section class="doc-section" id="references" data-title="Further reading">
+          <div class="sec-head"><h2><span class="sec-num">8.11</span>Further reading</h2></div>
+          <ul>
+            <li><a href="https://kotlinlang.org/docs/classes.html" target="_blank" rel="noopener">Classes</a> · <a href="https://kotlinlang.org/docs/properties.html" target="_blank" rel="noopener">Properties</a> · <a href="https://kotlinlang.org/docs/inheritance.html" target="_blank" rel="noopener">Inheritance</a></li>
+            <li><a href="https://kotlinlang.org/docs/interfaces.html" target="_blank" rel="noopener">Interfaces</a> · <a href="https://kotlinlang.org/docs/fun-interfaces.html" target="_blank" rel="noopener">Functional (SAM) interfaces</a></li>
+            <li><a href="https://kotlinlang.org/docs/visibility-modifiers.html" target="_blank" rel="noopener">Visibility modifiers</a></li>
+          </ul>
+        </section>
+
+        <div id="pager"></div>
+      </div>
+    </main>
+  </div>
+  <div id="site-footer"></div>
+  <script src="assets/js/core.js?v=__BUILD__"></script>
+</body>
+</html>

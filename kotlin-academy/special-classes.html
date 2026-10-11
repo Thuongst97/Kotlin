@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Data, Enum, Sealed & Object — Kotlin Academy</title>
+  <meta name="description" content="Kotlin data classes, enum classes, sealed classes and interfaces, object declarations, companion objects, object expressions, value classes, nested and inner classes.">
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <meta name="color-scheme" content="dark light">
+  <link rel="stylesheet" href="assets/css/main.css?v=__BUILD__">
+  <script>try{var t=localStorage.getItem("ka-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body data-page="special-classes">
+  <div id="site-header"></div>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="content">
+      <div class="content-inner">
+
+        <header class="page-hero">
+          <nav class="crumbs"><a href="index.html">Home</a><span>/</span><span>Object-Oriented &amp; Functional</span><span>/</span><span>Lesson 09</span></nav>
+          <div class="eyebrow">Lesson 09 · Object-Oriented Kotlin</div>
+          <h1>Data, Enum, Sealed &amp; Object</h1>
+          <p class="lead">Kotlin ships specialized kinds of classes for the most common modelling jobs. Master these five and you can model almost any domain — and every Android screen state — precisely and safely.</p>
+          <div class="page-meta"><span>⏱ 50 min</span><span>🎯 Intermediate</span><span>⭐ Used constantly in Android</span></div>
+          <div class="objectives">
+            <h4>You will be able to</h4>
+            <ul>
+              <li>Model values with <code>data class</code> and <code>copy</code></li>
+              <li>Represent fixed sets with <code>enum class</code></li>
+              <li>Model state machines with <code>sealed</code> types</li>
+              <li>Create singletons with <code>object</code></li>
+              <li>Write factories in <code>companion object</code>s</li>
+              <li>Wrap primitives safely with value classes</li>
+            </ul>
+          </div>
+        </header>
+
+        <section class="doc-section" id="data" data-title="Data classes">
+          <div class="sec-head"><h2><span class="sec-num">9.1</span>Data classes</h2></div>
+          <p>A class whose main job is to <b>hold data</b>. Add <code>data</code> and the compiler generates, from the primary-constructor properties: <code>equals()</code>/<code>hashCode()</code> (compare by value), a readable <code>toString()</code>, <code>copy()</code>, and <code>componentN()</code> functions for destructuring.</p>
+          <script type="text/plain" data-code="kotlin" data-file="DataClasses.kt" data-run>
+            data class User(val id: Int, val name: String, val email: String, val isAdmin: Boolean = false)
+
+            fun main() {
+                val ada = User(1, "Ada", "ada@example.com")
+                println(ada)                                    // readable toString
+
+                val same = User(1, "Ada", "ada@example.com")
+                println(ada == same)                            // equals compares values → true
+                println(setOf(ada, same).size)                  // hashCode consistent → 1
+
+                // copy: a new object with some properties changed — the original stays untouched
+                val promoted = ada.copy(isAdmin = true)
+                println(promoted)
+                println(ada.isAdmin)
+
+                // Destructuring uses component1(), component2()…
+                val (id, name) = ada
+                println("#$id $name")
+
+                val users = listOf(ada, User(2, "Bob", "bob@example.com"))
+                for ((uid, uname, _) in users) println("$uid=$uname")   // _ skips a component
+            }
+          </script>
+          <script type="text/plain" data-output>
+            User(id=1, name=Ada, email=ada@example.com, isAdmin=false)
+            true
+            1
+            User(id=1, name=Ada, email=ada@example.com, isAdmin=true)
+            false
+            #1 Ada
+            1=Ada
+            2=Bob
+          </script>
+          <div class="callout tip">
+            <div class="ci">💡</div>
+            <div><span class="ct">Immutable data + <code>copy</code> = predictable state</span>
+              <p>Use <code>val</code> properties in data classes. To “change” something, create a modified copy. Jetpack Compose and <code>StateFlow</code> detect changes by comparing old and new values with <code>equals</code> — mutating an object in place would go unnoticed, copying never does.</p>
+            </div>
+          </div>
+          <div class="callout note">
+            <div class="ci">ℹ️</div>
+            <div><span class="ct">Rules &amp; gotchas</span>
+              <ul>
+                <li>The primary constructor needs at least one <code>val</code>/<code>var</code> parameter.</li>
+                <li>Only properties in the <b>primary constructor</b> take part in <code>equals</code>/<code>toString</code>/<code>copy</code>; properties declared in the body are ignored.</li>
+                <li>Data classes can't be <code>open</code>/<code>abstract</code>, but they can implement interfaces and extend sealed classes.</li>
+                <li><code>copy</code> is shallow: a copied object shares the same nested lists.</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="enum" data-title="Enum classes">
+          <div class="sec-head"><h2><span class="sec-num">9.2</span>Enum classes</h2></div>
+          <p>An enum defines a <b>fixed set of named constants</b>. Each constant is an object; enums can have properties, methods, and even per-constant behaviour.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Enums.kt" data-run>
+            enum class Priority(val label: String, val weight: Int) {
+                LOW("Low", 1),
+                MEDIUM("Medium", 2),
+                HIGH("High", 3);                               // ; needed before members
+
+                fun isUrgent() = this == HIGH
+            }
+
+            enum class Op(val symbol: Char) {
+                PLUS('+') { override fun apply(a: Int, b: Int) = a + b },
+                TIMES('*') { override fun apply(a: Int, b: Int) = a * b };
+
+                abstract fun apply(a: Int, b: Int): Int
+            }
+
+            fun color(p: Priority): String = when (p) {      // exhaustive: no else needed
+                Priority.LOW -> "green"
+                Priority.MEDIUM -> "orange"
+                Priority.HIGH -> "red"
+            }
+
+            fun main() {
+                val p = Priority.HIGH
+                println("${p.name} ${p.ordinal} ${p.label} ${p.isUrgent()}")
+                println(Priority.entries.map { it.label })      // all constants (Kotlin 1.9+)
+                println(Priority.valueOf("LOW").weight)          // from String (throws if unknown)
+                println(Priority.entries.maxBy { it.weight })
+                println(color(Priority.MEDIUM))
+                println(Op.entries.map { "3${it.symbol}4=${it.apply(3, 4)}" })
+            }
+          </script>
+          <script type="text/plain" data-output>
+            HIGH 2 High true
+            [Low, Medium, High]
+            1
+            HIGH
+            orange
+            [3+4=7, 3*4=12]
+          </script>
+          <p class="small muted">Prefer <code>entries</code> over the older <code>values()</code>, which allocates a new array on every call.</p>
+        </section>
+
+        <section class="doc-section" id="sealed" data-title="Sealed classes & interfaces">
+          <div class="sec-head"><h2><span class="sec-num">9.3</span>Sealed classes &amp; interfaces</h2></div>
+          <p>An enum has a fixed set of <em>instances</em>. A <b>sealed</b> type has a fixed set of <em>subtypes</em> — each of which can carry different data. All direct subtypes must be declared in the same module and package, so the compiler knows the complete list and can check that <code>when</code> handles every case.</p>
+          <p>This is the idiomatic way to model <b>UI state</b>, results and events:</p>
+          <script type="text/plain" data-code="kotlin" data-file="Sealed.kt" data-run>
+            sealed interface UiState {
+                data object Loading : UiState                                   // no data needed
+                data class Success(val items: List<String>) : UiState
+                data class Error(val message: String, val canRetry: Boolean) : UiState
+            }
+
+            fun render(state: UiState): String = when (state) {               // exhaustive, no else
+                UiState.Loading -> "⏳ Loading…"
+                is UiState.Success ->                                          // smart cast to Success
+                    if (state.items.isEmpty()) "📭 Nothing here" else "✅ ${state.items.joinToString()}"
+                is UiState.Error -> "❌ ${state.message}" + if (state.canRetry) " [Retry]" else ""
+            }
+
+            fun main() {
+                val states = listOf(
+                    UiState.Loading,
+                    UiState.Success(listOf("Buy milk", "Learn Kotlin")),
+                    UiState.Success(emptyList()),
+                    UiState.Error("No connection", canRetry = true),
+                )
+                states.forEach { println(render(it)) }
+                println(UiState.Loading)                     // data object → nice toString
+            }
+          </script>
+          <script type="text/plain" data-output>
+            ⏳ Loading…
+            ✅ Buy milk, Learn Kotlin
+            📭 Nothing here
+            ❌ No connection [Retry]
+            Loading
+          </script>
+          <div class="callout tip">
+            <div class="ci">🛡️</div>
+            <div><span class="ct">Why this beats flags</span>
+              <p>Compare with <code>class State(val isLoading: Boolean, val items: List&lt;String&gt;?, val error: String?)</code>: nothing stops <code>isLoading = true</code> and <code>error = "x"</code> at the same time. With a sealed type, <b>impossible states are impossible to represent</b>. And when you add a new state (e.g. <code>Offline</code>), every <code>when</code> that doesn't handle it stops compiling — the compiler gives you a to-do list.</p>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th></th><th>enum class</th><th>sealed class / interface</th></tr></thead>
+              <tbody>
+                <tr><td>Fixed set of…</td><td>instances (each exists once)</td><td>subtypes (create as many instances as you like)</td></tr>
+                <tr><td>Different data per case</td><td>❌ same properties for all</td><td>✅ each subtype has its own</td></tr>
+                <tr><td>Exhaustive <code>when</code></td><td>✅</td><td>✅</td></tr>
+                <tr><td>Typical use</td><td>Priority, Direction, Theme</td><td>UiState, Result, NavigationEvent, payment methods</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="doc-section" id="object" data-title="object declarations">
+          <div class="sec-head"><h2><span class="sec-num">9.4</span><code>object</code>: singletons &amp; anonymous objects</h2></div>
+          <p>An <code>object</code> declaration defines a class and its <b>single instance</b> at once. It's created lazily and thread-safely on first access.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Objects.kt" data-run>
+            object AppConfig {
+                const val VERSION = "1.4.0"
+                var darkMode = false
+                fun summary() = "v$VERSION, dark=$darkMode"
+            }
+
+            interface ClickListener { fun onClick(id: Int) }
+
+            fun main() {
+                AppConfig.darkMode = true
+                println(AppConfig.summary())           // access through the name — no constructor
+
+                // Object EXPRESSION: an anonymous one-off implementation (like Java's anonymous class)
+                var clicks = 0
+                val listener = object : ClickListener {
+                    override fun onClick(id: Int) {
+                        clicks++                        // can capture and modify local variables
+                        println("Clicked $id (total $clicks)")
+                    }
+                }
+                listener.onClick(7)
+                listener.onClick(9)
+            }
+          </script>
+          <script type="text/plain" data-output>
+            v1.4.0, dark=true
+            Clicked 7 (total 1)
+            Clicked 9 (total 2)
+          </script>
+          <div class="callout warn">
+            <div class="ci">⚠️</div>
+            <div><span class="ct">Singletons are global state</span>
+              <p>Mutable singletons make code hard to test and reason about. Use <code>object</code> for stateless helpers and constants; for shared services (database, network), prefer one instance created and injected by a DI framework (lesson 18).</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="companion" data-title="Companion objects">
+          <div class="sec-head"><h2><span class="sec-num">9.5</span>Companion objects</h2></div>
+          <p>Kotlin has no <code>static</code> keyword. Members that belong to the class rather than to instances go into a <code>companion object</code>. Typical uses: factory functions, constants, and parsing.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Companion.kt" data-run>
+            class Color private constructor(val r: Int, val g: Int, val b: Int) {   // constructor is private
+                override fun toString() = "Color($r, $g, $b)"
+
+                companion object {
+                    val BLACK = Color(0, 0, 0)
+                    private const val MAX = 255
+
+                    fun rgb(r: Int, g: Int, b: Int): Color {
+                        require(listOf(r, g, b).all { it in 0..MAX }) { "Out of range" }
+                        return Color(r, g, b)
+                    }
+
+                    fun fromHex(hex: String): Color {
+                        val v = hex.removePrefix("#").toInt(16)
+                        return Color(v shr 16 and 0xFF, v shr 8 and 0xFF, v and 0xFF)
+                    }
+                }
+            }
+
+            fun main() {
+                println(Color.rgb(127, 82, 255))
+                println(Color.fromHex("#E44857"))
+                println(Color.BLACK)
+                // Color(1, 2, 3)                // ❌ constructor is private — use the factories
+            }
+          </script>
+          <script type="text/plain" data-output>
+            Color(127, 82, 255)
+            Color(228, 72, 87)
+            Color(0, 0, 0)
+          </script>
+          <p class="small muted">For Java callers, add <code>@JvmStatic</code> to companion functions to make them real static methods, and use <code>const val</code> or <code>@JvmField</code> for constants.</p>
+        </section>
+
+        <section class="doc-section" id="value-classes" data-title="Value classes">
+          <div class="sec-head"><h2><span class="sec-num">9.6</span>Value classes: type-safe wrappers for free</h2></div>
+          <p>Is <code>fun transfer(from: Long, to: Long, amount: Long)</code> safe? One swapped argument and you send money the wrong way. A <b>value class</b> wraps a single value in its own type; at runtime the wrapper is usually erased, so there's no allocation cost.</p>
+          <script type="text/plain" data-code="kotlin" data-file="ValueClasses.kt" data-run>
+            @JvmInline value class AccountId(val raw: Long)
+            @JvmInline value class Cents(val amount: Long) {
+                init { require(amount >= 0) { "Negative amount" } }
+                operator fun plus(other: Cents) = Cents(amount + other.amount)
+                override fun toString() = "$" + amount / 100 + "." + (amount % 100).toString().padStart(2, '0')
+            }
+
+            fun transfer(from: AccountId, to: AccountId, amount: Cents) =
+                println("Move $amount from ${from.raw} to ${to.raw}")
+
+            fun main() {
+                val alice = AccountId(1001)
+                val bob = AccountId(2002)
+                transfer(alice, bob, Cents(2_550))
+                // transfer(alice, Cents(2_550), bob)     // ❌ type mismatch — caught at compile time
+                println(Cents(199) + Cents(1))
+            }
+          </script>
+          <script type="text/plain" data-output>
+            Move $25.50 from 1001 to 2002
+            $2.00
+          </script>
+        </section>
+
+        <section class="doc-section" id="nested" data-title="Nested & inner classes">
+          <div class="sec-head"><h2><span class="sec-num">9.7</span>Nested vs inner classes</h2></div>
+          <p>A class declared inside another is <b>nested</b> by default: it does <em>not</em> hold a reference to the outer instance (like Java's <code>static</code> nested class). Mark it <code>inner</code> to access the outer instance's members.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Nested.kt" data-run>
+            class Playlist(val title: String) {
+                private val songs = mutableListOf<String>()
+
+                class Builder {                                     // nested: no access to Playlist instance
+                    private val names = mutableListOf<String>()
+                    fun add(name: String) = apply { names += name }
+                    fun build(title: String) = Playlist(title).also { p -> names.forEach { p.songs += it } }
+                }
+
+                inner class Cursor {                                // inner: can read outer `songs`, `title`
+                    private var index = 0
+                    fun next(): String? = songs.getOrNull(index++)?.let { "$title ▸ $it" }
+                }
+            }
+
+            fun main() {
+                val playlist = Playlist.Builder().add("Intro").add("Theme").build("Kotlin Mix")
+                val cursor = playlist.Cursor()                      // needs an outer instance
+                println(cursor.next())
+                println(cursor.next())
+                println(cursor.next())
+            }
+          </script>
+          <script type="text/plain" data-output>
+            Kotlin Mix ▸ Intro
+            Kotlin Mix ▸ Theme
+            null
+          </script>
+          <p class="small muted">Inner classes keep the outer object alive. On Android, an inner class or lambda capturing an <code>Activity</code> and outliving it is a classic memory leak — prefer nested classes unless you really need the outer instance.</p>
+        </section>
+
+        <section class="doc-section" id="exercises" data-title="Exercises">
+          <div class="sec-head"><h2><span class="sec-num">9.8</span>Exercises</h2></div>
+          <details class="exercise">
+            <summary>Exercise 1 — Immutable shopping cart <span class="badge green">Easy</span></summary>
+            <div class="ex-body">
+              <p>Model <code>CartItem(name, price, qty)</code> and <code>Cart(items: List&lt;CartItem&gt;)</code> as data classes. Write <code>Cart.add(item)</code> returning a <b>new</b> cart (merging quantity when the name exists) and a computed <code>total</code>.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution" data-run>
+                data class CartItem(val name: String, val price: Long, val qty: Int)
+
+                data class Cart(val items: List<CartItem> = emptyList()) {
+                    val total: Long get() = items.sumOf { it.price * it.qty }
+
+                    fun add(item: CartItem): Cart {
+                        val existing = items.find { it.name == item.name }
+                        return if (existing == null) copy(items = items + item)
+                        else copy(items = items.map { if (it.name == item.name) it.copy(qty = it.qty + item.qty) else it })
+                    }
+                }
+
+                fun main() {
+                    val empty = Cart()
+                    val cart = empty.add(CartItem("tea", 200, 1)).add(CartItem("cake", 450, 1)).add(CartItem("tea", 200, 2))
+                    println(cart.items)
+                    println("total=${cart.total} emptyStillEmpty=${empty.items.isEmpty()}")
+                }
+              </script>
+              <script type="text/plain" data-output>
+                [CartItem(name=tea, price=200, qty=3), CartItem(name=cake, price=450, qty=1)]
+                total=1050 emptyStillEmpty=true
+              </script>
+            </div>
+          </details>
+          <details class="exercise">
+            <summary>Exercise 2 — Traffic light state machine <span class="badge blue">Medium</span></summary>
+            <div class="ex-body">
+              <p>Create <code>enum class Light(val seconds: Int)</code> with RED(30), GREEN(25), YELLOW(5) and a <code>next()</code> function using an exhaustive <code>when</code>. Simulate 4 transitions starting at RED.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution" data-run>
+                enum class Light(val seconds: Int) {
+                    RED(30), GREEN(25), YELLOW(5);
+
+                    fun next(): Light = when (this) {
+                        RED -> GREEN
+                        GREEN -> YELLOW
+                        YELLOW -> RED
+                    }
+                }
+
+                fun main() {
+                    var light = Light.RED
+                    repeat(4) {
+                        println("$light for ${light.seconds}s")
+                        light = light.next()
+                    }
+                }
+              </script>
+              <script type="text/plain" data-output>
+                RED for 30s
+                GREEN for 25s
+                YELLOW for 5s
+                RED for 30s
+              </script>
+            </div>
+          </details>
+          <details class="exercise">
+            <summary>Exercise 3 — Payment methods <span class="badge amber">Challenge</span></summary>
+            <div class="ex-body">
+              <p>Model payments as a sealed interface: <code>Card(last4, brand)</code>, <code>BankTransfer(iban)</code>, <code>Wallet(provider)</code>, and <code>Cash</code> (a data object). Write <code>fee(payment, amountCents)</code>: card 2.9% + 30¢, bank transfer flat 50¢, wallet 1.5%, cash free. Write <code>describe</code> that masks the IBAN except its last 4 characters.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution" data-run>
+                sealed interface Payment {
+                    data class Card(val last4: String, val brand: String) : Payment
+                    data class BankTransfer(val iban: String) : Payment
+                    data class Wallet(val provider: String) : Payment
+                    data object Cash : Payment
+                }
+
+                fun fee(p: Payment, amount: Long): Long = when (p) {
+                    is Payment.Card -> amount * 29 / 1000 + 30
+                    is Payment.BankTransfer -> 50
+                    is Payment.Wallet -> amount * 15 / 1000
+                    Payment.Cash -> 0
+                }
+
+                fun describe(p: Payment): String = when (p) {
+                    is Payment.Card -> "${p.brand} •••• ${p.last4}"
+                    is Payment.BankTransfer -> "Bank " + "*".repeat(p.iban.length - 4) + p.iban.takeLast(4)
+                    is Payment.Wallet -> "${p.provider} wallet"
+                    Payment.Cash -> "Cash"
+                }
+
+                fun main() {
+                    val methods = listOf(Payment.Card("4242", "Visa"), Payment.BankTransfer("VN12345678"), Payment.Wallet("MoMo"), Payment.Cash)
+                    for (m in methods) println("${describe(m)}: fee ${fee(m, 10_000)}¢")
+                }
+              </script>
+              <script type="text/plain" data-output>
+                Visa •••• 4242: fee 320¢
+                Bank ******5678: fee 50¢
+                MoMo wallet: fee 150¢
+                Cash: fee 0¢
+              </script>
+            </div>
+          </details>
+        </section>
+
+        <section class="doc-section" id="quiz" data-title="Quiz">
+          <div class="sec-head"><h2><span class="sec-num">9.9</span>Quiz</h2></div>
+          <script type="application/json" data-quiz>
+          [
+            {"q": "Which members does `data class P(val x: Int)` NOT get automatically?", "options": ["equals/hashCode", "toString", "copy", "A no-argument constructor"], "answer": 3, "explain": "Data classes generate equals, hashCode, toString, copy and componentN — not a no-arg constructor (unless all params have defaults)."},
+            {"q": "`data class U(val name: String) { var visits = 0 }`. Are `U(\"a\").apply { visits = 5 }` and `U(\"a\")` equal?", "options": ["Yes — body properties are ignored by equals", "No — visits differs", "Compile error", "Only if visits is val"], "answer": 0, "explain": "Only primary-constructor properties participate in generated equals/hashCode/toString."},
+            {"q": "Why prefer a sealed interface over an enum for `UiState`?", "options": ["Enums are slower", "Each state can carry different data (e.g. Success(items), Error(message))", "Sealed types aren't checked by when", "Enums can't be used in Compose"], "answer": 1, "explain": "Enum constants all share the same shape; sealed subtypes can each have their own properties."},
+            {"q": "How do you write the equivalent of a Java `static` factory method?", "options": ["`static fun create()`", "A function in a `companion object`", "An `inner` class", "`@Static fun`"], "answer": 1, "explain": "Companion object members are accessed through the class name: `Color.fromHex(\"#fff\")`."},
+            {"q": "What's the main benefit of `@JvmInline value class UserId(val raw: String)`?", "options": ["Faster string comparison", "Type safety (can't mix up a UserId with another String) with usually no runtime allocation", "Automatic database IDs", "It makes the class open"], "answer": 1, "explain": "The compiler treats it as a distinct type but typically represents it as the underlying String at runtime."},
+            {"q": "Which can access the outer class instance's properties?", "options": ["A nested class", "An inner class", "A companion object", "A data class"], "answer": 1, "explain": "Only `inner` classes hold a reference to the outer instance."}
+          ]
+          </script>
+        </section>
+
+        <section class="doc-section" id="references" data-title="Further reading">
+          <div class="sec-head"><h2><span class="sec-num">9.10</span>Further reading</h2></div>
+          <ul>
+            <li><a href="https://kotlinlang.org/docs/data-classes.html" target="_blank" rel="noopener">Data classes</a> · <a href="https://kotlinlang.org/docs/enum-classes.html" target="_blank" rel="noopener">Enum classes</a> · <a href="https://kotlinlang.org/docs/sealed-classes.html" target="_blank" rel="noopener">Sealed classes</a></li>
+            <li><a href="https://kotlinlang.org/docs/object-declarations.html" target="_blank" rel="noopener">Object declarations and expressions</a></li>
+            <li><a href="https://kotlinlang.org/docs/inline-classes.html" target="_blank" rel="noopener">Inline value classes</a></li>
+          </ul>
+        </section>
+
+        <div id="pager"></div>
+      </div>
+    </main>
+  </div>
+  <div id="site-footer"></div>
+  <script src="assets/js/core.js?v=__BUILD__"></script>
+</body>
+</html>

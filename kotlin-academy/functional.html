@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lambdas, Extensions & Scope Functions — Kotlin Academy</title>
+  <meta name="description" content="Functional Kotlin: lambdas, function types, higher-order functions, function references, closures, extension functions, scope functions let/run/with/apply/also and inline functions.">
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <meta name="color-scheme" content="dark light">
+  <link rel="stylesheet" href="assets/css/main.css?v=__BUILD__">
+  <script>try{var t=localStorage.getItem("ka-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body data-page="functional">
+  <div id="site-header"></div>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="content">
+      <div class="content-inner">
+
+        <header class="page-hero">
+          <nav class="crumbs"><a href="index.html">Home</a><span>/</span><span>Object-Oriented &amp; Functional</span><span>/</span><span>Lesson 10</span></nav>
+          <div class="eyebrow">Lesson 10 · Functional Kotlin</div>
+          <h1>Lambdas, Extensions &amp; Scope Functions</h1>
+          <p class="lead">In Kotlin, functions are values: you can store them in variables, pass them to other functions and return them. This lesson unlocks the style you've already seen in <code>map { … }</code> — and the features that make Jetpack Compose and Kotlin DSLs possible.</p>
+          <div class="page-meta"><span>⏱ 60 min</span><span>🎯 Intermediate</span><span>▶ All examples are runnable</span></div>
+          <div class="objectives">
+            <h4>You will be able to</h4>
+            <ul>
+              <li>Write lambdas and read function types like <code>(Int) -&gt; String</code></li>
+              <li>Create higher-order functions and use trailing lambdas</li>
+              <li>Use function references (<code>::name</code>) and closures</li>
+              <li>Add behaviour to existing types with extensions</li>
+              <li>Choose correctly between <code>let</code>, <code>run</code>, <code>with</code>, <code>apply</code>, <code>also</code></li>
+              <li>Explain <code>inline</code>, non-local returns and lambdas with receivers</li>
+            </ul>
+          </div>
+        </header>
+
+        <section class="doc-section" id="lambdas" data-title="Lambdas & function types">
+          <div class="sec-head"><h2><span class="sec-num">10.1</span>Lambdas &amp; function types</h2></div>
+          <p>A <b>lambda</b> is an anonymous function written in braces: parameters, an arrow, then the body. The <b>last expression</b> is the return value. Its type is a <b>function type</b> such as <code>(Int, Int) -&gt; Int</code>.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Lambdas.kt" data-run>
+            fun main() {
+                val add: (Int, Int) -> Int = { a, b -> a + b }       // explicit function type
+                val square = { x: Int -> x * x }                    // parameter type on the lambda
+                val greet: (String) -> Unit = { println("Hi, $it!") } // single param → `it`
+                val answer: () -> Int = { 42 }                      // no parameters
+
+                println(add(2, 3))
+                println(square(9))
+                greet("Kotlin")
+                println(answer())
+
+                val longer = { x: Int ->
+                    val doubled = x * 2
+                    println("doubling $x")
+                    doubled + 1                                     // last expression = result
+                }
+                println(longer(5))
+
+                val maybe: ((String) -> Int)? = null                // nullable function type
+                println(maybe?.invoke("x") ?: "no function")
+            }
+          </script>
+          <script type="text/plain" data-output>
+            5
+            81
+            Hi, Kotlin!
+            42
+            doubling 5
+            11
+            no function
+          </script>
+        </section>
+
+        <section class="doc-section" id="higher-order" data-title="Higher-order functions">
+          <div class="sec-head"><h2><span class="sec-num">10.2</span>Higher-order functions &amp; trailing lambdas</h2></div>
+          <p>A <b>higher-order function</b> takes functions as parameters or returns one. When the last parameter is a function, you can pass the lambda <b>outside the parentheses</b> — the trailing lambda syntax that makes <code>list.filter { … }</code> and Compose's <code>Column { … }</code> read so naturally.</p>
+          <script type="text/plain" data-code="kotlin" data-file="HigherOrder.kt" data-run>
+            fun repeatAction(times: Int, action: (Int) -> Unit) {
+                for (i in 1..times) action(i)
+            }
+
+            fun <T> measure(label: String, block: () -> T): T {
+                val start = System.nanoTime()
+                val result = block()
+                val ms = (System.nanoTime() - start) / 1_000_000
+                println("$label finished in ${if (ms < 1000) "<1s" else "${ms}ms"}")
+                return result
+            }
+
+            fun makeMultiplier(factor: Int): (Int) -> Int = { it * factor }   // returns a function
+
+            fun main() {
+                repeatAction(3) { i -> print("#$i ") }          // trailing lambda
+                println()
+
+                val sum = measure("sum") { (1..1_000).sum() }
+                println(sum)
+
+                val triple = makeMultiplier(3)
+                println(triple(14))
+                println(listOf(1, 2, 3).map(makeMultiplier(10)))
+            }
+          </script>
+          <script type="text/plain" data-output>
+            #1 #2 #3
+            sum finished in <1s
+            500500
+            42
+            [10, 20, 30]
+          </script>
+        </section>
+
+        <section class="doc-section" id="references" data-title="Function references & closures">
+          <div class="sec-head"><h2><span class="sec-num">10.3</span>Function references &amp; closures</h2></div>
+          <p>Already have a named function that fits? Pass it with <code>::</code> instead of wrapping it in a lambda. Lambdas also <b>capture</b> variables from their surrounding scope (a <b>closure</b>) and can even modify captured <code>var</code>s.</p>
+          <script type="text/plain" data-code="kotlin" data-file="References.kt" data-run>
+            fun isOdd(n: Int) = n % 2 == 1
+            data class Person(val name: String, val age: Int)
+
+            fun main() {
+                val numbers = listOf(1, 2, 3, 4, 5)
+                println(numbers.filter(::isOdd))                 // top-level function reference
+                println(listOf("a", "b").map(String::uppercase)) // member reference
+                val people = listOf(Person("Ada", 36), Person("Linh", 24))
+                println(people.map(Person::name))                // property reference
+                val makePerson: (String, Int) -> Person = ::Person   // constructor reference
+                println(makePerson("Bob", 40))
+
+                // Closures
+                var counter = 0
+                val increment = { counter++ }                    // captures `counter`
+                repeat(3) { increment() }
+                println("counter = $counter")
+
+                val prefixes = listOf("Mr.", "Dr.").map { p -> { name: String -> "$p $name" } }
+                println(prefixes.map { it("Smith") })
+            }
+          </script>
+          <script type="text/plain" data-output>
+            [1, 3, 5]
+            [A, B]
+            [Ada, Linh]
+            Person(name=Bob, age=40)
+            counter = 3
+            [Mr. Smith, Dr. Smith]
+          </script>
+        </section>
+
+        <section class="doc-section" id="extensions" data-title="Extension functions & properties">
+          <div class="sec-head"><h2><span class="sec-num">10.4</span>Extension functions &amp; properties</h2></div>
+          <p>Extensions add functions or properties to a type you don't own — <code>String</code>, <code>List</code>, Android's <code>Context</code> — without inheritance. Inside, <code>this</code> is the receiver object. Most of Kotlin's standard library (<code>map</code>, <code>filter</code>, <code>trim</code>…) is written as extensions.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Extensions.kt" data-run>
+            fun String.isPalindrome(): Boolean {
+                val clean = this.lowercase().filter { it.isLetterOrDigit() }
+                return clean == clean.reversed()
+            }
+
+            fun Int.minutes(): String = "${this / 60}h ${this % 60}m"
+
+            val String.wordCount: Int                       // extension property (computed only)
+                get() = trim().split(Regex("\\s+")).count { it.isNotEmpty() }
+
+            fun String?.orDash(): String = if (this.isNullOrBlank()) "—" else this   // nullable receiver
+
+            fun <T> List<T>.second(): T? = getOrNull(1)    // generic extension
+
+            fun main() {
+                println("A man, a plan, a canal: Panama".isPalindrome())
+                println(135.minutes())
+                println("Kotlin  is   concise".wordCount)
+                val missing: String? = null
+                println(missing.orDash())
+                println(listOf("gold", "silver", "bronze").second())
+            }
+          </script>
+          <script type="text/plain" data-output>
+            true
+            2h 15m
+            3
+            —
+            silver
+          </script>
+          <div class="callout note">
+            <div class="ci">🔬</div>
+            <div><span class="ct">How extensions really work</span>
+              <p>An extension doesn't modify the class. It compiles to a static function taking the receiver as its first parameter: <code>isPalindrome(String $this)</code>. Consequences: extensions can't access <code>private</code> members, and they're resolved <b>statically</b> by the declared type — no polymorphism. If a class has a member with the same signature, the <b>member always wins</b>.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="scope-functions" data-title="Scope functions">
+          <div class="sec-head"><h2><span class="sec-num">10.5</span>Scope functions: <code>let</code>, <code>run</code>, <code>with</code>, <code>apply</code>, <code>also</code></h2></div>
+          <p>Five tiny standard-library functions that run a block in the context of an object. They differ in two ways: how you refer to the object (<code>it</code> or <code>this</code>) and what they return.</p>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>Function</th><th>Object as</th><th>Returns</th><th>Typical use</th></tr></thead>
+              <tbody>
+                <tr><td><code>let</code></td><td><code>it</code></td><td>lambda result</td><td>Null checks <code>x?.let { }</code>, transforming a value</td></tr>
+                <tr><td><code>run</code></td><td><code>this</code></td><td>lambda result</td><td>Configure + compute a result in one block</td></tr>
+                <tr><td><code>with(x)</code></td><td><code>this</code></td><td>lambda result</td><td>Call many methods on one object (non-extension)</td></tr>
+                <tr><td><code>apply</code></td><td><code>this</code></td><td>the object itself</td><td>Configuring/initializing an object</td></tr>
+                <tr><td><code>also</code></td><td><code>it</code></td><td>the object itself</td><td>Side effects: logging, validation</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <script type="text/plain" data-code="kotlin" data-file="ScopeFunctions.kt" data-run>
+            class Request {
+                var url = ""
+                var method = "GET"
+                val headers = mutableMapOf<String, String>()
+                override fun toString() = "$method $url $headers"
+            }
+
+            fun main() {
+                // apply: configure an object, get the object back
+                val request = Request().apply {
+                    url = "https://api.example.com/tasks"
+                    method = "POST"
+                    headers["Auth"] = "token"
+                }
+                println(request)
+
+                // also: do something extra, keep the object flowing
+                val numbers = mutableListOf(3, 1, 2)
+                    .also { println("Before sort: $it") }
+                    .apply { sort() }
+                println(numbers)
+
+                // let: transform / null-safe block
+                val name: String? = "kotlin"
+                val length = name?.let { it.replaceFirstChar(Char::uppercase) + " (${it.length})" }
+                println(length)
+
+                // run: compute a result using the object's members
+                val summary = request.run { "$method to ${url.substringAfter("//")}" }
+                println(summary)
+
+                // with: same as run, but the object is an argument
+                val report = with(StringBuilder()) {
+                    append("Tasks: ")
+                    append(listOf("a", "b").size)
+                    toString()
+                }
+                println(report)
+            }
+          </script>
+          <script type="text/plain" data-output>
+            POST https://api.example.com/tasks {Auth=token}
+            Before sort: [3, 1, 2]
+            [1, 2, 3]
+            Kotlin (6)
+            POST to api.example.com/tasks
+            Tasks: 2
+          </script>
+          <div class="callout tip">
+            <div class="ci">🧭</div>
+            <div><span class="ct">Quick decision guide</span>
+              <ul>
+                <li>Null check on a value? → <code>?.let</code></li>
+                <li>Setting up an object's properties? → <code>apply</code></li>
+                <li>Logging or validating mid-chain? → <code>also</code></li>
+                <li>Need a computed result from an object? → <code>run</code> / <code>with</code></li>
+              </ul>
+              <p>Don't nest them deeply — three levels of <code>it</code>/<code>this</code> is unreadable. When in doubt, a plain local <code>val</code> is fine.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="inline" data-title="inline functions">
+          <div class="sec-head"><h2><span class="sec-num">10.6</span><code>inline</code> functions &amp; non-local returns</h2></div>
+          <p>Each lambda passed to a normal function becomes an object. Marking a higher-order function <code>inline</code> makes the compiler <b>copy its body and the lambda's body</b> into the call site — zero overhead. That's why <code>map</code>, <code>filter</code>, <code>let</code> and <code>forEach</code> are inline.</p>
+          <p>A bonus: inside a lambda passed to an inline function, a bare <code>return</code> returns from the <em>enclosing</em> function (a <b>non-local return</b>). To return from just the lambda, use a label: <code>return@forEach</code>.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Inline.kt" data-run>
+            inline fun <T> retry(times: Int, block: (attempt: Int) -> T): T {
+                var last: Throwable? = null
+                repeat(times) { attempt ->
+                    try {
+                        return block(attempt + 1)            // non-local: returns from retry()
+                    } catch (e: Exception) {
+                        last = e
+                        println("  attempt ${attempt + 1} failed: ${e.message}")
+                    }
+                }
+                throw IllegalStateException("All $times attempts failed", last)
+            }
+
+            fun firstNegative(xs: List<Int>): Int? {
+                xs.forEach { if (it < 0) return it }      // returns from firstNegative
+                return null
+            }
+
+            fun printPositives(xs: List<Int>) {
+                xs.forEach {
+                    if (it < 0) return@forEach            // like `continue`
+                    print("$it ")
+                }
+                println()
+            }
+
+            fun main() {
+                val value = retry(3) { attempt ->
+                    if (attempt < 3) error("network down") else "data on attempt $attempt"
+                }
+                println(value)
+                println(firstNegative(listOf(4, -2, -7)))
+                printPositives(listOf(1, -1, 2, -2, 3))
+            }
+          </script>
+          <script type="text/plain" data-output>
+              attempt 1 failed: network down
+              attempt 2 failed: network down
+            data on attempt 3
+            -2
+            1 2 3
+          </script>
+          <p class="small muted">Related modifiers: <code>noinline</code> (keep one lambda parameter as an object, e.g. to store it) and <code>crossinline</code> (forbid non-local returns from a lambda that is called from another context). <code>reified</code> type parameters (lesson 11) also require <code>inline</code>.</p>
+        </section>
+
+        <section class="doc-section" id="receivers" data-title="Lambdas with receivers">
+          <div class="sec-head"><h2><span class="sec-num">10.7</span>Lambdas with receivers — the secret of DSLs</h2></div>
+          <p>The type <code>StringBuilder.() -&gt; Unit</code> is a function that runs <em>as if it were an extension</em> on <code>StringBuilder</code>: inside the lambda, <code>this</code> is a StringBuilder. That's how <code>apply</code>, <code>buildString</code> and Compose's layout scopes work. Lesson 15 builds a complete DSL with this.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Receivers.kt" data-run>
+            class Html {
+                private val parts = mutableListOf<String>()
+                fun h1(text: String) { parts += "<h1>$text</h1>" }
+                fun p(text: String) { parts += "<p>$text</p>" }
+                override fun toString() = parts.joinToString("\n")
+            }
+
+            fun html(build: Html.() -> Unit): Html = Html().apply(build)   // lambda with receiver
+
+            fun main() {
+                val page = html {
+                    h1("Kotlin Academy")         // `this` is Html, so h1() is called on it
+                    p("Learn by doing.")
+                }
+                println(page)
+            }
+          </script>
+          <script type="text/plain" data-output>
+            <h1>Kotlin Academy</h1>
+            <p>Learn by doing.</p>
+          </script>
+        </section>
+
+        <section class="doc-section" id="exercises" data-title="Exercises">
+          <div class="sec-head"><h2><span class="sec-num">10.8</span>Exercises</h2></div>
+          <details class="exercise">
+            <summary>Exercise 1 — Your own <code>filter</code> and <code>map</code> <span class="badge green">Easy</span></summary>
+            <div class="ex-body">
+              <p>Implement <code>myFilter</code> and <code>myMap</code> as generic extension functions on <code>List&lt;T&gt;</code> using a loop.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution" data-run>
+                inline fun <T> List<T>.myFilter(predicate: (T) -> Boolean): List<T> {
+                    val result = ArrayList<T>()
+                    for (item in this) if (predicate(item)) result.add(item)
+                    return result
+                }
+
+                inline fun <T, R> List<T>.myMap(transform: (T) -> R): List<R> {
+                    val result = ArrayList<R>(size)
+                    for (item in this) result.add(transform(item))
+                    return result
+                }
+
+                fun main() {
+                    println((1..10).toList().myFilter { it % 3 == 0 }.myMap { "[$it]" })
+                }
+              </script>
+              <script type="text/plain" data-output>
+                [[3], [6], [9]]
+              </script>
+            </div>
+          </details>
+          <details class="exercise">
+            <summary>Exercise 2 — Function composition <span class="badge blue">Medium</span></summary>
+            <div class="ex-body">
+              <p>Write an infix function <code>andThen</code> that composes <code>(A) -&gt; B</code> with <code>(B) -&gt; C</code> into <code>(A) -&gt; C</code>. Use it to build a text normalizer pipeline: trim → lowercase → collapse spaces.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution" data-run>
+                infix fun <A, B, C> ((A) -> B).andThen(next: (B) -> C): (A) -> C = { a -> next(this(a)) }
+
+                fun main() {
+                    val trim: (String) -> String = String::trim
+                    val lower: (String) -> String = String::lowercase
+                    val collapse: (String) -> String = { it.replace(Regex("\\s+"), " ") }
+
+                    val normalize = trim andThen lower andThen collapse
+                    println("[" + normalize("   Hello    KOTLIN   World ") + "]")
+                }
+              </script>
+              <script type="text/plain" data-output>
+                [hello kotlin world]
+              </script>
+            </div>
+          </details>
+          <details class="exercise">
+            <summary>Exercise 3 — Memoize <span class="badge amber">Challenge</span></summary>
+            <div class="ex-body">
+              <p>Write <code>fun &lt;A, R&gt; memoize(f: (A) -&gt; R): (A) -&gt; R</code> that caches results in a map captured by the returned lambda. Count how many times the real function runs.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution" data-run>
+                fun <A, R> memoize(f: (A) -> R): (A) -> R {
+                    val cache = mutableMapOf<A, R>()
+                    return { a -> cache.getOrPut(a) { f(a) } }
+                }
+
+                fun main() {
+                    var calls = 0
+                    val slowSquare = { n: Int -> calls++; n * n }
+                    val fast = memoize(slowSquare)
+                    println(listOf(4, 4, 5, 4, 5).map(fast))
+                    println("real calls: $calls")
+                }
+              </script>
+              <script type="text/plain" data-output>
+                [16, 16, 25, 16, 25]
+                real calls: 2
+              </script>
+            </div>
+          </details>
+        </section>
+
+        <section class="doc-section" id="quiz" data-title="Quiz">
+          <div class="sec-head"><h2><span class="sec-num">10.9</span>Quiz</h2></div>
+          <script type="application/json" data-quiz>
+          [
+            {"q": "What is the type of `{ s: String -> s.length > 3 }`?", "options": ["`(String) -> Int`", "`(String) -> Boolean`", "`String.() -> Boolean`", "`() -> Boolean`"], "answer": 1, "explain": "One String parameter; the last expression is a Boolean."},
+            {"q": "Which scope function returns the object itself and refers to it as `this`?", "options": ["let", "also", "apply", "run"], "answer": 2, "explain": "apply → this + returns the object; also → it + returns the object."},
+            {"q": "Why can't an extension function read a class's private properties?", "options": ["Because of a compiler bug", "Extensions compile to static functions outside the class", "Because extensions are inline", "They can"], "answer": 1, "explain": "An extension is syntactic sugar for a static function taking the receiver as a parameter."},
+            {"q": "Inside `list.forEach { if (it == 0) return }` in a regular function, what does `return` do?", "options": ["Skips to the next element", "Returns from the enclosing function (forEach is inline)", "Compile error", "Exits only the lambda"], "answer": 1, "explain": "Non-local return. Use `return@forEach` to only skip the current element."},
+            {"q": "Which call is equivalent to `names.map { it.uppercase() }`?", "options": ["`names.map(::uppercase)`", "`names.map(String::uppercase)`", "`names.map(uppercase)`", "`names::map(uppercase)`"], "answer": 1, "explain": "`String::uppercase` is an unbound member reference of type `(String) -> String`."},
+            {"q": "In `fun html(build: Html.() -> Unit)`, what is `this` inside the lambda passed to html?", "options": ["The calling class", "An Html instance", "Unit", "The lambda itself"], "answer": 1, "explain": "A function type with receiver makes the receiver available as `this`."}
+          ]
+          </script>
+        </section>
+
+        <section class="doc-section" id="references-reading" data-title="Further reading">
+          <div class="sec-head"><h2><span class="sec-num">10.10</span>Further reading</h2></div>
+          <ul>
+            <li><a href="https://kotlinlang.org/docs/lambdas.html" target="_blank" rel="noopener">Higher-order functions and lambdas</a></li>
+            <li><a href="https://kotlinlang.org/docs/extensions.html" target="_blank" rel="noopener">Extensions</a></li>
+            <li><a href="https://kotlinlang.org/docs/scope-functions.html" target="_blank" rel="noopener">Scope functions</a></li>
+            <li><a href="https://kotlinlang.org/docs/inline-functions.html" target="_blank" rel="noopener">Inline functions</a></li>
+          </ul>
+        </section>
+
+        <div id="pager"></div>
+      </div>
+    </main>
+  </div>
+  <div id="site-footer"></div>
+  <script src="assets/js/core.js?v=__BUILD__"></script>
+</body>
+</html>

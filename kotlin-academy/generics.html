@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Generics — Kotlin Academy</title>
+  <meta name="description" content="Kotlin generics: generic classes and functions, type constraints, variance with in and out, use-site variance, star projection, type erasure and reified type parameters.">
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <meta name="color-scheme" content="dark light">
+  <link rel="stylesheet" href="assets/css/main.css?v=__BUILD__">
+  <script>try{var t=localStorage.getItem("ka-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body data-page="generics">
+  <div id="site-header"></div>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="content">
+      <div class="content-inner">
+
+        <header class="page-hero">
+          <nav class="crumbs"><a href="index.html">Home</a><span>/</span><span>Object-Oriented &amp; Functional</span><span>/</span><span>Lesson 11</span></nav>
+          <div class="eyebrow">Lesson 11 · Type System</div>
+          <h1>Generics</h1>
+          <p class="lead">Generics let you write code once and use it with many types — safely. You've been using them since lesson 07 (<code>List&lt;String&gt;</code>). Now you'll write your own, and finally understand what <code>out</code>, <code>in</code> and <code>reified</code> mean.</p>
+          <div class="page-meta"><span>⏱ 45 min</span><span>🎯 Intermediate → Advanced</span><span>▶ All examples are runnable</span></div>
+          <div class="objectives">
+            <h4>You will be able to</h4>
+            <ul>
+              <li>Write generic classes, interfaces and functions</li>
+              <li>Restrict type parameters with upper bounds and <code>where</code></li>
+              <li>Explain covariance (<code>out</code>) and contravariance (<code>in</code>)</li>
+              <li>Use star projections <code>&lt;*&gt;</code></li>
+              <li>Understand type erasure</li>
+              <li>Use <code>inline</code> + <code>reified</code> to access types at runtime</li>
+            </ul>
+          </div>
+        </header>
+
+        <section class="doc-section" id="why" data-title="Why generics">
+          <div class="sec-head"><h2><span class="sec-num">11.1</span>Generic classes &amp; functions</h2></div>
+          <p>Without generics you'd write <code>IntBox</code>, <code>StringBox</code>… or use <code>Any</code> and cast everywhere. A <b>type parameter</b> (by convention a single capital letter like <code>T</code>) is a placeholder that the caller fills in.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Generics.kt" data-run>
+            class Box<T>(val value: T) {
+                fun <R> map(transform: (T) -> R): Box<R> = Box(transform(value))
+                override fun toString() = "Box($value)"
+            }
+
+            // A generic function: the type parameter goes before the name
+            fun <T> List<T>.middle(): T? = if (isEmpty()) null else this[size / 2]
+
+            data class Pair2<A, B>(val first: A, val second: B)   // several type parameters
+
+            fun main() {
+                val intBox = Box(21)                    // T inferred as Int
+                val strBox: Box<String> = intBox.map { "value=${it * 2}" }
+                println(intBox)
+                println(strBox)
+                println(listOf("a", "b", "c").middle())
+                println(emptyList<Int>().middle())      // explicit type argument
+                println(Pair2("age", 36))
+            }
+          </script>
+          <script type="text/plain" data-output>
+            Box(21)
+            Box(value=42)
+            b
+            null
+            Pair2(first=age, second=36)
+          </script>
+        </section>
+
+        <section class="doc-section" id="constraints" data-title="Type constraints">
+          <div class="sec-head"><h2><span class="sec-num">11.2</span>Upper bounds &amp; constraints</h2></div>
+          <p><code>&lt;T : Comparable&lt;T&gt;&gt;</code> means “any type T, as long as T is comparable to itself”. Inside the function you can then use everything the bound provides. For multiple bounds, use a <code>where</code> clause.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Constraints.kt" data-run>
+            fun <T : Comparable<T>> maxOf3(a: T, b: T, c: T): T {
+                var best = a
+                if (b > best) best = b                   // `>` works because T is Comparable
+                if (c > best) best = c
+                return best
+            }
+
+            fun <T : Number> List<T>.averageValue(): Double =
+                if (isEmpty()) 0.0 else sumOf { it.toDouble() } / size
+
+            interface Named { val name: String }
+            data class City(override val name: String, val population: Int) : Named, Comparable<City> {
+                override fun compareTo(other: City) = population.compareTo(other.population)
+            }
+
+            fun <T> describeLargest(items: List<T>): String
+                where T : Named, T : Comparable<T> {     // two bounds
+                val top = items.maxOrNull() ?: return "none"
+                return "Largest: ${top.name}"
+            }
+
+            fun main() {
+                println(maxOf3(3, 9, 4))
+                println(maxOf3("pear", "apple", "zucchini"))
+                println(listOf(1, 2, 3, 4).averageValue())
+                println(listOf(1.5, 2.5).averageValue())
+                // listOf("a").averageValue()          // ❌ String is not a Number
+                println(describeLargest(listOf(City("Hanoi", 8_500_000), City("Hue", 650_000))))
+            }
+          </script>
+          <script type="text/plain" data-output>
+            9
+            zucchini
+            2.5
+            2.0
+            Largest: Hanoi
+          </script>
+          <p class="small muted">The default upper bound is <code>Any?</code>, so a plain <code>T</code> may be nullable. Write <code>&lt;T : Any&gt;</code> to require non-null types.</p>
+        </section>
+
+        <section class="doc-section" id="variance" data-title="Variance: in & out">
+          <div class="sec-head"><h2><span class="sec-num">11.3</span>Variance: <code>out</code> and <code>in</code></h2></div>
+          <p>A <code>Cat</code> is an <code>Animal</code>. Is a <code>Box&lt;Cat&gt;</code> a <code>Box&lt;Animal&gt;</code>? <b>It depends on what the box does with T.</b></p>
+          <div class="grid grid-3">
+            <div class="glass card"><h4 class="c-green"><code>out T</code> — covariant</h4><p class="small">The class only <b>produces</b> T (returns it). <code>Producer&lt;Cat&gt;</code> <b>is a</b> <code>Producer&lt;Animal&gt;</code>. Example: Kotlin's read-only <code>List&lt;out E&gt;</code>.</p></div>
+            <div class="glass card"><h4 class="c-blue"><code>in T</code> — contravariant</h4><p class="small">The class only <b>consumes</b> T (takes it as a parameter). <code>Consumer&lt;Animal&gt;</code> <b>is a</b> <code>Consumer&lt;Cat&gt;</code>. Example: <code>Comparator&lt;in T&gt;</code>.</p></div>
+            <div class="glass card"><h4 class="c-amber"><code>T</code> — invariant</h4><p class="small">Reads <em>and</em> writes T. No subtyping relationship. Example: <code>MutableList&lt;E&gt;</code>.</p></div>
+          </div>
+          <script type="text/plain" data-code="kotlin" data-file="Variance.kt" data-run>
+            open class Animal(val name: String)
+            class Cat(name: String) : Animal(name)
+
+            interface Producer<out T> { fun produce(): T }         // T only in "out" positions
+            interface Consumer<in T> { fun consume(item: T) }       // T only in "in" positions
+
+            class CatShelter : Producer<Cat> { override fun produce() = Cat("Tom") }
+            class Vet : Consumer<Animal> { override fun consume(item: Animal) = println("Treating ${item.name}") }
+
+            fun adoptAny(p: Producer<Animal>) = println("Adopted ${p.produce().name}")
+            fun treatCat(c: Consumer<Cat>, cat: Cat) = c.consume(cat)
+
+            fun main() {
+                adoptAny(CatShelter())                // Producer<Cat> accepted as Producer<Animal> (out)
+                treatCat(Vet(), Cat("Kitty"))         // Consumer<Animal> accepted as Consumer<Cat> (in)
+
+                val cats: List<Cat> = listOf(Cat("A"))
+                val animals: List<Animal> = cats      // ✅ List is covariant (List<out E>)
+                println(animals.first().name)
+
+                val mutableCats = mutableListOf(Cat("B"))
+                // val mutableAnimals: MutableList<Animal> = mutableCats   // ❌ invariant
+                // …otherwise you could add a Dog into a list of Cats!
+                println(mutableCats.size)
+            }
+          </script>
+          <script type="text/plain" data-output>
+            Adopted Tom
+            Treating Kitty
+            A
+            1
+          </script>
+          <div class="callout analogy">
+            <div class="ci">🎭</div>
+            <div><span class="ct">Memory hook: PECS → “out produces, in consumes”</span>
+              <p>A vending machine of cola (<b>produces</b> cola) can be used wherever “a vending machine of drinks” is expected — <code>out</code>. A recycling bin that <b>accepts</b> any bottle can be used wherever “a bin for glass bottles” is expected — <code>in</code>.</p>
+            </div>
+          </div>
+          <h3>Use-site variance &amp; star projection</h3>
+          <p>You can also apply variance at the place of use, and use <code>*</code> when you don't care about the type argument at all:</p>
+          <script type="text/plain" data-code="kotlin" data-file="UseSite.kt" data-run>
+            // Copy from any list of T-or-subtype into a list that accepts T-or-supertype
+            fun <T> copy(from: List<out T>, to: MutableList<in T>) {
+                for (item in from) to.add(item)
+            }
+
+            fun printSize(list: List<*>) = println("size=${list.size}, first=${list.firstOrNull()}")
+
+            fun main() {
+                val ints = listOf(1, 2, 3)
+                val numbers = mutableListOf<Number>(0.5)
+                copy(ints, numbers)                  // Int → Number
+                println(numbers)
+                printSize(listOf("x", "y"))
+                printSize(listOf(1.0))
+            }
+          </script>
+          <script type="text/plain" data-output>
+            [0.5, 1, 2, 3]
+            size=2, first=x
+            size=1, first=1.0
+          </script>
+        </section>
+
+        <section class="doc-section" id="reified" data-title="Type erasure & reified">
+          <div class="sec-head"><h2><span class="sec-num">11.4</span>Type erasure &amp; <code>reified</code></h2></div>
+          <p>On the JVM, generic type arguments are <b>erased</b> at runtime: a <code>List&lt;String&gt;</code> and a <code>List&lt;Int&gt;</code> are both just <code>List</code>. So <code>if (x is T)</code> doesn't compile in a normal generic function. An <code>inline</code> function with a <code>reified</code> type parameter keeps the real type, because the body is copied to each call site where the type is known.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Reified.kt" data-run>
+            inline fun <reified T> List<Any>.only(): List<T> = filter { it is T }.map { it as T }
+
+            inline fun <reified T> describeType(): String = T::class.simpleName ?: "?"
+
+            inline fun <reified T : Enum<T>> parseEnum(text: String, default: T): T =
+                enumValues<T>().firstOrNull { it.name.equals(text, ignoreCase = true) } ?: default
+
+            enum class Theme { LIGHT, DARK, SYSTEM }
+
+            fun main() {
+                val mixed: List<Any> = listOf(1, "two", 3.0, "four", 5)
+                println(mixed.only<String>())
+                println(mixed.only<Int>())
+                println(describeType<Map<String, Int>>())
+                println(parseEnum("dark", Theme.SYSTEM))
+                println(parseEnum("purple", Theme.SYSTEM))
+                println(mixed.filterIsInstance<Double>())   // the stdlib version of only<T>()
+            }
+          </script>
+          <script type="text/plain" data-output>
+            [two, four]
+            [1, 5]
+            Map
+            DARK
+            SYSTEM
+            [3.0]
+          </script>
+          <div class="callout tip">
+            <div class="ci">🤖</div>
+            <div><span class="ct">Where you'll see reified on Android</span>
+              <p><code>viewModel&lt;TaskViewModel&gt;()</code>, <code>hiltViewModel&lt;T&gt;()</code>, <code>context.getSystemService&lt;NotificationManager&gt;()</code>, <code>Json.decodeFromString&lt;Task&gt;(json)</code> and <code>composable&lt;TaskRoute&gt; { }</code> in Navigation are all reified generic functions.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="result-type" data-title="A generic Result type">
+          <div class="sec-head"><h2><span class="sec-num">11.5</span>Putting it together: a generic, covariant result type</h2></div>
+          <p>Here's a pattern you'll use in real apps — a sealed, generic, covariant type representing the outcome of loading data. <code>Nothing</code> as a type argument plus <code>out</code> lets <code>Loading</code> and <code>Failure</code> fit <em>any</em> <code>Outcome&lt;T&gt;</code>.</p>
+          <script type="text/plain" data-code="kotlin" data-file="Outcome.kt" data-run>
+            sealed interface Outcome<out T> {
+                data object Loading : Outcome<Nothing>
+                data class Success<T>(val data: T) : Outcome<T>
+                data class Failure(val error: Throwable) : Outcome<Nothing>
+            }
+
+            inline fun <T, R> Outcome<T>.map(transform: (T) -> R): Outcome<R> = when (this) {
+                Outcome.Loading -> Outcome.Loading
+                is Outcome.Success -> Outcome.Success(transform(data))
+                is Outcome.Failure -> this
+            }
+
+            fun loadUserName(id: Int): Outcome<String> =
+                if (id > 0) Outcome.Success("user#$id") else Outcome.Failure(IllegalArgumentException("bad id"))
+
+            fun main() {
+                val states: List<Outcome<String>> = listOf(Outcome.Loading, loadUserName(7), loadUserName(-1))
+                for (s in states) {
+                    val shown = s.map { it.uppercase() }
+                    println(
+                        when (shown) {
+                            Outcome.Loading -> "loading"
+                            is Outcome.Success -> "ok: ${shown.data}"
+                            is Outcome.Failure -> "error: ${shown.error.message}"
+                        }
+                    )
+                }
+            }
+          </script>
+          <script type="text/plain" data-output>
+            loading
+            ok: USER#7
+            error: bad id
+          </script>
+        </section>
+
+        <section class="doc-section" id="exercises" data-title="Exercises">
+          <div class="sec-head"><h2><span class="sec-num">11.6</span>Exercises</h2></div>
+          <details class="exercise">
+            <summary>Exercise 1 — Generic stack <span class="badge green">Easy</span></summary>
+            <div class="ex-body">
+              <p>Implement <code>class Stack&lt;T&gt;</code> with <code>push</code>, <code>pop(): T?</code>, <code>peek(): T?</code>, <code>isEmpty</code> and <code>size</code>.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution" data-run>
+                class Stack<T> {
+                    private val items = ArrayList<T>()
+                    val size get() = items.size
+                    fun isEmpty() = items.isEmpty()
+                    fun push(item: T) { items.add(item) }
+                    fun pop(): T? = if (items.isEmpty()) null else items.removeAt(items.lastIndex)
+                    fun peek(): T? = items.lastOrNull()
+                }
+
+                fun main() {
+                    val s = Stack<String>()
+                    s.push("a"); s.push("b"); s.push("c")
+                    println("${s.pop()} ${s.peek()} ${s.size}")
+                }
+              </script>
+              <script type="text/plain" data-output>
+                c b 2
+              </script>
+            </div>
+          </details>
+          <details class="exercise">
+            <summary>Exercise 2 — Balanced brackets <span class="badge blue">Medium</span></summary>
+            <div class="ex-body">
+              <p>Using your <code>Stack&lt;Char&gt;</code> (or <code>ArrayDeque</code>), write <code>isBalanced(text)</code> for <code>()[]{}</code>.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution" data-run>
+                fun isBalanced(text: String): Boolean {
+                    val pairs = mapOf(')' to '(', ']' to '[', '}' to '{')
+                    val stack = ArrayDeque<Char>()
+                    for (ch in text) {
+                        when (ch) {
+                            '(', '[', '{' -> stack.addLast(ch)
+                            ')', ']', '}' -> if (stack.removeLastOrNull() != pairs[ch]) return false
+                        }
+                    }
+                    return stack.isEmpty()
+                }
+
+                fun main() {
+                    println(listOf("fun f() { g(a[1]) }", "(]", "((", "").map(::isBalanced))
+                }
+              </script>
+              <script type="text/plain" data-output>
+                [true, false, false, true]
+              </script>
+            </div>
+          </details>
+          <details class="exercise">
+            <summary>Exercise 3 — Type-safe registry <span class="badge amber">Challenge</span></summary>
+            <div class="ex-body">
+              <p>Build a <code>ServiceRegistry</code> with <code>inline fun &lt;reified T : Any&gt; register(instance: T)</code> and <code>inline fun &lt;reified T : Any&gt; get(): T</code> that stores services by <code>KClass</code>. (This is the core idea of a dependency-injection container.)</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution" data-run>
+                import kotlin.reflect.KClass
+
+                class ServiceRegistry {
+                    @PublishedApi internal val services = mutableMapOf<KClass<*>, Any>()
+
+                    inline fun <reified T : Any> register(instance: T) { services[T::class] = instance }
+
+                    inline fun <reified T : Any> get(): T =
+                        services[T::class] as? T ?: error("No ${T::class.simpleName} registered")
+                }
+
+                class Database { fun query() = "rows" }
+                class Analytics { fun track(e: String) = println("track: $e") }
+
+                fun main() {
+                    val registry = ServiceRegistry()
+                    registry.register(Database())
+                    registry.register(Analytics())
+                    println(registry.get<Database>().query())
+                    registry.get<Analytics>().track("app_open")
+                    println(runCatching { registry.get<String>() }.exceptionOrNull()?.message)
+                }
+              </script>
+              <script type="text/plain" data-output>
+                rows
+                track: app_open
+                No String registered
+              </script>
+              <p class="small muted"><code>@PublishedApi internal</code> lets a public inline function use an internal member.</p>
+            </div>
+          </details>
+        </section>
+
+        <section class="doc-section" id="quiz" data-title="Quiz">
+          <div class="sec-head"><h2><span class="sec-num">11.7</span>Quiz</h2></div>
+          <script type="application/json" data-quiz>
+          [
+            {"q": "What does `fun <T : Comparable<T>> sort(list: List<T>)` require?", "options": ["T must be a String", "T must implement Comparable of itself", "T must be nullable", "Nothing"], "answer": 1, "explain": "The upper bound lets the function compare elements."},
+            {"q": "Why is `val animals: List<Animal> = listOf<Cat>()` allowed?", "options": ["Kotlin ignores generics", "`List` is declared `List<out E>` (covariant), because it only produces elements", "Cat is an alias of Animal", "It's not allowed"], "answer": 1, "explain": "Read-only lists can't accept new elements, so treating a list of cats as a list of animals is safe."},
+            {"q": "Why does `MutableList<Cat>` NOT convert to `MutableList<Animal>`?", "options": ["Performance", "Then you could add a Dog to a list of Cats", "MutableList is final", "It does convert"], "answer": 1, "explain": "MutableList both reads and writes E, so it must be invariant."},
+            {"q": "Which declaration correctly marks T as only consumed?", "options": ["`interface Sink<out T> { fun put(t: T) }`", "`interface Sink<in T> { fun put(t: T) }`", "`interface Sink<*T>`", "`interface Sink<T : in>`"], "answer": 1, "explain": "`in` = consumer (T appears as a parameter)."},
+            {"q": "Why does `fun <T> isType(x: Any) = x is T` fail to compile?", "options": ["`is` can't be used with generics because of type erasure; you need `inline` + `reified T`", "Missing return type", "T must be Any", "`is` only works with Strings"], "answer": 0, "explain": "At runtime T is erased. Reified type parameters in inline functions keep it."}
+          ]
+          </script>
+        </section>
+
+        <section class="doc-section" id="references" data-title="Further reading">
+          <div class="sec-head"><h2><span class="sec-num">11.8</span>Further reading</h2></div>
+          <ul>
+            <li><a href="https://kotlinlang.org/docs/generics.html" target="_blank" rel="noopener">Kotlin docs — Generics: in, out, where</a></li>
+            <li><a href="https://kotlinlang.org/docs/inline-functions.html#reified-type-parameters" target="_blank" rel="noopener">Reified type parameters</a></li>
+          </ul>
+        </section>
+
+        <div id="pager"></div>
+      </div>
+    </main>
+  </div>
+  <div id="site-footer"></div>
+  <script src="assets/js/core.js?v=__BUILD__"></script>
+</body>
+</html>
