@@ -4,7 +4,8 @@ on:
   push:
     paths:
       - "kotlin-academy/**"
-      - "tools/check_snippets.py"
+      - "tools/**"
+      - "final-project/**"
       - ".github/workflows/check-snippets.yml"
   pull_request:
     paths:
@@ -41,5 +42,7 @@ jobs:
             echo "GET $M/$path"
             curl -sSfL --retry 4 --retry-delay 5 -O "$M/$path"
           done
+      - name: Final-project page shows the current TaskFlow source
+        run: python3 tools/embed_sources.py --check
       - name: Compile and run every runnable example
         run: python3 tools/check_snippets.py --kotlin-lib kotlin-lib

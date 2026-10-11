@@ -557,7 +557,7 @@ body.landing main { overflow-x: hidden; }
 .milestone { margin: 26px 0 10px; padding: 14px 18px; border-radius: var(--radius); background: var(--grad); color: #fff; }
 .milestone h3 { margin: 0; color: #fff; font-size: 1.1rem; }
 .milestone p { margin: 4px 0 0; opacity: 0.9; font-size: 0.9rem; }
-.screen-mock { width: 230px; border-radius: 26px; padding: 10px; background: #0b0b10; border: 2px solid #33323d; box-shadow: var(--shadow); flex: 0 0 auto; }
+.screen-mock { text-align: left; width: 230px; border-radius: 26px; padding: 10px; background: #0b0b10; border: 2px solid #33323d; box-shadow: var(--shadow); flex: 0 0 auto; }
 .screen-mock .sm-inner { border-radius: 18px; overflow: hidden; background: #fbf8ff; color: #1d1b20; font-size: 0.72rem; min-height: 400px; }
 .screens { display: flex; gap: 22px; overflow-x: auto; padding: 10px 4px 18px; }
 .screens figure { margin: 0; text-align: center; }
@@ -619,3 +619,45 @@ body.landing main { overflow-x: hidden; }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; scroll-behavior: auto !important; }
 }
+
+/* ------------------------------------------- Phone mock-ups (final project) */
+.screen-mock .sm-status { display: flex; justify-content: space-between; padding: 6px 14px 2px; font-size: 0.62rem; color: #49454f; }
+.screen-mock .sm-bar { display: flex; align-items: center; gap: 8px; padding: 8px 14px; font-size: 0.95rem; font-weight: 600; color: #1d1b20; }
+.screen-mock .sm-bar .sm-sp { flex: 1; }
+.screen-mock .sm-search { margin: 4px 12px 8px; padding: 8px 10px; border: 1px solid #79747e; border-radius: 6px; color: #79747e; }
+.screen-mock .sm-chips { display: flex; gap: 5px; padding: 0 12px 6px; flex-wrap: wrap; }
+.screen-mock .sm-chip { padding: 3px 8px; border: 1px solid #79747e; border-radius: 7px; font-size: 0.62rem; color: #49454f; }
+.screen-mock .sm-chip.on { background: #e9ddff; border-color: #e9ddff; color: #21005e; font-weight: 600; }
+.screen-mock .sm-progress { margin: 2px 12px 2px; height: 4px; border-radius: 4px; background: #e6e0ec; overflow: hidden; }
+.screen-mock .sm-progress i { display: block; height: 100%; background: #6a3df0; }
+.screen-mock .sm-meta { padding: 2px 12px 6px; font-size: 0.6rem; color: #625b71; }
+.screen-mock .sm-card { display: flex; align-items: flex-start; gap: 8px; margin: 6px 10px; padding: 8px; border-radius: 12px; background: #f3edf7; }
+.screen-mock .sm-box { width: 14px; height: 14px; border: 2px solid #49454f; border-radius: 3px; flex: 0 0 auto; margin-top: 1px; }
+.screen-mock .sm-box.on { background: #6a3df0; border-color: #6a3df0; position: relative; }
+.screen-mock .sm-box.on::after { content: "✓"; position: absolute; inset: -3px 0 0 1px; color: #fff; font-size: 0.6rem; font-weight: 800; }
+.screen-mock .sm-t { font-weight: 600; font-size: 0.74rem; }
+.screen-mock .sm-t.done { text-decoration: line-through; color: #79747e; }
+.screen-mock .sm-s { font-size: 0.62rem; color: #625b71; }
+.screen-mock .sm-due { font-size: 0.6rem; color: #6a3df0; font-weight: 600; }
+.screen-mock .sm-due.late { color: #b3261e; }
+.screen-mock .sm-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+.screen-mock .sm-fab { position: absolute; right: 14px; bottom: 14px; width: 40px; height: 40px; border-radius: 12px; background: #e9ddff; color: #21005e; display: grid; place-items: center; font-size: 1.3rem; box-shadow: 0 3px 8px rgba(0,0,0,.2); }
+.screen-mock .sm-inner { position: relative; }
+.screen-mock .sm-field { margin: 8px 12px; padding: 6px 10px; border: 1px solid #79747e; border-radius: 6px; }
+.screen-mock .sm-field small { display: block; font-size: 0.55rem; color: #6a3df0; }
+.screen-mock .sm-label { padding: 8px 12px 2px; font-size: 0.68rem; font-weight: 600; color: #1d1b20; }
+.screen-mock .sm-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 12px; font-size: 0.7rem; }
+.screen-mock .sm-switch { width: 28px; height: 16px; border-radius: 10px; background: #6a3df0; position: relative; }
+.screen-mock .sm-switch::after { content: ""; position: absolute; right: 2px; top: 2px; width: 12px; height: 12px; border-radius: 50%; background: #fff; }
+.screen-mock .sm-switch.off { background: #e6e0ec; border: 1px solid #79747e; }
+.screen-mock .sm-switch.off::after { left: 2px; right: auto; background: #79747e; }
+.screen-mock .sm-radio { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #49454f; margin-right: 10px; display: inline-block; vertical-align: middle; }
+.screen-mock .sm-radio.on { border-color: #6a3df0; box-shadow: inset 0 0 0 2px #fff, inset 0 0 0 6px #6a3df0; }
+.screen-mock .sm-section { padding: 10px 12px 2px; font-size: 0.62rem; font-weight: 700; color: #6a3df0; }
+.screen-mock .sm-snack { position: absolute; left: 10px; right: 60px; bottom: 14px; padding: 8px 10px; border-radius: 6px; background: #322f35; color: #f5eff7; font-size: 0.62rem; display: flex; justify-content: space-between; }
+.screen-mock .sm-snack b { color: #cfbcff; }
+
+/* Grid/flex children must be allowed to shrink below their content width,
+   otherwise wide code blocks push the page sideways. */
+.grid > *, .compare > *, .callout > div, .tab-panel, .ex-body, ol.steps > li { min-width: 0; }
+.quiz-q h4 > span, .quiz-opts button, .quiz-explain { min-width: 0; overflow-wrap: anywhere; }

@@ -172,7 +172,12 @@
     return $$("section.doc-section[id]", doc).map((s) => {
       const h = $("h2", s);
       const title = s.dataset.title || (h ? h.textContent.replace(/^\s*[\d.]+\s*/, "") : s.id);
-      return { title, sub: page.short, page: page.num, href: `${page.file}#${s.id}`, text: s.textContent.replace(/\s+/g, " ") };
+      // Join text nodes with spaces so words from adjacent elements don't run together.
+      const walker = doc.createTreeWalker(s, NodeFilter.SHOW_TEXT);
+      const parts = [];
+      while (walker.nextNode()) parts.push(walker.currentNode.nodeValue);
+      const text = parts.join(" ").replace(/\s+/g, " ");
+      return { title, sub: page.short, page: page.num, href: `${page.file}#${s.id}`, text };
     });
   }
   let indexPromise = null;
@@ -180,13 +185,13 @@
     if (indexPromise) return indexPromise;
     const base = SITE.map((p) => ({ title: p.title, sub: p.desc, page: p.num === "A" ? "Ref" : "Lesson " + p.num, href: p.file, text: p.desc }));
     let cached = null;
-    try { cached = JSON.parse(sessionStorage.getItem("ka-index-v1") || "null"); } catch (e) { /* ignore */ }
+    try { cached = JSON.parse(sessionStorage.getItem("ka-index-v2") || "null"); } catch (e) { /* ignore */ }
     if (cached) return (indexPromise = Promise.resolve(base.concat(cached)));
     indexPromise = Promise.all(SITE.map((p) =>
       fetch(p.file).then((r) => (r.ok ? r.text() : "")).then((html) => sectionsOf(new DOMParser().parseFromString(html, "text/html"), p)).catch(() => [])
     )).then((lists) => {
       const all = [].concat(...lists);
-      try { sessionStorage.setItem("ka-index-v1", JSON.stringify(all)); } catch (e) { /* quota */ }
+      try { sessionStorage.setItem("ka-index-v2", JSON.stringify(all)); } catch (e) { /* quota */ }
       return base.concat(all);
     }).catch(() => base);
     return indexPromise;

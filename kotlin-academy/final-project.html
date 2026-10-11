@@ -1,0 +1,3066 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Final Project: TaskFlow — Kotlin Academy</title>
+  <meta name="description" content="Build TaskFlow, a complete Android task manager in Kotlin, step by step: Jetpack Compose, MVVM, Hilt, Room, DataStore, Retrofit, WorkManager reminders, type-safe navigation, tests and CI.">
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <meta name="color-scheme" content="dark light">
+  <link rel="stylesheet" href="assets/css/main.css?v=__BUILD__">
+  <script>try{var t=localStorage.getItem("ka-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body data-page="final-project">
+  <div id="site-header"></div>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="content">
+      <div class="content-inner">
+
+        <header class="page-hero">
+          <nav class="crumbs"><a href="index.html">Home</a><span>/</span><span>Final Project</span><span>/</span><span>Lesson 21</span></nav>
+          <div class="eyebrow">Lesson 21 · Final Project</div>
+          <h1>TaskFlow — build a complete Android app</h1>
+          <p class="lead">Everything you've learned, in one real app. Over nine milestones you'll build <b>TaskFlow</b>, a polished task manager with search, filters, priorities, due dates, reminder notifications, settings, network import, tests and CI. Every file shown here is the actual code from the repository, built and tested automatically on every change.</p>
+          <div class="page-meta"><span>⏱ 6–10 hours</span><span>🎯 Master</span><span>📂 <a href="https://github.com/Thuongst97/Kotlin/tree/main/final-project/TaskFlow" target="_blank" rel="noopener">Full source on GitHub</a></span></div>
+          <div class="objectives">
+            <h4>By the end you will have</h4>
+            <ul>
+              <li>A multi-screen Compose app with Material 3 &amp; dynamic color</li>
+              <li>MVVM + unidirectional data flow with StateFlow</li>
+              <li>Hilt dependency injection across all layers</li>
+              <li>An offline-first Room database + Retrofit import</li>
+              <li>DataStore settings and WorkManager reminders</li>
+              <li>Unit tests, UI tests and a CI pipeline</li>
+            </ul>
+          </div>
+        </header>
+
+        <section class="doc-section" id="overview" data-title="What you'll build">
+          <div class="sec-head"><h2><span class="sec-num">21.1</span>What you'll build</h2></div>
+          <div class="screens" aria-label="TaskFlow screens">
+            <figure>
+              <div class="screen-mock"><div class="sm-inner">
+                <div class="sm-status"><span>9:41</span><span>▴ ▮</span></div>
+                <div class="sm-bar">TaskFlow<span class="sm-sp"></span>⟳ ⚙</div>
+                <div class="sm-search">🔍 Search tasks</div>
+                <div class="sm-chips"><span class="sm-chip on">All (4)</span><span class="sm-chip">Active (3)</span><span class="sm-chip">Done (1)</span></div>
+                <div class="sm-progress"><i style="width:25%"></i></div>
+                <div class="sm-meta">1 of 4 done</div>
+                <div class="sm-card"><span class="sm-box"></span><div><div class="sm-t"><span class="sm-dot" style="background:#d33a4c"></span>Finish final project</div><div class="sm-s">Milestones 6–9</div><div class="sm-due late">📅 Overdue · Oct 10, 2026 🔔</div></div></div>
+                <div class="sm-card"><span class="sm-box"></span><div><div class="sm-t"><span class="sm-dot" style="background:#d08a0b"></span>Review coroutines</div><div class="sm-due">📅 Due Oct 14, 2026</div></div></div>
+                <div class="sm-card"><span class="sm-box"></span><div><div class="sm-t"><span class="sm-dot" style="background:#2e9d6b"></span>Read Compose docs</div></div></div>
+                <div class="sm-card"><span class="sm-box on"></span><div><div class="sm-t done"><span class="sm-dot" style="background:#d08a0b"></span>Install Android Studio</div></div></div>
+                <div class="sm-fab">+</div>
+              </div></div>
+              <figcaption>Task list · search · filters · progress</figcaption>
+            </figure>
+            <figure>
+              <div class="screen-mock"><div class="sm-inner">
+                <div class="sm-status"><span>9:41</span><span>▴ ▮</span></div>
+                <div class="sm-bar">← Edit task<span class="sm-sp"></span><span style="color:#6a3df0;font-size:.75rem">Save</span></div>
+                <div class="sm-field"><small>Title</small>Finish final project</div>
+                <div class="sm-field" style="min-height:56px"><small>Notes</small>Milestones 6–9</div>
+                <div class="sm-label">Priority</div>
+                <div class="sm-chips"><span class="sm-chip">Low</span><span class="sm-chip">Medium</span><span class="sm-chip on" style="color:#d33a4c">High</span></div>
+                <div class="sm-label">Due date</div>
+                <div class="sm-chips"><span class="sm-chip">📅 Oct 10, 2026</span><span class="sm-chip" style="border:0;color:#6a3df0">Clear</span></div>
+                <div class="sm-row"><span>Remind me at 9:00 on the due date</span><span class="sm-switch"></span></div>
+              </div></div>
+              <figcaption>Create / edit · date picker · reminders</figcaption>
+            </figure>
+            <figure>
+              <div class="screen-mock"><div class="sm-inner">
+                <div class="sm-status"><span>9:41</span><span>▴ ▮</span></div>
+                <div class="sm-bar">← Settings</div>
+                <div class="sm-section">Appearance</div>
+                <div class="sm-row" style="justify-content:flex-start"><span class="sm-radio on"></span>System default</div>
+                <div class="sm-row" style="justify-content:flex-start"><span class="sm-radio"></span>Light</div>
+                <div class="sm-row" style="justify-content:flex-start"><span class="sm-radio"></span>Dark</div>
+                <div class="sm-row"><span>Dynamic color (Android 12+)</span><span class="sm-switch"></span></div>
+                <div class="sm-section">Sort tasks by</div>
+                <div class="sm-row" style="justify-content:flex-start"><span class="sm-radio on"></span>Due date</div>
+                <div class="sm-row" style="justify-content:flex-start"><span class="sm-radio"></span>Priority</div>
+                <div class="sm-row" style="justify-content:flex-start"><span class="sm-radio"></span>Newest first</div>
+                <div class="sm-section">About</div>
+                <div class="sm-row"><span>Version 1.0.0</span></div>
+              </div></div>
+              <figcaption>Settings stored in DataStore</figcaption>
+            </figure>
+            <figure>
+              <div class="screen-mock"><div class="sm-inner">
+                <div class="sm-status"><span>9:41</span><span>▴ ▮</span></div>
+                <div class="sm-bar">TaskFlow<span class="sm-sp"></span>⟳ ⚙</div>
+                <div class="sm-search">🔍 Search tasks</div>
+                <div class="sm-chips"><span class="sm-chip on">All (3)</span><span class="sm-chip">Active (2)</span><span class="sm-chip">Done (1)</span></div>
+                <div class="sm-card"><span class="sm-box"></span><div><div class="sm-t"><span class="sm-dot" style="background:#d08a0b"></span>Review coroutines</div></div></div>
+                <div class="sm-card"><span class="sm-box"></span><div><div class="sm-t"><span class="sm-dot" style="background:#2e9d6b"></span>Read Compose docs</div></div></div>
+                <div class="sm-card"><span class="sm-box on"></span><div><div class="sm-t done">Install Android Studio</div></div></div>
+                <div class="sm-snack"><span>Task deleted</span><b>Undo</b></div>
+                <div class="sm-fab">+</div>
+              </div></div>
+              <figcaption>Delete with Undo snackbar</figcaption>
+            </figure>
+          </div>
+          <h3>Requirements (user stories)</h3>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>#</th><th>As a user, I can…</th><th>Concepts</th></tr></thead>
+              <tbody>
+                <tr><td>1</td><td>see my tasks, with unfinished ones first</td><td>Room Flow, StateFlow, LazyColumn</td></tr>
+                <tr><td>2</td><td>add and edit a task with title, notes, priority and due date</td><td>Forms, validation, DatePicker, navigation args</td></tr>
+                <tr><td>3</td><td>mark tasks done and see my progress</td><td>Derived state, UDF</td></tr>
+                <tr><td>4</td><td>search and filter (All / Active / Done)</td><td><code>combine</code>, collection operations</td></tr>
+                <tr><td>5</td><td>delete a task and undo</td><td>One-off events, Snackbar</td></tr>
+                <tr><td>6</td><td>get a reminder notification on the due date</td><td>WorkManager, notifications, runtime permission</td></tr>
+                <tr><td>7</td><td>choose theme, dynamic color and sort order — remembered across restarts</td><td>DataStore, Material 3 theming</td></tr>
+                <tr><td>8</td><td>import sample tasks from the internet, without duplicates</td><td>Retrofit, kotlinx.serialization, error handling</td></tr>
+                <tr><td>9</td><td>keep using the app offline and after rotation/process death</td><td>Offline-first, ViewModel, SavedStateHandle</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <h3>Tech stack</h3>
+          <div class="grid grid-3">
+            <div class="glass card"><h4>UI</h4><p class="small">Jetpack Compose · Material 3 · Navigation Compose (type-safe) · Lifecycle</p></div>
+            <div class="glass card"><h4>Architecture</h4><p class="small">MVVM · UDF · Repository · Hilt · Coroutines &amp; Flow</p></div>
+            <div class="glass card"><h4>Data &amp; work</h4><p class="small">Room · DataStore · Retrofit + kotlinx.serialization · OkHttp · WorkManager</p></div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="architecture" data-title="Architecture & structure">
+          <div class="sec-head"><h2><span class="sec-num">21.2</span>Architecture &amp; project structure</h2></div>
+          <div class="flow" aria-label="TaskFlow architecture">
+            <div class="fbox">Compose screens<small>TasksScreen · EditTaskScreen · SettingsScreen</small></div><span class="farrow">⇄</span>
+            <div class="fbox">ViewModels<small>StateFlow&lt;UiState&gt; + events</small></div><span class="farrow">→</span>
+            <div class="fbox">Repositories<small>TaskRepository · SettingsRepository</small></div><span class="farrow">→</span>
+            <div class="fbox">Room · DataStore · Retrofit · WorkManager</div>
+          </div>
+          <div class="filetree"><span class="d">final-project/TaskFlow/</span>
+├── gradle/libs.versions.toml
+├── settings.gradle.kts · build.gradle.kts · gradle.properties
+└── <span class="d">app/</span>
+    ├── build.gradle.kts · proguard-rules.pro
+    └── <span class="d">src/</span>
+        ├── <span class="d">main/</span>
+        │   ├── AndroidManifest.xml
+        │   ├── <span class="d">res/</span>  values/strings.xml · themes.xml · drawable/ · mipmap-anydpi-v26/
+        │   └── <span class="d">java/com/kotlinacademy/taskflow/</span>
+        │       ├── TaskFlowApp.kt · MainActivity.kt
+        │       ├── <span class="d">domain/</span>      Task.kt · UserSettings.kt                       <span class="c">← M2</span>
+        │       ├── <span class="d">data/</span>        local/ · remote/ · settings/ · repository · mappers  <span class="c">← M3, M5</span>
+        │       ├── <span class="d">di/</span>          AppModule.kt · BindingsModule.kt                <span class="c">← M4</span>
+        │       ├── <span class="d">reminders/</span>   ReminderScheduler · ReminderWorker · Notifier   <span class="c">← M8</span>
+        │       └── <span class="d">ui/</span>          theme/ · navigation/ · tasks/ · edit/ · settings/ <span class="c">← M6, M7</span>
+        ├── <span class="d">test/</span>             ViewModel, domain, mapper, reminder tests         <span class="c">← M9</span>
+        └── <span class="d">androidTest/</span>      Room DAO test · Compose UI test                  <span class="c">← M9</span></div>
+          <div class="callout tip">
+            <div class="ci">🧭</div>
+            <div><span class="ct">How to use this page</span>
+              <p><b>Option A (recommended):</b> create a new project and type each milestone yourself, running the app at every checkpoint. <b>Option B:</b> clone the repository, open <code>final-project/TaskFlow</code> in Android Studio and read along. Either way, do the stretch goals at the end — they're where the learning sticks.</p>
+              <script type="text/plain" data-code="bash" data-file="Get the source">
+                $ git clone https://github.com/Thuongst97/Kotlin.git
+                # Android Studio → Open → Kotlin/final-project/TaskFlow → wait for Gradle sync → ▶ Run
+              </script>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================================================================ M1 -->
+        <section class="doc-section" id="m1" data-title="M1 · Project & Gradle">
+          <div class="milestone"><h3>Milestone 1 — Create the project &amp; configure Gradle</h3><p>Goal: an empty Compose app that builds with all the libraries we'll need.</p></div>
+          <ol class="steps">
+            <li><b>New project</b>Android Studio → New Project → <b>Empty Activity</b>. Name <code>TaskFlow</code>, package <code>com.kotlinacademy.taskflow</code> (use your own domain for a real app), Minimum SDK <b>API 26</b>, build language <b>Kotlin DSL</b>.</li>
+            <li><b>Version catalog</b>Replace <code>gradle/libs.versions.toml</code> with the catalog below. Android Studio will highlight newer versions — upgrading is fine, but keep Kotlin, the Compose compiler plugin and KSP aligned.</li>
+            <li><b>Root build &amp; settings</b>Declare every plugin once in the root <code>build.gradle.kts</code> with <code>apply false</code>.</li>
+            <li><b>App build script</b>Apply the plugins, set SDK levels, Java 17, Compose, Room schema directory and dependencies.</li>
+            <li><b>Sync &amp; run</b>Click <b>Sync Now</b>, then ▶ Run. You should see the template's “Hello Android!”.</li>
+          </ol>
+          <script type="text/plain" data-code="toml" data-file="gradle/libs.versions.toml" data-src="final-project/TaskFlow/gradle/libs.versions.toml">
+              [versions]
+              agp = "8.11.1"
+              kotlin = "2.2.21"
+              ksp = "2.2.21-2.0.4"
+              coreKtx = "1.16.0"
+              activityCompose = "1.10.1"
+              composeBom = "2025.06.00"
+              lifecycle = "2.9.1"
+              navigation = "2.9.0"
+              room = "2.7.2"
+              datastore = "1.1.7"
+              work = "2.10.2"
+              hilt = "2.57.2"
+              androidxHilt = "1.2.0"
+              retrofit = "3.0.0"
+              okhttp = "4.12.0"
+              kotlinxSerialization = "1.9.0"
+              coroutines = "1.10.2"
+              junit = "4.13.2"
+              turbine = "1.2.1"
+              androidxTestExtJunit = "1.2.1"
+              androidxTestRunner = "1.6.2"
+              espresso = "3.6.1"
+
+              [libraries]
+              androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+              androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+
+              androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+              androidx-compose-ui = { group = "androidx.compose.ui", name = "ui" }
+              androidx-compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
+              androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
+              androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+              androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
+              androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
+              androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
+              androidx-compose-material-icons-core = { group = "androidx.compose.material", name = "material-icons-core" }
+
+              androidx-lifecycle-runtime-compose = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "lifecycle" }
+              androidx-lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "lifecycle" }
+              androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigation" }
+
+              androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+              androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
+              androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+              androidx-room-testing = { group = "androidx.room", name = "room-testing", version.ref = "room" }
+              androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
+              androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "work" }
+
+              hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
+              hilt-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hilt" }
+              androidx-hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "androidxHilt" }
+              androidx-hilt-work = { group = "androidx.hilt", name = "hilt-work", version.ref = "androidxHilt" }
+              androidx-hilt-compiler = { group = "androidx.hilt", name = "hilt-compiler", version.ref = "androidxHilt" }
+
+              retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
+              retrofit-kotlinx-serialization = { group = "com.squareup.retrofit2", name = "converter-kotlinx-serialization", version.ref = "retrofit" }
+              okhttp-logging = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
+              kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
+              kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
+              kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
+
+              junit = { group = "junit", name = "junit", version.ref = "junit" }
+              turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
+              androidx-test-ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidxTestExtJunit" }
+              androidx-test-runner = { group = "androidx.test", name = "runner", version.ref = "androidxTestRunner" }
+              androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espresso" }
+
+              [plugins]
+              android-application = { id = "com.android.application", version.ref = "agp" }
+              kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+              kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+              kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+              ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+              hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+              room = { id = "androidx.room", version.ref = "room" }
+            </script>
+          <script type="text/plain" data-code="kts" data-file="settings.gradle.kts" data-src="final-project/TaskFlow/settings.gradle.kts">
+              pluginManagement {
+                  repositories {
+                      google {
+                          content {
+                              includeGroupByRegex("com\\.android.*")
+                              includeGroupByRegex("com\\.google.*")
+                              includeGroupByRegex("androidx.*")
+                          }
+                      }
+                      mavenCentral()
+                      gradlePluginPortal()
+                  }
+              }
+
+              dependencyResolutionManagement {
+                  repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+                  repositories {
+                      google()
+                      mavenCentral()
+                  }
+              }
+
+              rootProject.name = "TaskFlow"
+              include(":app")
+            </script>
+          <script type="text/plain" data-code="kts" data-file="build.gradle.kts (root)" data-src="final-project/TaskFlow/build.gradle.kts">
+              // Top-level build file: declare plugins once (apply false) so every module uses the same versions.
+              plugins {
+                  alias(libs.plugins.android.application) apply false
+                  alias(libs.plugins.kotlin.android) apply false
+                  alias(libs.plugins.kotlin.compose) apply false
+                  alias(libs.plugins.kotlin.serialization) apply false
+                  alias(libs.plugins.ksp) apply false
+                  alias(libs.plugins.hilt) apply false
+                  alias(libs.plugins.room) apply false
+              }
+            </script>
+          <script type="text/plain" data-code="kts" data-file="app/build.gradle.kts" data-src="final-project/TaskFlow/app/build.gradle.kts" data-numbered>
+              import java.util.Properties
+              import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
+              plugins {
+                  alias(libs.plugins.android.application)
+                  alias(libs.plugins.kotlin.android)
+                  alias(libs.plugins.kotlin.compose)
+                  alias(libs.plugins.kotlin.serialization)
+                  alias(libs.plugins.ksp)
+                  alias(libs.plugins.hilt)
+                  alias(libs.plugins.room)
+              }
+
+              // Release signing secrets live in keystore.properties, which is git-ignored (see lesson 20).
+              val keystoreProperties = Properties().apply {
+                  val file = rootProject.file("keystore.properties")
+                  if (file.exists()) file.inputStream().use { load(it) }
+              }
+
+              android {
+                  namespace = "com.kotlinacademy.taskflow"
+                  compileSdk = 36
+
+                  defaultConfig {
+                      applicationId = "com.kotlinacademy.taskflow"
+                      minSdk = 26
+                      targetSdk = 36
+                      versionCode = 1
+                      versionName = "1.0.0"
+
+                      testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+                  }
+
+                  signingConfigs {
+                      create("release") {
+                          if (keystoreProperties.isNotEmpty()) {
+                              storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
+                              storePassword = keystoreProperties.getProperty("storePassword")
+                              keyAlias = keystoreProperties.getProperty("keyAlias")
+                              keyPassword = keystoreProperties.getProperty("keyPassword")
+                          }
+                      }
+                  }
+
+                  buildTypes {
+                      debug {
+                          applicationIdSuffix = ".debug"
+                          versionNameSuffix = "-debug"
+                      }
+                      release {
+                          isMinifyEnabled = true
+                          isShrinkResources = true
+                          proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+                          if (keystoreProperties.isNotEmpty()) signingConfig = signingConfigs.getByName("release")
+                      }
+                  }
+
+                  compileOptions {
+                      sourceCompatibility = JavaVersion.VERSION_17
+                      targetCompatibility = JavaVersion.VERSION_17
+                  }
+
+                  buildFeatures {
+                      compose = true
+                      buildConfig = true
+                  }
+
+                  testOptions {
+                      unitTests.isReturnDefaultValues = true
+                  }
+              }
+
+              kotlin {
+                  compilerOptions {
+                      jvmTarget.set(JvmTarget.JVM_17)
+                  }
+              }
+
+              room {
+                  // Exported schemas are committed to git so database migrations can be tested.
+                  schemaDirectory("$projectDir/schemas")
+              }
+
+              dependencies {
+                  implementation(libs.androidx.core.ktx)
+                  implementation(libs.androidx.activity.compose)
+
+                  // Compose — versions come from the BOM
+                  implementation(platform(libs.androidx.compose.bom))
+                  implementation(libs.androidx.compose.ui)
+                  implementation(libs.androidx.compose.ui.graphics)
+                  implementation(libs.androidx.compose.ui.tooling.preview)
+                  implementation(libs.androidx.compose.material3)
+                  implementation(libs.androidx.compose.material.icons.core)
+                  debugImplementation(libs.androidx.compose.ui.tooling)
+                  debugImplementation(libs.androidx.compose.ui.test.manifest)
+
+                  // Architecture
+                  implementation(libs.androidx.lifecycle.runtime.compose)
+                  implementation(libs.androidx.lifecycle.viewmodel.compose)
+                  implementation(libs.androidx.navigation.compose)
+
+                  // Data
+                  implementation(libs.androidx.room.runtime)
+                  implementation(libs.androidx.room.ktx)
+                  ksp(libs.androidx.room.compiler)
+                  implementation(libs.androidx.datastore.preferences)
+                  implementation(libs.androidx.work.runtime.ktx)
+
+                  // Networking
+                  implementation(libs.retrofit)
+                  implementation(libs.retrofit.kotlinx.serialization)
+                  implementation(libs.okhttp.logging)
+                  implementation(libs.kotlinx.serialization.json)
+                  implementation(libs.kotlinx.coroutines.android)
+
+                  // Dependency injection
+                  implementation(libs.hilt.android)
+                  ksp(libs.hilt.compiler)
+                  implementation(libs.androidx.hilt.navigation.compose)
+                  implementation(libs.androidx.hilt.work)
+                  ksp(libs.androidx.hilt.compiler)
+
+                  // Local unit tests (src/test) — run on the JVM: ./gradlew testDebugUnitTest
+                  testImplementation(libs.junit)
+                  testImplementation(libs.kotlinx.coroutines.test)
+                  testImplementation(libs.turbine)
+
+                  // Instrumented tests (src/androidTest) — run on a device: ./gradlew connectedDebugAndroidTest
+                  androidTestImplementation(libs.androidx.test.ext.junit)
+                  androidTestImplementation(libs.androidx.test.runner)
+                  androidTestImplementation(libs.androidx.espresso.core)
+                  androidTestImplementation(libs.androidx.room.testing)
+                  androidTestImplementation(libs.kotlinx.coroutines.test)
+                  androidTestImplementation(platform(libs.androidx.compose.bom))
+                  androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+              }
+            </script>
+          <div class="callout note">
+            <div class="ci">✅</div>
+            <div><span class="ct">Checkpoint</span>
+              <p><code>./gradlew assembleDebug</code> succeeds. If sync fails, read the first error in the Build window — usually a typo in an alias (<code>libs.androidx.room.runtime</code> maps to <code>androidx-room-runtime</code> in the catalog).</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================================================================ M2 -->
+        <section class="doc-section" id="m2" data-title="M2 · Domain model">
+          <div class="milestone"><h3>Milestone 2 — The domain model</h3><p>Goal: plain Kotlin types that describe tasks and settings, with the sorting and filtering rules — no Android code at all.</p></div>
+          <p>Start with the heart of the app. Notice how much of lessons 09–11 appears here: a data class with defaults, enums with properties and behaviour, an exhaustive <code>when</code>, and comparators built with <code>compareBy</code>/<code>thenBy</code>.</p>
+          <script type="text/plain" data-code="kotlin" data-file="domain/Task.kt" data-src="final-project/TaskFlow/app/src/main/java/com/kotlinacademy/taskflow/domain/Task.kt" data-numbered>
+              package com.kotlinacademy.taskflow.domain
+
+              /**
+               * A task as the rest of the app sees it — independent of how it is stored (Room) or
+               * transferred (network DTOs). Immutable: "changing" a task means creating a copy.
+               */
+              data class Task(
+                  val id: Long = 0,
+                  val title: String,
+                  val notes: String = "",
+                  val priority: Priority = Priority.MEDIUM,
+                  /** Due date as epoch milliseconds (start of the day in the user's time zone), or null. */
+                  val dueAt: Long? = null,
+                  val remind: Boolean = false,
+                  val isDone: Boolean = false,
+                  val createdAt: Long = System.currentTimeMillis(),
+              ) {
+                  fun isOverdue(now: Long): Boolean = !isDone && dueAt != null && dueAt < startOfToday(now)
+              }
+
+              enum class Priority(val weight: Int) {
+                  LOW(0), MEDIUM(1), HIGH(2);
+
+                  companion object {
+                      fun fromWeight(weight: Int): Priority = entries.firstOrNull { it.weight == weight } ?: MEDIUM
+                  }
+              }
+
+              /** Which tasks the list shows. */
+              enum class TaskFilter {
+                  ALL, ACTIVE, DONE;
+
+                  fun matches(task: Task): Boolean = when (this) {
+                      ALL -> true
+                      ACTIVE -> !task.isDone
+                      DONE -> task.isDone
+                  }
+              }
+
+              /** User-selectable ordering. Unfinished tasks always come before finished ones. */
+              enum class SortOrder(val comparator: Comparator<Task>) {
+                  DUE_DATE(
+                      compareBy<Task> { it.isDone }
+                          .thenBy(nullsLast(naturalOrder())) { it.dueAt }
+                          .thenByDescending { it.priority.weight },
+                  ),
+                  PRIORITY(
+                      compareBy<Task> { it.isDone }
+                          .thenByDescending { it.priority.weight }
+                          .thenBy(nullsLast(naturalOrder())) { it.dueAt },
+                  ),
+                  CREATED(
+                      compareBy<Task> { it.isDone }
+                          .thenByDescending { it.createdAt },
+                  ),
+              }
+
+              private const val DAY_MS = 24 * 60 * 60 * 1000L
+
+              /**
+               * Start of the current day in UTC. Due dates are stored as UTC midnight, which is exactly what
+               * the Material 3 DatePicker reports, so comparing against this boundary is consistent.
+               */
+              fun startOfToday(now: Long): Long = now - Math.floorMod(now, DAY_MS)
+            </script>
+          <script type="text/plain" data-code="kotlin" data-file="domain/UserSettings.kt" data-src="final-project/TaskFlow/app/src/main/java/com/kotlinacademy/taskflow/domain/UserSettings.kt">
+              package com.kotlinacademy.taskflow.domain
+
+              enum class ThemeMode { SYSTEM, LIGHT, DARK }
+
+              data class UserSettings(
+                  val themeMode: ThemeMode = ThemeMode.SYSTEM,
+                  val dynamicColor: Boolean = true,
+                  val sortOrder: SortOrder = SortOrder.DUE_DATE,
+              )
+            </script>
+          <p>Because this is pure Kotlin, test it right away with fast JVM unit tests:</p>
+          <script type="text/plain" data-code="kotlin" data-file="src/test/.../domain/TaskTest.kt" data-src="final-project/TaskFlow/app/src/test/java/com/kotlinacademy/taskflow/domain/TaskTest.kt">
+              package com.kotlinacademy.taskflow.domain
+
+              import org.junit.Assert.assertEquals
+              import org.junit.Assert.assertFalse
+              import org.junit.Assert.assertTrue
+              import org.junit.Test
+
+              class TaskTest {
+
+                  private val day = 24 * 60 * 60 * 1000L
+                  private val today = 20_000 * day                 // some UTC midnight
+                  private val now = today + 10 * 60 * 60 * 1000L    // 10:00 UTC
+
+                  @Test
+                  fun `a task due yesterday is overdue, one due today is not`() {
+                      assertTrue(Task(title = "x", dueAt = today - day).isOverdue(now))
+                      assertFalse(Task(title = "x", dueAt = today).isOverdue(now))
+                      assertFalse(Task(title = "x", dueAt = today - day, isDone = true).isOverdue(now))
+                      assertFalse(Task(title = "x", dueAt = null).isOverdue(now))
+                  }
+
+                  @Test
+                  fun `due-date order puts dated tasks first and done tasks last`() {
+                      val tasks = listOf(
+                          Task(id = 1, title = "no date"),
+                          Task(id = 2, title = "later", dueAt = today + day),
+                          Task(id = 3, title = "done", dueAt = today - day, isDone = true),
+                          Task(id = 4, title = "sooner", dueAt = today),
+                      )
+                      assertEquals(listOf(4L, 2L, 1L, 3L), tasks.sortedWith(SortOrder.DUE_DATE.comparator).map { it.id })
+                  }
+
+                  @Test
+                  fun `filters match the right tasks`() {
+                      val open = Task(title = "open")
+                      val done = Task(title = "done", isDone = true)
+                      assertTrue(TaskFilter.ALL.matches(open) && TaskFilter.ALL.matches(done))
+                      assertTrue(TaskFilter.ACTIVE.matches(open) && !TaskFilter.ACTIVE.matches(done))
+                      assertTrue(TaskFilter.DONE.matches(done) && !TaskFilter.DONE.matches(open))
+                  }
+
+                  @Test
+                  fun `unknown priority weights fall back to medium`() {
+                      assertEquals(Priority.HIGH, Priority.fromWeight(2))
+                      assertEquals(Priority.MEDIUM, Priority.fromWeight(42))
+                  }
+              }
+            </script>
+          <div class="callout note">
+            <div class="ci">✅</div>
+            <div><span class="ct">Checkpoint</span><p><code>./gradlew testDebugUnitTest</code> → all <code>TaskTest</code> tests green.</p></div>
+          </div>
+        </section>
+
+        <!-- ================================================================ M3 -->
+        <section class="doc-section" id="m3" data-title="M3 · Room database">
+          <div class="milestone"><h3>Milestone 3 — Persist tasks with Room</h3><p>Goal: a <code>tasks</code> table, a DAO that exposes a Flow, and mappers between the database and domain models.</p></div>
+          <script type="text/plain" data-code="kotlin" data-file="data/local/TaskEntity.kt" data-src="final-project/TaskFlow/app/src/main/java/com/kotlinacademy/taskflow/data/local/TaskEntity.kt">
+              package com.kotlinacademy.taskflow.data.local
+
+              import androidx.room.ColumnInfo
+              import androidx.room.Entity
+              import androidx.room.PrimaryKey
+
+              /** One row of the `tasks` table. Kept separate from the domain [com.kotlinacademy.taskflow.domain.Task]. */
+              @Entity(tableName = "tasks")
+              data class TaskEntity(
+                  @PrimaryKey(autoGenerate = true) val id: Long = 0,
+                  val title: String,
+                  val notes: String,
+                  /** Stored as [com.kotlinacademy.taskflow.domain.Priority.weight] so renaming enum constants is safe. */
+                  val priority: Int,
+                  @ColumnInfo(name = "due_at") val dueAt: Long?,
+                  val remind: Boolean,
+                  @ColumnInfo(name = "is_done") val isDone: Boolean,
+                  @ColumnInfo(name = "created_at") val createdAt: Long,
+                  /** Set for tasks imported from the sample API, so a second import doesn't duplicate them. */
+                  @ColumnInfo(name = "remote_id") val remoteId: Int? = null,
+              )
+            </script>
+          <script type="text/plain" data-code="kotlin" data-file="data/local/TaskDao.kt" data-src="final-project/TaskFlow/app/src/main/java/com/kotlinacademy/taskflow/data/local/TaskDao.kt">
+              package com.kotlinacademy.taskflow.data.local
+
+              import androidx.room.Dao
+              import androidx.room.Insert
+              import androidx.room.OnConflictStrategy
+              import androidx.room.Query
+              import androidx.room.Upsert
+              import kotlinx.coroutines.flow.Flow
+
+              @Dao
+              interface TaskDao {
+
+                  /** Emits a new list every time the table changes. Room runs the query off the main thread. */
+                  @Query("SELECT * FROM tasks ORDER BY created_at DESC")
+                  fun observeAll(): Flow<List<TaskEntity>>
+
+                  @Query("SELECT * FROM tasks WHERE id = :id")
+                  suspend fun getById(id: Long): TaskEntity?
+
+                  /** Inserts or updates. Returns the new row id, or -1 when an existing row was updated. */
+                  @Upsert
+                  suspend fun upsert(task: TaskEntity): Long
+
+                  @Query("UPDATE tasks SET is_done = :done WHERE id = :id")
+                  suspend fun setDone(id: Long, done: Boolean)
+
+                  @Query("DELETE FROM tasks WHERE id = :id")
+                  suspend fun deleteById(id: Long)
+
+                  @Insert(onConflict = OnConflictStrategy.IGNORE)
+                  suspend fun insertAll(tasks: List<TaskEntity>): List<Long>
+
+                  @Query("SELECT remote_id FROM tasks WHERE remote_id IS NOT NULL")
+                  suspend fun importedRemoteIds(): List<Int>
+              }
+            </script>
+          <script type="text/plain" data-code="kotlin" data-file="data/local/TaskDatabase.kt" data-src="final-project/TaskFlow/app/src/main/java/com/kotlinacademy/taskflow/data/local/TaskDatabase.kt">
+              package com.kotlinacademy.taskflow.data.local
+
+              import androidx.room.Database
+              import androidx.room.RoomDatabase
+
+              @Database(entities = [TaskEntity::class], version = 1, exportSchema = true)
+              abstract class TaskDatabase : RoomDatabase() {
+                  abstract fun taskDao(): TaskDao
+              }
+            </script>
+          <p>Mapping functions are extension functions (lesson 10) that keep each layer's model private to that layer:</p>
+          <script type="text/plain" data-code="kotlin" data-file="data/TaskMappers.kt" data-src="final-project/TaskFlow/app/src/main/java/com/kotlinacademy/taskflow/data/TaskMappers.kt">
+              package com.kotlinacademy.taskflow.data
+
+              import com.kotlinacademy.taskflow.data.local.TaskEntity
+              import com.kotlinacademy.taskflow.data.remote.TodoDto
+              import com.kotlinacademy.taskflow.domain.Priority
+              import com.kotlinacademy.taskflow.domain.Task
+
+              /* Mapping functions keep each layer's model independent: the UI never sees Room or JSON types. */
+
+              fun TaskEntity.toDomain(): Task = Task(
+                  id = id,
+                  title = title,
+                  notes = notes,
+                  priority = Priority.fromWeight(priority),
+                  dueAt = dueAt,
+                  remind = remind,
+                  isDone = isDone,
+                  createdAt = createdAt,
+              )
+
+              fun Task.toEntity(): TaskEntity = TaskEntity(
+                  id = id,
+                  title = title.trim(),
+                  notes = notes.trim(),
+                  priority = priority.weight,
+                  dueAt = dueAt,
+                  remind = remind && dueAt != null,
+                  isDone = isDone,
+                  createdAt = createdAt,
+              )
+
+              fun TodoDto.toEntity(now: Long): TaskEntity = TaskEntity(
+                  title = todo.trim().replaceFirstChar { it.uppercase() },
+                  notes = "Imported from dummyjson.com",
+                  priority = Priority.MEDIUM.weight,
+                  dueAt = null,
+                  remind = false,
+                  isDone = completed,
+                  createdAt = now,
+                  remoteId = id,
+              )
+            </script>
+          <div class="callout tip">
+            <div class="ci">💡</div>
+            <div><span class="ct">Why store priority as an Int?</span>
+              <p>If Room stored the enum's <em>name</em>, renaming <code>MEDIUM</code> to <code>NORMAL</code> later would break every existing row. Storing a stable number (<code>weight</code>) decouples the database from Kotlin names.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================================================================ M4 -->
+        <section class="doc-section" id="m4" data-title="M4 · Hilt & app entry points">
+          <div class="milestone"><h3>Milestone 4 — Wire everything with Hilt</h3><p>Goal: one place that knows how to build the database, DataStore, WorkManager and Retrofit — and which implementation backs each interface.</p></div>
+          <script type="text/plain" data-code="kotlin" data-file="di/AppModule.kt" data-src="final-project/TaskFlow/app/src/main/java/com/kotlinacademy/taskflow/di/AppModule.kt" data-numbered>
+              package com.kotlinacademy.taskflow.di
+
+              import android.content.Context
+              import androidx.datastore.core.DataStore
+              import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+              import androidx.datastore.preferences.core.Preferences
+              import androidx.datastore.preferences.preferencesDataStoreFile
+              import androidx.room.Room
+              import androidx.work.WorkManager
+              import com.kotlinacademy.taskflow.BuildConfig
+              import com.kotlinacademy.taskflow.data.local.TaskDao
+              import com.kotlinacademy.taskflow.data.local.TaskDatabase
+              import com.kotlinacademy.taskflow.data.remote.TodoApi
+              import dagger.Module
+              import dagger.Provides
+              import dagger.hilt.InstallIn
+              import dagger.hilt.android.qualifiers.ApplicationContext
+              import dagger.hilt.components.SingletonComponent
+              import kotlinx.serialization.json.Json
+              import okhttp3.MediaType.Companion.toMediaType
+              import okhttp3.OkHttpClient
+              import okhttp3.logging.HttpLoggingInterceptor
+              import retrofit2.Retrofit
+              import retrofit2.converter.kotlinx.serialization.asConverterFactory
+              import java.util.concurrent.TimeUnit
+              import javax.inject.Singleton
+
+              /** "Recipes" for objects Hilt can't construct by itself (third-party classes, builders). */
+              @Module
+              @InstallIn(SingletonComponent::class)
+              object DataModule {
+
+                  @Provides
+                  @Singleton
+                  fun provideDatabase(@ApplicationContext context: Context): TaskDatabase =
+                      Room.databaseBuilder(context, TaskDatabase::class.java, "taskflow.db").build()
+
+                  @Provides
+                  fun provideTaskDao(database: TaskDatabase): TaskDao = database.taskDao()
+
+                  @Provides
+                  @Singleton
+                  fun provideDataStore(@ApplicationContext context: Context): DataStore<Preferences> =
+                      PreferenceDataStoreFactory.create { context.preferencesDataStoreFile("settings") }
+
+                  @Provides
+                  @Singleton
+                  fun provideWorkManager(@ApplicationContext context: Context): WorkManager =
+                      WorkManager.getInstance(context)
+              }
+
+              @Module
+              @InstallIn(SingletonComponent::class)
+              object NetworkModule {
+
+                  @Provides
+                  @Singleton
+                  fun provideJson(): Json = Json { ignoreUnknownKeys = true }
+
+                  @Provides
+                  @Singleton
+                  fun provideOkHttpClient(): OkHttpClient = OkHttpClient.Builder()
+                      .connectTimeout(15, TimeUnit.SECONDS)
+                      .readTimeout(15, TimeUnit.SECONDS)
+                      .apply {
+                          if (BuildConfig.DEBUG) {
+                              addInterceptor(HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BASIC })
+                          }
+                      }
+                      .build()
+
+                  @Provides
+                  @Singleton
+                  fun provideTodoApi(client: OkHttpClient, json: Json): TodoApi = Retrofit.Builder()
+                      .baseUrl(TodoApi.BASE_URL)
+                      .client(client)
+                      .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+                      .build()
+                      .create(TodoApi::class.java)
+              }
+            </script>
+          <script type="text/plain" data-code="kotlin" data-file="di/BindingsModule.kt" data-src="final-project/TaskFlow/app/src/main/java/com/kotlinacademy/taskflow/di/BindingsModule.kt">
+              package com.kotlinacademy.taskflow.di
+
+              import com.kotlinacademy.taskflow.data.OfflineFirstTaskRepository
+              import com.kotlinacademy.taskflow.data.TaskRepository
+              import com.kotlinacademy.taskflow.data.settings.DataStoreSettingsRepository
+              import com.kotlinacademy.taskflow.data.settings.SettingsRepository
+              import com.kotlinacademy.taskflow.reminders.ReminderScheduler
+              import com.kotlinacademy.taskflow.reminders.WorkManagerReminderScheduler
+              import dagger.Binds
+              import dagger.Module
+              import dagger.hilt.InstallIn
+              import dagger.hilt.components.SingletonComponent
+
+              /** Tells Hilt which implementation to use when someone asks for an interface. */
+              @Module
+              @InstallIn(SingletonComponent::class)
+              abstract class BindingsModule {
+
+                  @Binds
+                  abstract fun bindTaskRepository(impl: OfflineFirstTaskRepository): TaskRepository
+
+                  @Binds
+                  abstract fun bindSettingsRepository(impl: DataStoreSettingsRepository): SettingsRepository
+
+                  @Binds
+                  abstract fun bindReminderScheduler(impl: WorkManagerReminderScheduler): ReminderScheduler
+              }
+            </script>
+          <script type="text/plain" data-code="kotlin" data-file="TaskFlowApp.kt" data-src="final-project/TaskFlow/app/src/main/java/com/kotlinacademy/taskflow/TaskFlowApp.kt">
+              package com.kotlinacademy.taskflow
+
+              import android.app.Application
+              import androidx.hilt.work.HiltWorkerFactory
+              import androidx.work.Configuration
+              import com.kotlinacademy.taskflow.reminders.ReminderNotifier
+              import dagger.hilt.android.HiltAndroidApp
+              import javax.inject.Inject
+
+              /**
+               * @HiltAndroidApp triggers Hilt's code generation and creates the app-wide dependency container.
+               * Implementing Configuration.Provider lets WorkManager create workers through Hilt.
+               */
+              @HiltAndroidApp
+              class TaskFlowApp : Application(), Configuration.Provider {
+
+                  @Inject lateinit var workerFactory: HiltWorkerFactory
+                  @Inject lateinit var notifier: ReminderNotifier
+
+                  override val workManagerConfiguration: Configuration
+                      get() = Configuration.Builder().setWorkerFactory(workerFactory).build()
+
+                  override fun onCreate() {
+                      super.onCreate() // Hilt injects the fields above here
+                      notifier.createChannel()
+                  }
+              }
+            </script>
+          <script type="text/plain" data-code="kotlin" data-file="MainActivity.kt" data-src="final-project/TaskFlow/app/src/main/java/com/kotlinacademy/taskflow/MainActivity.kt">
+              package com.kotlinacademy.taskflow
+
+              import android.os.Bundle
+              import androidx.activity.ComponentActivity
+              import androidx.activity.compose.setContent
+              import androidx.activity.enableEdgeToEdge
+              import com.kotlinacademy.taskflow.ui.TaskFlowRoot
+              import dagger.hilt.android.AndroidEntryPoint
+
+              /** The app's only Activity: it just hosts Compose. Screens are composables + navigation destinations. */
+              @AndroidEntryPoint
+              class MainActivity : ComponentActivity() {
+                  override fun onCreate(savedInstanceState: Bundle?) {
+                      super.onCreate(savedInstanceState)
+                      enableEdgeToEdge()
+                      setContent { TaskFlowRoot() }
+                  }
+              }
+            </script>
+          <script type="text/plain" data-code="xml" data-file="AndroidManifest.xml" data-src="final-project/TaskFlow/app/src/main/AndroidManifest.xml">
+              <?xml version="1.0" encoding="utf-8"?>
+              <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                  xmlns:tools="http://schemas.android.com/tools">
+
+                  <!-- Import sample tasks from the internet -->
+                  <uses-permission android:name="android.permission.INTERNET" />
+                  <!-- Reminder notifications (runtime permission on Android 13+) -->
+                  <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+                  <application
+                      android:name=".TaskFlowApp"
+                      android:allowBackup="true"
+                      android:icon="@mipmap/ic_launcher"
+                      android:roundIcon="@mipmap/ic_launcher"
+                      android:label="@string/app_name"
+                      android:supportsRtl="true"
+                      android:theme="@style/Theme.TaskFlow">
+
+                      <activity
+                          android:name=".MainActivity"
+                          android:exported="true"
+                          android:windowSoftInputMode="adjustResize">
+                          <intent-filter>
+                              <action android:name="android.intent.action.MAIN" />
+                              <category android:name="android.intent.category.LAUNCHER" />
+                          </intent-filter>
+                      </activity>
+
+                      <!-- We initialize WorkManager ourselves (TaskFlowApp) so Hilt can inject workers. -->
+                      <provider
+                          android:name="androidx.startup.InitializationProvider"
+                          android:authorities="${applicationId}.androidx-startup"
+                          android:exported="false"
+                          tools:node="merge">
+                          <meta-data
+                              android:name="androidx.work.WorkManagerInitializer"
+                              android:value="androidx.startup"
+                              tools:node="remove" />
+                      </provider>
+                  </application>
+              </manifest>
+            </script>
+          <div class="callout note">
+            <div class="ci">✅</div>
+            <div><span class="ct">Checkpoint</span><p>The project compiles once milestone 5's classes exist. Hilt validates the whole dependency graph at build time — a missing binding is a compile error with a clear path.</p></div>
+          </div>
+        </section>
+
+        <!-- ================================================================ M5 -->
+        <section class="doc-section" id="m5" data-title="M5 · Repositories, DataStore & network">
+          <div class="milestone"><h3>Milestone 5 — Repositories, settings &amp; network import</h3><p>Goal: an offline-first task repository, a DataStore-backed settings repository and a Retrofit API for importing sample tasks.</p></div>
+          <script type="text/plain" data-code="kotlin" data-file="data/TaskRepository.kt" data-src="final-project/TaskFlow/app/src/main/java/com/kotlinacademy/taskflow/data/TaskRepository.kt">
+              package com.kotlinacademy.taskflow.data
+
+              import com.kotlinacademy.taskflow.domain.Task
+              import kotlinx.coroutines.flow.Flow
+
+              /**
+               * The single source of truth for tasks. ViewModels depend on this interface, never on Room or
+               * Retrofit directly — which is what makes them easy to unit test with a fake (see src/test).
+               */
+              interface TaskRepository {
+                  fun observeTasks(): Flow<List<Task>>
+                  suspend fun getTask(id: Long): Task?
+
+                  /** Inserts a new task (id == 0) or updates an existing one. Returns the task's id. */
+                  suspend fun upsert(task: Task): Long
+                  suspend fun setDone(id: Long, done: Boolean)
+                  suspend fun delete(id: Long)
+
+                  /** Downloads sample tasks. Returns how many new tasks were added, or a failure. */
+                  suspend fun importSampleTasks(): Result<Int>
+              }
+            </script>
+          <script type="text/plain" data-code="kotlin" data-file="data/OfflineFirstTaskRepository.kt" data-src="final-project/TaskFlow/app/src/main/java/com/kotlinacademy/taskflow/data/OfflineFirstTaskRepository.kt" data-numbered>
+              package com.kotlinacademy.taskflow.data
+
+              import com.kotlinacademy.taskflow.data.local.TaskDao
+              import com.kotlinacademy.taskflow.data.remote.TodoApi
+              import com.kotlinacademy.taskflow.domain.Task
+              import com.kotlinacademy.taskflow.reminders.ReminderScheduler
+              import kotlinx.coroutines.flow.Flow
+              import kotlinx.coroutines.flow.map
+              import kotlinx.serialization.SerializationException
+              import retrofit2.HttpException
+              import java.io.IOException
+              import javax.inject.Inject
+              import javax.inject.Singleton
+
+              /**
+               * Offline-first: the Room database is the source of truth and the UI only ever observes it.
+               * The network is used to add data to the database, never shown directly.
+               */
+              @Singleton
+              class OfflineFirstTaskRepository @Inject constructor(
+                  private val dao: TaskDao,
+                  private val api: TodoApi,
+                  private val reminders: ReminderScheduler,
+              ) : TaskRepository {
+
+                  override fun observeTasks(): Flow<List<Task>> =
+                      dao.observeAll().map { entities -> entities.map { it.toDomain() } }
+
+                  override suspend fun getTask(id: Long): Task? = dao.getById(id)?.toDomain()
+
+                  override suspend fun upsert(task: Task): Long {
+                      // Keep the remote id of imported tasks when they are edited.
+                      val existing = if (task.id != 0L) dao.getById(task.id) else null
+                      val rowId = dao.upsert(task.toEntity().copy(remoteId = existing?.remoteId))
+                      val id = if (rowId == -1L) task.id else rowId          // -1 means "updated an existing row"
+                      updateReminder(task.copy(id = id))
+                      return id
+                  }
+
+                  override suspend fun setDone(id: Long, done: Boolean) {
+                      dao.setDone(id, done)
+                      if (done) reminders.cancel(id) else getTask(id)?.let { updateReminder(it) }
+                  }
+
+                  override suspend fun delete(id: Long) {
+                      dao.deleteById(id)
+                      reminders.cancel(id)
+                  }
+
+                  override suspend fun importSampleTasks(): Result<Int> = try {
+                      val alreadyImported = dao.importedRemoteIds().toSet()
+                      val now = System.currentTimeMillis()
+                      val newTasks = api.getTodos(limit = 10).todos
+                          .filter { it.id !in alreadyImported }
+                          .mapIndexed { index, dto -> dto.toEntity(now - index) }   // keep the API's order
+                      dao.insertAll(newTasks)
+                      Result.success(newTasks.size)
+                  } catch (e: IOException) {               // no connection, timeout
+                      Result.failure(e)
+                  } catch (e: HttpException) {             // 4xx / 5xx response
+                      Result.failure(e)
+                  } catch (e: SerializationException) {    // unexpected JSON
+                      Result.failure(e)
+                  }
+                  // Note: we deliberately don't catch Exception — that would also swallow CancellationException.
+
+                  private fun updateReminder(task: Task) {
+                      val due = task.dueAt
+                      if (task.remind && due != null && !task.isDone) reminders.schedule(task.id, task.title, due)
+                      else reminders.cancel(task.id)
+                  }
+              }
+            </script>
+          <script type="text/plain" data-code="kotlin" data-file="data/remote/TodoApi.kt" data-src="final-project/TaskFlow/app/src/main/java/com/kotlinacademy/taskflow/data/remote/TodoApi.kt">
+              package com.kotlinacademy.taskflow.data.remote
+
+              import kotlinx.serialization.Serializable
+              import retrofit2.http.GET
+              import retrofit2.http.Query
+
+              /**
+               * A free, public demo API (https://dummyjson.com/docs/todos) used for the "Import sample tasks"
+               * feature. Retrofit generates the implementation of this interface at runtime.
+               */
+              interface TodoApi {
+                  @GET("todos")
+                  suspend fun getTodos(@Query("limit") limit: Int = 10): TodosResponse
+
+                  companion object {
+                      const val BASE_URL = "https://dummyjson.com/"
+                  }
+              }
+
+              /** Network DTOs mirror the JSON exactly; unknown fields are ignored by our Json configuration. */
+              @Serializable
+              data class TodosResponse(val todos: List<TodoDto>)
+
+              @Serializable
+              data class TodoDto(
+                  val id: Int,
+                  val todo: String,
+                  val completed: Boolean,
+              )
+            </script>
+          <script type="text/plain" data-code="kotlin" data-file="data/settings/SettingsRepository.kt" data-src="final-project/TaskFlow/app/src/main/java/com/kotlinacademy/taskflow/data/settings/SettingsRepository.kt">
+              package com.kotlinacademy.taskflow.data.settings
+
+              import androidx.datastore.core.DataStore
+              import androidx.datastore.preferences.core.Preferences
+              import androidx.datastore.preferences.core.booleanPreferencesKey
+              import androidx.datastore.preferences.core.edit
+              import androidx.datastore.preferences.core.emptyPreferences
+              import androidx.datastore.preferences.core.stringPreferencesKey
+              import com.kotlinacademy.taskflow.domain.SortOrder
+              import com.kotlinacademy.taskflow.domain.ThemeMode
+              import com.kotlinacademy.taskflow.domain.UserSettings
+              import kotlinx.coroutines.flow.Flow
+              import kotlinx.coroutines.flow.catch
+              import kotlinx.coroutines.flow.map
+              import java.io.IOException
+              import javax.inject.Inject
+              import javax.inject.Singleton
+
+              interface SettingsRepository {
+                  val settings: Flow<UserSettings>
+                  suspend fun setThemeMode(mode: ThemeMode)
+                  suspend fun setDynamicColor(enabled: Boolean)
+                  suspend fun setSortOrder(order: SortOrder)
+              }
+
+              /** Stores small key-value settings with Jetpack DataStore (asynchronous, transactional, Flow-based). */
+              @Singleton
+              class DataStoreSettingsRepository @Inject constructor(
+                  private val dataStore: DataStore<Preferences>,
+              ) : SettingsRepository {
+
+                  override val settings: Flow<UserSettings> = dataStore.data
+                      .catch { e -> if (e is IOException) emit(emptyPreferences()) else throw e }
+                      .map { prefs ->
+                          UserSettings(
+                              themeMode = prefs[THEME_MODE].toEnumOrDefault(ThemeMode.SYSTEM),
+                              dynamicColor = prefs[DYNAMIC_COLOR] ?: true,
+                              sortOrder = prefs[SORT_ORDER].toEnumOrDefault(SortOrder.DUE_DATE),
+                          )
+                      }
+
+                  override suspend fun setThemeMode(mode: ThemeMode) {
+                      dataStore.edit { it[THEME_MODE] = mode.name }
+                  }
+
+                  override suspend fun setDynamicColor(enabled: Boolean) {
+                      dataStore.edit { it[DYNAMIC_COLOR] = enabled }
+                  }
+
+                  override suspend fun setSortOrder(order: SortOrder) {
+                      dataStore.edit { it[SORT_ORDER] = order.name }
+                  }
+
+                  private companion object {
+                      val THEME_MODE = stringPreferencesKey("theme_mode")
+                      val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
+                      val SORT_ORDER = stringPreferencesKey("sort_order")
+                  }
+              }
+
+              private inline fun <reified T : Enum<T>> String?.toEnumOrDefault(default: T): T =
+                  enumValues<T>().firstOrNull { it.name == this } ?: default
+            </script>
+          <div class="callout tip">
+            <div class="ci">🔍</div>
+            <div><span class="ct">Look closer</span>
+              <ul>
+                <li><code>@Upsert</code> returns <code>-1</code> for updates — the repository handles it so callers always get the real id.</li>
+                <li>Import is <b>idempotent</b>: remote ids are stored, so importing twice adds nothing.</li>
+                <li>The <code>try/catch</code> lists exactly the expected failures and deliberately lets <code>CancellationException</code> through (lesson 13).</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================================================================ M6 -->
+        <section class="doc-section" id="m6" data-title="M6 · The task list screen">
+          <div class="milestone"><h3>Milestone 6 — The task list: ViewModel + Compose</h3><p>Goal: a reactive list with search, filter chips, progress, done-toggling, delete with Undo and import.</p></div>
+          <p>The ViewModel combines five Flows into one immutable <code>TasksUiState</code> (lesson 14's <code>combine</code> + <code>stateIn</code>), and sends one-off events through a <code>Channel</code>:</p>
+          <script type="text/plain" data-code="kotlin" data-file="ui/tasks/TasksViewModel.kt" data-src="final-project/TaskFlow/app/src/main/java/com/kotlinacademy/taskflow/ui/tasks/TasksViewModel.kt" data-numbered>
+              package com.kotlinacademy.taskflow.ui.tasks
+
+              import androidx.lifecycle.ViewModel
+              import androidx.lifecycle.viewModelScope
+              import com.kotlinacademy.taskflow.data.TaskRepository
+              import com.kotlinacademy.taskflow.data.settings.SettingsRepository
+              import com.kotlinacademy.taskflow.domain.Task
+              import com.kotlinacademy.taskflow.domain.TaskFilter
+              import dagger.hilt.android.lifecycle.HiltViewModel
+              import kotlinx.coroutines.channels.Channel
+              import kotlinx.coroutines.flow.Flow
+              import kotlinx.coroutines.flow.MutableStateFlow
+              import kotlinx.coroutines.flow.SharingStarted
+              import kotlinx.coroutines.flow.StateFlow
+              import kotlinx.coroutines.flow.combine
+              import kotlinx.coroutines.flow.receiveAsFlow
+              import kotlinx.coroutines.flow.stateIn
+              import kotlinx.coroutines.launch
+              import javax.inject.Inject
+
+              /** Everything the task list screen needs to draw itself — one immutable snapshot. */
+              data class TasksUiState(
+                  val isLoading: Boolean = true,
+                  val tasks: List<Task> = emptyList(),
+                  val filter: TaskFilter = TaskFilter.ALL,
+                  val query: String = "",
+                  val totalCount: Int = 0,
+                  val activeCount: Int = 0,
+                  val doneCount: Int = 0,
+                  val isImporting: Boolean = false,
+              )
+
+              /** One-off events (shown once, not part of the state). */
+              sealed interface TasksEvent {
+                  data class TaskDeleted(val task: Task) : TasksEvent
+                  data class Imported(val count: Int) : TasksEvent
+                  data object ImportFailed : TasksEvent
+              }
+
+              @HiltViewModel
+              class TasksViewModel @Inject constructor(
+                  private val repository: TaskRepository,
+                  settingsRepository: SettingsRepository,
+              ) : ViewModel() {
+
+                  private val filter = MutableStateFlow(TaskFilter.ALL)
+                  private val query = MutableStateFlow("")
+                  private val isImporting = MutableStateFlow(false)
+
+                  private val _events = Channel<TasksEvent>(Channel.BUFFERED)
+                  val events: Flow<TasksEvent> = _events.receiveAsFlow()
+
+                  /**
+                   * Unidirectional data flow: inputs (database, settings, filter, query) are combined into a
+                   * single UI state. The screen only renders it and sends user actions back as function calls.
+                   */
+                  val uiState: StateFlow<TasksUiState> = combine(
+                      repository.observeTasks(),
+                      settingsRepository.settings,
+                      filter,
+                      query,
+                      isImporting,
+                  ) { tasks, settings, filter, query, importing ->
+                      val visible = tasks
+                          .filter(filter::matches)
+                          .filter { query.isBlank() || it.title.contains(query, ignoreCase = true) || it.notes.contains(query, ignoreCase = true) }
+                          .sortedWith(settings.sortOrder.comparator)
+                      TasksUiState(
+                          isLoading = false,
+                          tasks = visible,
+                          filter = filter,
+                          query = query,
+                          totalCount = tasks.size,
+                          activeCount = tasks.count { !it.isDone },
+                          doneCount = tasks.count { it.isDone },
+                          isImporting = importing,
+                      )
+                  }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TasksUiState())
+
+                  fun setFilter(newFilter: TaskFilter) {
+                      filter.value = newFilter
+                  }
+
+                  fun setQuery(text: String) {
+                      query.value = text
+                  }
+
+                  fun toggleDone(task: Task) {
+                      viewModelScope.launch { repository.setDone(task.id, !task.isDone) }
+                  }
+
+                  fun delete(task: Task) {
+                      viewModelScope.launch {
+                          repository.delete(task.id)
+                          _events.send(TasksEvent.TaskDeleted(task))
+                      }
+                  }
+
+                  /** Re-inserts a deleted task with its original id, so the Snackbar's Undo restores it exactly. */
+                  fun undoDelete(task: Task) {
+                      viewModelScope.launch { repository.upsert(task) }
+                  }
+
+                  fun importSamples() {
+                      if (isImporting.value) return
+                      viewModelScope.launch {
+                          isImporting.value = true
+                          val result = repository.importSampleTasks()
+                          isImporting.value = false
+                          _events.send(result.fold({ TasksEvent.Imported(it) }, { TasksEvent.ImportFailed }))
+                      }
+                  }
+              }
+            </script>
+          <p>The screen is split into a <b>stateful</b> entry point and a <b>stateless</b> <code>TasksContent</code> (lesson 17's state hoisting) that previews and UI tests use directly:</p>
+          <script type="text/plain" data-code="kotlin" data-file="ui/tasks/TasksScreen.kt" data-src="final-project/TaskFlow/app/src/main/java/com/kotlinacademy/taskflow/ui/tasks/TasksScreen.kt" data-numbered>
+              package com.kotlinacademy.taskflow.ui.tasks
+
+              import androidx.compose.foundation.layout.Arrangement
+              import androidx.compose.foundation.layout.Box
+              import androidx.compose.foundation.layout.Column
+              import androidx.compose.foundation.layout.PaddingValues
+              import androidx.compose.foundation.layout.Row
+              import androidx.compose.foundation.layout.Spacer
+              import androidx.compose.foundation.layout.fillMaxSize
+              import androidx.compose.foundation.layout.fillMaxWidth
+              import androidx.compose.foundation.layout.height
+              import androidx.compose.foundation.layout.padding
+              import androidx.compose.foundation.layout.size
+              import androidx.compose.foundation.lazy.LazyColumn
+              import androidx.compose.foundation.lazy.items
+              import androidx.compose.material.icons.Icons
+              import androidx.compose.material.icons.filled.Add
+              import androidx.compose.material.icons.filled.Clear
+              import androidx.compose.material.icons.filled.Refresh
+              import androidx.compose.material.icons.filled.Search
+              import androidx.compose.material.icons.filled.Settings
+              import androidx.compose.material3.CircularProgressIndicator
+              import androidx.compose.material3.ExperimentalMaterial3Api
+              import androidx.compose.material3.FilterChip
+              import androidx.compose.material3.FloatingActionButton
+              import androidx.compose.material3.Icon
+              import androidx.compose.material3.IconButton
+              import androidx.compose.material3.LinearProgressIndicator
+              import androidx.compose.material3.MaterialTheme
+              import androidx.compose.material3.OutlinedTextField
+              import androidx.compose.material3.Scaffold
+              import androidx.compose.material3.SnackbarDuration
+              import androidx.compose.material3.SnackbarHost
+              import androidx.compose.material3.SnackbarHostState
+              import androidx.compose.material3.SnackbarResult
+              import androidx.compose.material3.Text
+              import androidx.compose.material3.TopAppBar
+              import androidx.compose.runtime.Composable
+              import androidx.compose.runtime.LaunchedEffect
+              import androidx.compose.runtime.getValue
+              import androidx.compose.runtime.remember
+              import androidx.compose.ui.Alignment
+              import androidx.compose.ui.Modifier
+              import androidx.compose.ui.platform.LocalContext
+              import androidx.compose.ui.res.stringResource
+              import androidx.compose.ui.text.style.TextAlign
+              import androidx.compose.ui.tooling.preview.Preview
+              import androidx.compose.ui.unit.dp
+              import androidx.hilt.navigation.compose.hiltViewModel
+              import androidx.lifecycle.compose.collectAsStateWithLifecycle
+              import com.kotlinacademy.taskflow.R
+              import com.kotlinacademy.taskflow.domain.Priority
+              import com.kotlinacademy.taskflow.domain.Task
+              import com.kotlinacademy.taskflow.domain.TaskFilter
+              import com.kotlinacademy.taskflow.ui.theme.TaskFlowTheme
+
+              /**
+               * Stateful entry point: gets the ViewModel, collects state and events, and passes plain values
+               * and callbacks down to the stateless [TasksContent].
+               */
+              @Composable
+              fun TasksScreen(
+                  onAddTask: () -> Unit,
+                  onOpenTask: (Long) -> Unit,
+                  onOpenSettings: () -> Unit,
+                  viewModel: TasksViewModel = hiltViewModel(),
+              ) {
+                  val state by viewModel.uiState.collectAsStateWithLifecycle()
+                  val snackbarHostState = remember { SnackbarHostState() }
+                  val context = LocalContext.current
+
+                  // Collect one-off events while this screen is on screen.
+                  LaunchedEffect(viewModel) {
+                      viewModel.events.collect { event ->
+                          when (event) {
+                              is TasksEvent.TaskDeleted -> {
+                                  val result = snackbarHostState.showSnackbar(
+                                      message = context.getString(R.string.task_deleted),
+                                      actionLabel = context.getString(R.string.undo),
+                                      duration = SnackbarDuration.Short,
+                                  )
+                                  if (result == SnackbarResult.ActionPerformed) viewModel.undoDelete(event.task)
+                              }
+                              is TasksEvent.Imported ->
+                                  snackbarHostState.showSnackbar(context.getString(R.string.imported_count, event.count))
+                              TasksEvent.ImportFailed ->
+                                  snackbarHostState.showSnackbar(context.getString(R.string.import_failed))
+                          }
+                      }
+                  }
+
+                  TasksContent(
+                      state = state,
+                      snackbarHostState = snackbarHostState,
+                      onQueryChange = viewModel::setQuery,
+                      onFilterChange = viewModel::setFilter,
+                      onToggleDone = viewModel::toggleDone,
+                      onDelete = viewModel::delete,
+                      onImport = viewModel::importSamples,
+                      onAddTask = onAddTask,
+                      onOpenTask = onOpenTask,
+                      onOpenSettings = onOpenSettings,
+                  )
+              }
+
+              @OptIn(ExperimentalMaterial3Api::class)
+              @Composable
+              fun TasksContent(
+                  state: TasksUiState,
+                  snackbarHostState: SnackbarHostState,
+                  onQueryChange: (String) -> Unit,
+                  onFilterChange: (TaskFilter) -> Unit,
+                  onToggleDone: (Task) -> Unit,
+                  onDelete: (Task) -> Unit,
+                  onImport: () -> Unit,
+                  onAddTask: () -> Unit,
+                  onOpenTask: (Long) -> Unit,
+                  onOpenSettings: () -> Unit,
+                  now: Long = System.currentTimeMillis(),
+              ) {
+                  Scaffold(
+                      topBar = {
+                          TopAppBar(
+                              title = { Text(stringResource(R.string.tasks_title)) },
+                              actions = {
+                                  if (state.isImporting) {
+                                      CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                                  } else {
+                                      IconButton(onClick = onImport) {
+                                          Icon(Icons.Filled.Refresh, contentDescription = stringResource(R.string.import_samples))
+                                      }
+                                  }
+                                  IconButton(onClick = onOpenSettings) {
+                                      Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.settings))
+                                  }
+                              },
+                          )
+                      },
+                      floatingActionButton = {
+                          FloatingActionButton(onClick = onAddTask) {
+                              Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.add_task))
+                          }
+                      },
+                      snackbarHost = { SnackbarHost(snackbarHostState) },
+                  ) { innerPadding ->
+                      Column(
+                          modifier = Modifier
+                              .fillMaxSize()
+                              .padding(innerPadding),
+                      ) {
+                          SearchField(query = state.query, onQueryChange = onQueryChange)
+                          FilterRow(state = state, onFilterChange = onFilterChange)
+                          if (state.totalCount > 0) ProgressSummary(done = state.doneCount, total = state.totalCount)
+
+                          when {
+                              state.isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                  CircularProgressIndicator()
+                              }
+                              state.tasks.isEmpty() -> EmptyState(query = state.query)
+                              else -> LazyColumn(
+                                  contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 88.dp),
+                                  verticalArrangement = Arrangement.spacedBy(8.dp),
+                              ) {
+                                  // A stable key lets Compose keep each row's state and animate changes correctly.
+                                  items(state.tasks, key = { it.id }) { task ->
+                                      TaskItem(
+                                          task = task,
+                                          now = now,
+                                          onToggleDone = { onToggleDone(task) },
+                                          onClick = { onOpenTask(task.id) },
+                                          onDelete = { onDelete(task) },
+                                          modifier = Modifier.animateItem(),
+                                      )
+                                  }
+                              }
+                          }
+                      }
+                  }
+              }
+
+              @Composable
+              private fun SearchField(query: String, onQueryChange: (String) -> Unit) {
+                  OutlinedTextField(
+                      value = query,
+                      onValueChange = onQueryChange,
+                      modifier = Modifier
+                          .fillMaxWidth()
+                          .padding(horizontal = 16.dp, vertical = 4.dp),
+                      placeholder = { Text(stringResource(R.string.search_tasks)) },
+                      leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                      trailingIcon = {
+                          if (query.isNotEmpty()) {
+                              IconButton(onClick = { onQueryChange("") }) {
+                                  Icon(Icons.Filled.Clear, contentDescription = stringResource(R.string.clear_search))
+                              }
+                          }
+                      },
+                      singleLine = true,
+                  )
+              }
+
+              @OptIn(ExperimentalMaterial3Api::class)
+              @Composable
+              private fun FilterRow(state: TasksUiState, onFilterChange: (TaskFilter) -> Unit) {
+                  Row(
+                      modifier = Modifier.padding(horizontal = 16.dp),
+                      horizontalArrangement = Arrangement.spacedBy(8.dp),
+                  ) {
+                      TaskFilter.entries.forEach { filter ->
+                          val label = when (filter) {
+                              TaskFilter.ALL -> stringResource(R.string.filter_all, state.totalCount)
+                              TaskFilter.ACTIVE -> stringResource(R.string.filter_active, state.activeCount)
+                              TaskFilter.DONE -> stringResource(R.string.filter_done, state.doneCount)
+                          }
+                          FilterChip(
+                              selected = state.filter == filter,
+                              onClick = { onFilterChange(filter) },
+                              label = { Text(label) },
+                          )
+                      }
+                  }
+              }
+
+              @Composable
+              private fun ProgressSummary(done: Int, total: Int) {
+                  Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+                      LinearProgressIndicator(
+                          progress = { done.toFloat() / total },
+                          modifier = Modifier.fillMaxWidth(),
+                      )
+                      Text(
+                          text = stringResource(R.string.progress_summary, done, total),
+                          style = MaterialTheme.typography.labelMedium,
+                          color = MaterialTheme.colorScheme.onSurfaceVariant,
+                          modifier = Modifier.padding(top = 4.dp),
+                      )
+                  }
+              }
+
+              @Composable
+              private fun EmptyState(query: String) {
+                  Column(
+                      modifier = Modifier
+                          .fillMaxSize()
+                          .padding(32.dp),
+                      verticalArrangement = Arrangement.Center,
+                      horizontalAlignment = Alignment.CenterHorizontally,
+                  ) {
+                      Text("📝", style = MaterialTheme.typography.displayMedium)
+                      Spacer(Modifier.height(12.dp))
+                      if (query.isNotBlank()) {
+                          Text(stringResource(R.string.empty_search, query), style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
+                      } else {
+                          Text(stringResource(R.string.empty_title), style = MaterialTheme.typography.titleMedium)
+                          Text(
+                              stringResource(R.string.empty_body),
+                              style = MaterialTheme.typography.bodyMedium,
+                              color = MaterialTheme.colorScheme.onSurfaceVariant,
+                              textAlign = TextAlign.Center,
+                          )
+                      }
+                  }
+              }
+
+              @Preview(showBackground = true)
+              @Composable
+              private fun TasksContentPreview() {
+                  val tasks = listOf(
+                      Task(id = 1, title = "Set up Android Studio", isDone = true),
+                      Task(id = 2, title = "Learn coroutines", notes = "Lesson 13", priority = Priority.HIGH),
+                      Task(id = 3, title = "Build TaskFlow", priority = Priority.MEDIUM),
+                  )
+                  TaskFlowTheme(dynamicColor = false) {
+                      TasksContent(
+                          state = TasksUiState(isLoading = false, tasks = tasks, totalCount = 3, activeCount = 2, doneCount = 1),
+                          snackbarHostState = SnackbarHostState(),
+                          onQueryChange = {}, onFilterChange = {}, onToggleDone = {}, onDelete = {}, onImport = {},
+                          onAddTask = {}, onOpenTask = {}, onOpenSettings = {},
+                      )
+                  }
+              }
+            </script>
+          <script type="text/plain" data-code="kotlin" data-file="ui/tasks/TaskItem.kt" data-src="final-project/TaskFlow/app/src/main/java/com/kotlinacademy/taskflow/ui/tasks/TaskItem.kt">
+              package com.kotlinacademy.taskflow.ui.tasks
+
+              import androidx.compose.foundation.background
+              import androidx.compose.foundation.clickable
+              import androidx.compose.foundation.layout.Arrangement
+              import androidx.compose.foundation.layout.Column
+              import androidx.compose.foundation.layout.Row
+              import androidx.compose.foundation.layout.Spacer
+              import androidx.compose.foundation.layout.fillMaxWidth
+              import androidx.compose.foundation.layout.height
+              import androidx.compose.foundation.layout.padding
+              import androidx.compose.foundation.layout.size
+              import androidx.compose.foundation.layout.width
+              import androidx.compose.foundation.shape.CircleShape
+              import androidx.compose.material.icons.Icons
+              import androidx.compose.material.icons.filled.DateRange
+              import androidx.compose.material.icons.filled.Delete
+              import androidx.compose.material.icons.filled.Notifications
+              import androidx.compose.material3.Card
+              import androidx.compose.material3.Checkbox
+              import androidx.compose.material3.Icon
+              import androidx.compose.material3.IconButton
+              import androidx.compose.material3.MaterialTheme
+              import androidx.compose.material3.Text
+              import androidx.compose.runtime.Composable
+              import androidx.compose.ui.Alignment
+              import androidx.compose.ui.Modifier
+              import androidx.compose.ui.graphics.Color
+              import androidx.compose.ui.res.stringResource
+              import androidx.compose.ui.semantics.contentDescription
+              import androidx.compose.ui.semantics.semantics
+              import androidx.compose.ui.text.style.TextDecoration
+              import androidx.compose.ui.text.style.TextOverflow
+              import androidx.compose.ui.tooling.preview.Preview
+              import androidx.compose.ui.unit.dp
+              import com.kotlinacademy.taskflow.R
+              import com.kotlinacademy.taskflow.domain.Priority
+              import com.kotlinacademy.taskflow.domain.Task
+              import com.kotlinacademy.taskflow.ui.components.formatDueDate
+              import com.kotlinacademy.taskflow.ui.theme.PriorityHigh
+              import com.kotlinacademy.taskflow.ui.theme.PriorityLow
+              import com.kotlinacademy.taskflow.ui.theme.PriorityMedium
+              import com.kotlinacademy.taskflow.ui.theme.TaskFlowTheme
+
+              fun Priority.color(): Color = when (this) {
+                  Priority.LOW -> PriorityLow
+                  Priority.MEDIUM -> PriorityMedium
+                  Priority.HIGH -> PriorityHigh
+              }
+
+              /** A stateless row: it receives data and reports clicks. Easy to preview, test and reuse. */
+              @Composable
+              fun TaskItem(
+                  task: Task,
+                  now: Long,
+                  onToggleDone: () -> Unit,
+                  onClick: () -> Unit,
+                  onDelete: () -> Unit,
+                  modifier: Modifier = Modifier,
+              ) {
+                  Card(modifier = modifier.fillMaxWidth().clickable(onClick = onClick)) {
+                      Row(
+                          modifier = Modifier.padding(start = 4.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
+                          verticalAlignment = Alignment.CenterVertically,
+                      ) {
+                          Checkbox(
+                              checked = task.isDone,
+                              onCheckedChange = { onToggleDone() },
+                              modifier = Modifier.semantics { contentDescription = "Toggle ${task.title}" },
+                          )
+                          Column(modifier = Modifier.weight(1f)) {
+                              Row(verticalAlignment = Alignment.CenterVertically) {
+                                  Spacer(
+                                      Modifier
+                                          .size(8.dp)
+                                          .background(task.priority.color(), CircleShape),
+                                  )
+                                  Spacer(Modifier.width(8.dp))
+                                  Text(
+                                      text = task.title,
+                                      style = MaterialTheme.typography.titleMedium,
+                                      maxLines = 1,
+                                      overflow = TextOverflow.Ellipsis,
+                                      textDecoration = if (task.isDone) TextDecoration.LineThrough else null,
+                                      color = if (task.isDone) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                                  )
+                              }
+                              if (task.notes.isNotBlank()) {
+                                  Text(
+                                      text = task.notes,
+                                      style = MaterialTheme.typography.bodyMedium,
+                                      color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                      maxLines = 2,
+                                      overflow = TextOverflow.Ellipsis,
+                                      modifier = Modifier.padding(start = 16.dp),
+                                  )
+                              }
+                              task.dueAt?.let { due ->
+                                  Spacer(Modifier.height(4.dp))
+                                  Row(
+                                      modifier = Modifier.padding(start = 16.dp),
+                                      verticalAlignment = Alignment.CenterVertically,
+                                      horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                  ) {
+                                      val overdue = task.isOverdue(now)
+                                      val tint = if (overdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                                      Icon(Icons.Filled.DateRange, contentDescription = null, tint = tint, modifier = Modifier.size(16.dp))
+                                      Text(
+                                          text = if (overdue) stringResource(R.string.overdue) + " · " + formatDueDate(due)
+                                          else stringResource(R.string.due_on, formatDueDate(due)),
+                                          style = MaterialTheme.typography.labelMedium,
+                                          color = tint,
+                                      )
+                                      if (task.remind) {
+                                          Icon(Icons.Filled.Notifications, contentDescription = null, tint = tint, modifier = Modifier.size(16.dp))
+                                      }
+                                  }
+                              }
+                          }
+                          IconButton(onClick = onDelete) {
+                              Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.delete_task))
+                          }
+                      }
+                  }
+              }
+
+              @Preview(showBackground = true)
+              @Composable
+              private fun TaskItemPreview() {
+                  TaskFlowTheme(dynamicColor = false) {
+                      TaskItem(
+                          task = Task(id = 1, title = "Finish lesson 17", notes = "Compose layouts and state", priority = Priority.HIGH, dueAt = 0, remind = true),
+                          now = System.currentTimeMillis(),
+                          onToggleDone = {}, onClick = {}, onDelete = {},
+                      )
+                  }
+              }
+            </script>
+          <div class="callout note">
+            <div class="ci">✅</div>
+            <div><span class="ct">Checkpoint</span><p>Temporarily set <code>startDestination</code> to the list (milestone 7 adds navigation) and run: tap ⟳ to import sample tasks, check some off, search, filter, delete and Undo. Rotate the phone — nothing is lost.</p></div>
+          </div>
+        </section>
+
+        <!-- ================================================================ M7 -->
+        <section class="doc-section" id="m7" data-title="M7 · Editing, navigation, settings & theme">
+          <div class="milestone"><h3>Milestone 7 — Editor, navigation, settings &amp; theme</h3><p>Goal: create/edit tasks with validation and a date picker, a settings screen, typed navigation between all three screens, and a theme that follows the user's settings.</p></div>
+          <script type="text/plain" data-code="kotlin" data-file="ui/navigation/TaskFlowNavHost.kt" data-src="final-project/TaskFlow/app/src/main/java/com/kotlinacademy/taskflow/ui/navigation/TaskFlowNavHost.kt">
+              package com.kotlinacademy.taskflow.ui.navigation
+
+              import androidx.compose.runtime.Composable
+              import androidx.navigation.NavHostController
+              import androidx.navigation.compose.NavHost
+              import androidx.navigation.compose.composable
+              import androidx.navigation.compose.rememberNavController
+              import com.kotlinacademy.taskflow.ui.edit.EditTaskScreen
+              import com.kotlinacademy.taskflow.ui.settings.SettingsScreen
+              import com.kotlinacademy.taskflow.ui.tasks.TasksScreen
+              import kotlinx.serialization.Serializable
+
+              /* Type-safe routes: each destination is a @Serializable type; arguments are its properties. */
+
+              @Serializable
+              data object TasksRoute
+
+              /** taskId == NEW_TASK opens an empty editor. */
+              @Serializable
+              data class EditTaskRoute(val taskId: Long = NEW_TASK) {
+                  companion object {
+                      const val NEW_TASK = -1L
+                  }
+              }
+
+              @Serializable
+              data object SettingsRoute
+
+              @Composable
+              fun TaskFlowNavHost(navController: NavHostController = rememberNavController()) {
+                  NavHost(navController = navController, startDestination = TasksRoute) {
+                      composable<TasksRoute> {
+                          TasksScreen(
+                              onAddTask = { navController.navigate(EditTaskRoute()) },
+                              onOpenTask = { id -> navController.navigate(EditTaskRoute(id)) },
+                              onOpenSettings = { navController.navigate(SettingsRoute) },
+                          )
+                      }
+                      composable<EditTaskRoute> {
+                          // EditTaskViewModel reads taskId from its SavedStateHandle.
+                          EditTaskScreen(onDone = { navController.popBackStack() })
+                      }
+                      composable<SettingsRoute> {
+                          SettingsScreen(onBack = { navController.popBackStack() })
+                      }
+                  }
+              }
+            </script>
+          <script type="text/plain" data-code="kotlin" data-file="ui/edit/EditTaskViewModel.kt" data-src="final-project/TaskFlow/app/src/main/java/com/kotlinacademy/taskflow/ui/edit/EditTaskViewModel.kt" data-numbered>
+              package com.kotlinacademy.taskflow.ui.edit
+
+              import androidx.lifecycle.SavedStateHandle
+              import androidx.lifecycle.ViewModel
+              import androidx.lifecycle.viewModelScope
+              import androidx.navigation.toRoute
+              import com.kotlinacademy.taskflow.data.TaskRepository
+              import com.kotlinacademy.taskflow.domain.Priority
+              import com.kotlinacademy.taskflow.domain.Task
+              import com.kotlinacademy.taskflow.ui.navigation.EditTaskRoute
+              import dagger.hilt.android.lifecycle.HiltViewModel
+              import kotlinx.coroutines.flow.MutableStateFlow
+              import kotlinx.coroutines.flow.StateFlow
+              import kotlinx.coroutines.flow.asStateFlow
+              import kotlinx.coroutines.flow.update
+              import kotlinx.coroutines.launch
+              import javax.inject.Inject
+
+              data class EditTaskUiState(
+                  val isNew: Boolean = true,
+                  val isLoading: Boolean = false,
+                  val title: String = "",
+                  val notes: String = "",
+                  val priority: Priority = Priority.MEDIUM,
+                  val dueAt: Long? = null,
+                  val remind: Boolean = false,
+                  val showTitleError: Boolean = false,
+                  /** Becomes true after a successful save; the screen then navigates back. */
+                  val isSaved: Boolean = false,
+              )
+
+              @HiltViewModel
+              class EditTaskViewModel @Inject constructor(
+                  savedStateHandle: SavedStateHandle,
+                  private val repository: TaskRepository,
+              ) : ViewModel() {
+
+                  private val taskId: Long = savedStateHandle.toRoute<EditTaskRoute>().taskId
+                  private var original: Task? = null
+
+                  private val _state = MutableStateFlow(EditTaskUiState(isNew = taskId == EditTaskRoute.NEW_TASK))
+                  val state: StateFlow<EditTaskUiState> = _state.asStateFlow()
+
+                  init {
+                      if (taskId != EditTaskRoute.NEW_TASK) load(taskId)
+                  }
+
+                  private fun load(id: Long) {
+                      viewModelScope.launch {
+                          _state.update { it.copy(isLoading = true) }
+                          val task = repository.getTask(id)
+                          original = task
+                          _state.update { s ->
+                              if (task == null) s.copy(isLoading = false, isNew = true)
+                              else s.copy(
+                                  isLoading = false,
+                                  title = task.title,
+                                  notes = task.notes,
+                                  priority = task.priority,
+                                  dueAt = task.dueAt,
+                                  remind = task.remind,
+                              )
+                          }
+                      }
+                  }
+
+                  fun onTitleChange(value: String) = _state.update { it.copy(title = value, showTitleError = false) }
+                  fun onNotesChange(value: String) = _state.update { it.copy(notes = value) }
+                  fun onPriorityChange(value: Priority) = _state.update { it.copy(priority = value) }
+                  fun onDueDateChange(value: Long?) = _state.update { it.copy(dueAt = value, remind = it.remind && value != null) }
+                  fun onRemindChange(value: Boolean) = _state.update { it.copy(remind = value && it.dueAt != null) }
+
+                  fun save() {
+                      val s = _state.value
+                      if (s.title.isBlank()) {
+                          _state.update { it.copy(showTitleError = true) }
+                          return
+                      }
+                      viewModelScope.launch {
+                          val base = original ?: Task(title = s.title)
+                          repository.upsert(
+                              base.copy(title = s.title, notes = s.notes, priority = s.priority, dueAt = s.dueAt, remind = s.remind),
+                          )
+                          _state.update { it.copy(isSaved = true) }
+                      }
+                  }
+              }
+            </script>
+          <script type="text/plain" data-code="kotlin" data-file="ui/edit/EditTaskScreen.kt" data-src="final-project/TaskFlow/app/src/main/java/com/kotlinacademy/taskflow/ui/edit/EditTaskScreen.kt">
+              package com.kotlinacademy.taskflow.ui.edit
+
+              import android.Manifest
+              import android.os.Build
+              import androidx.activity.compose.rememberLauncherForActivityResult
+              import androidx.activity.result.contract.ActivityResultContracts
+              import androidx.compose.foundation.layout.Arrangement
+              import androidx.compose.foundation.layout.Box
+              import androidx.compose.foundation.layout.Column
+              import androidx.compose.foundation.layout.Row
+              import androidx.compose.foundation.layout.fillMaxSize
+              import androidx.compose.foundation.layout.fillMaxWidth
+              import androidx.compose.foundation.layout.imePadding
+              import androidx.compose.foundation.layout.padding
+              import androidx.compose.foundation.rememberScrollState
+              import androidx.compose.foundation.verticalScroll
+              import androidx.compose.material.icons.Icons
+              import androidx.compose.material.icons.automirrored.filled.ArrowBack
+              import androidx.compose.material.icons.filled.DateRange
+              import androidx.compose.material3.AssistChip
+              import androidx.compose.material3.CircularProgressIndicator
+              import androidx.compose.material3.DatePicker
+              import androidx.compose.material3.DatePickerDialog
+              import androidx.compose.material3.ExperimentalMaterial3Api
+              import androidx.compose.material3.FilterChip
+              import androidx.compose.material3.Icon
+              import androidx.compose.material3.IconButton
+              import androidx.compose.material3.MaterialTheme
+              import androidx.compose.material3.OutlinedTextField
+              import androidx.compose.material3.Scaffold
+              import androidx.compose.material3.Switch
+              import androidx.compose.material3.Text
+              import androidx.compose.material3.TextButton
+              import androidx.compose.material3.TopAppBar
+              import androidx.compose.material3.rememberDatePickerState
+              import androidx.compose.runtime.Composable
+              import androidx.compose.runtime.LaunchedEffect
+              import androidx.compose.runtime.getValue
+              import androidx.compose.runtime.mutableStateOf
+              import androidx.compose.runtime.saveable.rememberSaveable
+              import androidx.compose.runtime.setValue
+              import androidx.compose.ui.Alignment
+              import androidx.compose.ui.Modifier
+              import androidx.compose.ui.res.stringResource
+              import androidx.compose.ui.unit.dp
+              import androidx.hilt.navigation.compose.hiltViewModel
+              import androidx.lifecycle.compose.collectAsStateWithLifecycle
+              import com.kotlinacademy.taskflow.R
+              import com.kotlinacademy.taskflow.domain.Priority
+              import com.kotlinacademy.taskflow.ui.components.formatDueDate
+              import com.kotlinacademy.taskflow.ui.tasks.color
+
+              @Composable
+              fun EditTaskScreen(
+                  onDone: () -> Unit,
+                  viewModel: EditTaskViewModel = hiltViewModel(),
+              ) {
+                  val state by viewModel.state.collectAsStateWithLifecycle()
+
+                  // Navigate back once the ViewModel reports a successful save.
+                  LaunchedEffect(state.isSaved) {
+                      if (state.isSaved) onDone()
+                  }
+
+                  // Android 13+ requires asking for notification permission at runtime.
+                  val notificationPermission = rememberLauncherForActivityResult(
+                      ActivityResultContracts.RequestPermission(),
+                  ) { granted -> viewModel.onRemindChange(granted) }
+
+                  EditTaskContent(
+                      state = state,
+                      onBack = onDone,
+                      onSave = viewModel::save,
+                      onTitleChange = viewModel::onTitleChange,
+                      onNotesChange = viewModel::onNotesChange,
+                      onPriorityChange = viewModel::onPriorityChange,
+                      onDueDateChange = viewModel::onDueDateChange,
+                      onRemindChange = { enabled ->
+                          if (enabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                              notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                          } else {
+                              viewModel.onRemindChange(enabled)
+                          }
+                      },
+                  )
+              }
+
+              @OptIn(ExperimentalMaterial3Api::class)
+              @Composable
+              fun EditTaskContent(
+                  state: EditTaskUiState,
+                  onBack: () -> Unit,
+                  onSave: () -> Unit,
+                  onTitleChange: (String) -> Unit,
+                  onNotesChange: (String) -> Unit,
+                  onPriorityChange: (Priority) -> Unit,
+                  onDueDateChange: (Long?) -> Unit,
+                  onRemindChange: (Boolean) -> Unit,
+              ) {
+                  var showDatePicker by rememberSaveable { mutableStateOf(false) }
+
+                  Scaffold(
+                      topBar = {
+                          TopAppBar(
+                              title = { Text(stringResource(if (state.isNew) R.string.new_task else R.string.edit_task)) },
+                              navigationIcon = {
+                                  IconButton(onClick = onBack) {
+                                      Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
+                                  }
+                              },
+                              actions = {
+                                  TextButton(onClick = onSave, enabled = !state.isLoading) { Text(stringResource(R.string.save)) }
+                              },
+                          )
+                      },
+                  ) { innerPadding ->
+                      if (state.isLoading) {
+                          Box(Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) {
+                              CircularProgressIndicator()
+                          }
+                          return@Scaffold
+                      }
+                      Column(
+                          modifier = Modifier
+                              .fillMaxSize()
+                              .padding(innerPadding)
+                              .imePadding()
+                              .verticalScroll(rememberScrollState())
+                              .padding(16.dp),
+                          verticalArrangement = Arrangement.spacedBy(16.dp),
+                      ) {
+                          OutlinedTextField(
+                              value = state.title,
+                              onValueChange = onTitleChange,
+                              label = { Text(stringResource(R.string.title_label)) },
+                              isError = state.showTitleError,
+                              supportingText = if (state.showTitleError) {
+                                  { Text(stringResource(R.string.title_error)) }
+                              } else null,
+                              singleLine = true,
+                              modifier = Modifier.fillMaxWidth(),
+                          )
+                          OutlinedTextField(
+                              value = state.notes,
+                              onValueChange = onNotesChange,
+                              label = { Text(stringResource(R.string.notes_label)) },
+                              minLines = 3,
+                              modifier = Modifier.fillMaxWidth(),
+                          )
+
+                          Text(stringResource(R.string.priority), style = MaterialTheme.typography.titleSmall)
+                          Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                              Priority.entries.forEach { p ->
+                                  val label = when (p) {
+                                      Priority.LOW -> R.string.priority_low
+                                      Priority.MEDIUM -> R.string.priority_medium
+                                      Priority.HIGH -> R.string.priority_high
+                                  }
+                                  FilterChip(
+                                      selected = state.priority == p,
+                                      onClick = { onPriorityChange(p) },
+                                      label = { Text(stringResource(label), color = if (state.priority == p) p.color() else MaterialTheme.colorScheme.onSurface) },
+                                  )
+                              }
+                          }
+
+                          Text(stringResource(R.string.due_date), style = MaterialTheme.typography.titleSmall)
+                          Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                              AssistChip(
+                                  onClick = { showDatePicker = true },
+                                  label = { Text(state.dueAt?.let(::formatDueDate) ?: stringResource(R.string.pick_date)) },
+                                  leadingIcon = { Icon(Icons.Filled.DateRange, contentDescription = null) },
+                              )
+                              if (state.dueAt != null) {
+                                  TextButton(onClick = { onDueDateChange(null) }) { Text(stringResource(R.string.clear)) }
+                              }
+                          }
+
+                          Row(verticalAlignment = Alignment.CenterVertically) {
+                              Column(Modifier.weight(1f)) {
+                                  Text(stringResource(R.string.remind_me))
+                                  if (state.dueAt == null) {
+                                      Text(
+                                          stringResource(R.string.remind_needs_date),
+                                          style = MaterialTheme.typography.bodySmall,
+                                          color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                      )
+                                  }
+                              }
+                              Switch(checked = state.remind, onCheckedChange = onRemindChange, enabled = state.dueAt != null)
+                          }
+                      }
+                  }
+
+                  if (showDatePicker) {
+                      val pickerState = rememberDatePickerState(initialSelectedDateMillis = state.dueAt)
+                      DatePickerDialog(
+                          onDismissRequest = { showDatePicker = false },
+                          confirmButton = {
+                              TextButton(onClick = {
+                                  onDueDateChange(pickerState.selectedDateMillis)
+                                  showDatePicker = false
+                              }) { Text(stringResource(R.string.ok)) }
+                          },
+                          dismissButton = {
+                              TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.cancel)) }
+                          },
+                      ) {
+                          DatePicker(state = pickerState)
+                      }
+                  }
+              }
+            </script>
+          <script type="text/plain" data-code="kotlin" data-file="ui/settings/SettingsViewModel.kt" data-src="final-project/TaskFlow/app/src/main/java/com/kotlinacademy/taskflow/ui/settings/SettingsViewModel.kt">
+              package com.kotlinacademy.taskflow.ui.settings
+
+              import androidx.lifecycle.ViewModel
+              import androidx.lifecycle.viewModelScope
+              import com.kotlinacademy.taskflow.data.settings.SettingsRepository
+              import com.kotlinacademy.taskflow.domain.SortOrder
+              import com.kotlinacademy.taskflow.domain.ThemeMode
+              import com.kotlinacademy.taskflow.domain.UserSettings
+              import dagger.hilt.android.lifecycle.HiltViewModel
+              import kotlinx.coroutines.flow.SharingStarted
+              import kotlinx.coroutines.flow.StateFlow
+              import kotlinx.coroutines.flow.stateIn
+              import kotlinx.coroutines.launch
+              import javax.inject.Inject
+
+              @HiltViewModel
+              class SettingsViewModel @Inject constructor(
+                  private val repository: SettingsRepository,
+              ) : ViewModel() {
+
+                  val settings: StateFlow<UserSettings> = repository.settings
+                      .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), UserSettings())
+
+                  fun setThemeMode(mode: ThemeMode) {
+                      viewModelScope.launch { repository.setThemeMode(mode) }
+                  }
+
+                  fun setDynamicColor(enabled: Boolean) {
+                      viewModelScope.launch { repository.setDynamicColor(enabled) }
+                  }
+
+                  fun setSortOrder(order: SortOrder) {
+                      viewModelScope.launch { repository.setSortOrder(order) }
+                  }
+              }
+            </script>
+          <script type="text/plain" data-code="kotlin" data-file="ui/settings/SettingsScreen.kt" data-src="final-project/TaskFlow/app/src/main/java/com/kotlinacademy/taskflow/ui/settings/SettingsScreen.kt">
+              package com.kotlinacademy.taskflow.ui.settings
+
+              import android.os.Build
+              import androidx.compose.foundation.layout.Column
+              import androidx.compose.foundation.layout.Row
+              import androidx.compose.foundation.layout.fillMaxSize
+              import androidx.compose.foundation.layout.fillMaxWidth
+              import androidx.compose.foundation.layout.padding
+              import androidx.compose.foundation.rememberScrollState
+              import androidx.compose.foundation.selection.selectable
+              import androidx.compose.foundation.selection.selectableGroup
+              import androidx.compose.foundation.verticalScroll
+              import androidx.compose.material.icons.Icons
+              import androidx.compose.material.icons.automirrored.filled.ArrowBack
+              import androidx.compose.material3.ExperimentalMaterial3Api
+              import androidx.compose.material3.HorizontalDivider
+              import androidx.compose.material3.Icon
+              import androidx.compose.material3.IconButton
+              import androidx.compose.material3.MaterialTheme
+              import androidx.compose.material3.RadioButton
+              import androidx.compose.material3.Scaffold
+              import androidx.compose.material3.Switch
+              import androidx.compose.material3.Text
+              import androidx.compose.material3.TopAppBar
+              import androidx.compose.runtime.Composable
+              import androidx.compose.runtime.getValue
+              import androidx.compose.ui.Alignment
+              import androidx.compose.ui.Modifier
+              import androidx.compose.ui.res.stringResource
+              import androidx.compose.ui.semantics.Role
+              import androidx.compose.ui.unit.dp
+              import androidx.hilt.navigation.compose.hiltViewModel
+              import androidx.lifecycle.compose.collectAsStateWithLifecycle
+              import com.kotlinacademy.taskflow.BuildConfig
+              import com.kotlinacademy.taskflow.R
+              import com.kotlinacademy.taskflow.domain.SortOrder
+              import com.kotlinacademy.taskflow.domain.ThemeMode
+
+              @OptIn(ExperimentalMaterial3Api::class)
+              @Composable
+              fun SettingsScreen(
+                  onBack: () -> Unit,
+                  viewModel: SettingsViewModel = hiltViewModel(),
+              ) {
+                  val settings by viewModel.settings.collectAsStateWithLifecycle()
+
+                  Scaffold(
+                      topBar = {
+                          TopAppBar(
+                              title = { Text(stringResource(R.string.settings)) },
+                              navigationIcon = {
+                                  IconButton(onClick = onBack) {
+                                      Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
+                                  }
+                              },
+                          )
+                      },
+                  ) { innerPadding ->
+                      Column(
+                          modifier = Modifier
+                              .fillMaxSize()
+                              .padding(innerPadding)
+                              .verticalScroll(rememberScrollState()),
+                      ) {
+                          SectionTitle(stringResource(R.string.appearance))
+                          Column(Modifier.selectableGroup()) {
+                              ThemeMode.entries.forEach { mode ->
+                                  val label = when (mode) {
+                                      ThemeMode.SYSTEM -> R.string.theme_system
+                                      ThemeMode.LIGHT -> R.string.theme_light
+                                      ThemeMode.DARK -> R.string.theme_dark
+                                  }
+                                  RadioRow(stringResource(label), settings.themeMode == mode) { viewModel.setThemeMode(mode) }
+                              }
+                          }
+                          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                              Row(
+                                  modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                                  verticalAlignment = Alignment.CenterVertically,
+                              ) {
+                                  Text(stringResource(R.string.dynamic_color), modifier = Modifier.weight(1f))
+                                  Switch(checked = settings.dynamicColor, onCheckedChange = viewModel::setDynamicColor)
+                              }
+                          }
+
+                          HorizontalDivider(Modifier.padding(vertical = 8.dp))
+                          SectionTitle(stringResource(R.string.sort_by))
+                          Column(Modifier.selectableGroup()) {
+                              SortOrder.entries.forEach { order ->
+                                  val label = when (order) {
+                                      SortOrder.DUE_DATE -> R.string.sort_due
+                                      SortOrder.PRIORITY -> R.string.sort_priority
+                                      SortOrder.CREATED -> R.string.sort_created
+                                  }
+                                  RadioRow(stringResource(label), settings.sortOrder == order) { viewModel.setSortOrder(order) }
+                              }
+                          }
+
+                          HorizontalDivider(Modifier.padding(vertical = 8.dp))
+                          SectionTitle(stringResource(R.string.about))
+                          Text(
+                              text = stringResource(R.string.version, BuildConfig.VERSION_NAME),
+                              modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                              color = MaterialTheme.colorScheme.onSurfaceVariant,
+                          )
+                      }
+                  }
+              }
+
+              @Composable
+              private fun SectionTitle(text: String) {
+                  Text(
+                      text = text,
+                      style = MaterialTheme.typography.titleSmall,
+                      color = MaterialTheme.colorScheme.primary,
+                      modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 4.dp),
+                  )
+              }
+
+              /** The whole row is clickable (bigger touch target) and announced as a radio button. */
+              @Composable
+              private fun RadioRow(label: String, selected: Boolean, onSelect: () -> Unit) {
+                  Row(
+                      modifier = Modifier
+                          .fillMaxWidth()
+                          .selectable(selected = selected, onClick = onSelect, role = Role.RadioButton)
+                          .padding(horizontal = 16.dp, vertical = 8.dp),
+                      verticalAlignment = Alignment.CenterVertically,
+                  ) {
+                      RadioButton(selected = selected, onClick = null)
+                      Text(label, modifier = Modifier.padding(start = 16.dp))
+                  }
+              }
+            </script>
+          <script type="text/plain" data-code="kotlin" data-file="ui/TaskFlowRoot.kt" data-src="final-project/TaskFlow/app/src/main/java/com/kotlinacademy/taskflow/ui/TaskFlowRoot.kt">
+              package com.kotlinacademy.taskflow.ui
+
+              import androidx.compose.runtime.Composable
+              import androidx.compose.runtime.getValue
+              import androidx.hilt.navigation.compose.hiltViewModel
+              import androidx.lifecycle.ViewModel
+              import androidx.lifecycle.compose.collectAsStateWithLifecycle
+              import androidx.lifecycle.viewModelScope
+              import com.kotlinacademy.taskflow.data.settings.SettingsRepository
+              import com.kotlinacademy.taskflow.domain.UserSettings
+              import com.kotlinacademy.taskflow.ui.navigation.TaskFlowNavHost
+              import com.kotlinacademy.taskflow.ui.theme.TaskFlowTheme
+              import dagger.hilt.android.lifecycle.HiltViewModel
+              import kotlinx.coroutines.flow.SharingStarted
+              import kotlinx.coroutines.flow.StateFlow
+              import kotlinx.coroutines.flow.stateIn
+              import javax.inject.Inject
+
+              @HiltViewModel
+              class MainViewModel @Inject constructor(settingsRepository: SettingsRepository) : ViewModel() {
+                  val settings: StateFlow<UserSettings> = settingsRepository.settings
+                      .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), UserSettings())
+              }
+
+              /** Applies the user's theme settings around the whole navigation graph. */
+              @Composable
+              fun TaskFlowRoot(viewModel: MainViewModel = hiltViewModel()) {
+                  val settings by viewModel.settings.collectAsStateWithLifecycle()
+                  TaskFlowTheme(themeMode = settings.themeMode, dynamicColor = settings.dynamicColor) {
+                      TaskFlowNavHost()
+                  }
+              }
+            </script>
+          <script type="text/plain" data-code="kotlin" data-file="ui/theme/Theme.kt" data-src="final-project/TaskFlow/app/src/main/java/com/kotlinacademy/taskflow/ui/theme/Theme.kt">
+              package com.kotlinacademy.taskflow.ui.theme
+
+              import android.os.Build
+              import androidx.compose.foundation.isSystemInDarkTheme
+              import androidx.compose.material3.MaterialTheme
+              import androidx.compose.material3.Typography
+              import androidx.compose.material3.darkColorScheme
+              import androidx.compose.material3.dynamicDarkColorScheme
+              import androidx.compose.material3.dynamicLightColorScheme
+              import androidx.compose.material3.lightColorScheme
+              import androidx.compose.runtime.Composable
+              import androidx.compose.ui.platform.LocalContext
+              import com.kotlinacademy.taskflow.domain.ThemeMode
+
+              private val LightColors = lightColorScheme(
+                  primary = Violet40,
+                  onPrimary = androidx.compose.ui.graphics.Color.White,
+                  primaryContainer = Violet90,
+                  onPrimaryContainer = Violet10,
+                  secondary = Magenta40,
+                  error = Coral40,
+              )
+
+              private val DarkColors = darkColorScheme(
+                  primary = Violet80,
+                  onPrimary = Violet20,
+                  primaryContainer = Violet30,
+                  onPrimaryContainer = Violet90,
+                  secondary = Magenta80,
+                  error = Coral80,
+              )
+
+              @Composable
+              fun TaskFlowTheme(
+                  themeMode: ThemeMode = ThemeMode.SYSTEM,
+                  dynamicColor: Boolean = true,
+                  content: @Composable () -> Unit,
+              ) {
+                  val darkTheme = when (themeMode) {
+                      ThemeMode.SYSTEM -> isSystemInDarkTheme()
+                      ThemeMode.LIGHT -> false
+                      ThemeMode.DARK -> true
+                  }
+                  val colorScheme = when {
+                      // Material You: colors derived from the user's wallpaper (Android 12+)
+                      dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+                          val context = LocalContext.current
+                          if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+                      }
+                      darkTheme -> DarkColors
+                      else -> LightColors
+                  }
+                  MaterialTheme(colorScheme = colorScheme, typography = Typography(), content = content)
+              }
+            </script>
+          <script type="text/plain" data-code="kotlin" data-file="ui/theme/Color.kt" data-src="final-project/TaskFlow/app/src/main/java/com/kotlinacademy/taskflow/ui/theme/Color.kt">
+              package com.kotlinacademy.taskflow.ui.theme
+
+              import androidx.compose.ui.graphics.Color
+
+              // Brand palette inspired by the Kotlin logo.
+              val Violet10 = Color(0xFF21005E)
+              val Violet20 = Color(0xFF381E72)
+              val Violet30 = Color(0xFF4F378B)
+              val Violet40 = Color(0xFF6A3DF0)
+              val Violet80 = Color(0xFFCFBCFF)
+              val Violet90 = Color(0xFFE9DDFF)
+
+              val Magenta40 = Color(0xFFA0119E)
+              val Magenta80 = Color(0xFFFFAAF3)
+              val Coral40 = Color(0xFFB3261E)
+              val Coral80 = Color(0xFFFFB4AB)
+
+              val PriorityLow = Color(0xFF2E9D6B)
+              val PriorityMedium = Color(0xFFD08A0B)
+              val PriorityHigh = Color(0xFFD33A4C)
+            </script>
+          <script type="text/plain" data-code="kotlin" data-file="ui/components/DateFormat.kt" data-src="final-project/TaskFlow/app/src/main/java/com/kotlinacademy/taskflow/ui/components/DateFormat.kt">
+              package com.kotlinacademy.taskflow.ui.components
+
+              import java.time.Instant
+              import java.time.ZoneOffset
+              import java.time.format.DateTimeFormatter
+              import java.time.format.FormatStyle
+
+              private val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
+
+              /** Due dates are stored as UTC midnight, so format them in UTC to show the date the user picked. */
+              fun formatDueDate(epochMillis: Long): String =
+                  Instant.ofEpochMilli(epochMillis).atZone(ZoneOffset.UTC).toLocalDate().format(dateFormatter)
+            </script>
+          <details class="exercise">
+            <summary>Resources used by the UI (strings, theme, icons) <span class="badge">res/</span></summary>
+            <div class="ex-body">
+              <script type="text/plain" data-code="xml" data-file="res/values/strings.xml" data-src="final-project/TaskFlow/app/src/main/res/values/strings.xml">
+              <?xml version="1.0" encoding="utf-8"?>
+              <resources>
+                  <string name="app_name">TaskFlow</string>
+
+                  <string name="tasks_title">TaskFlow</string>
+                  <string name="add_task">Add task</string>
+                  <string name="search_tasks">Search tasks</string>
+                  <string name="clear_search">Clear search</string>
+                  <string name="settings">Settings</string>
+                  <string name="import_samples">Import sample tasks</string>
+                  <string name="filter_all">All (%1$d)</string>
+                  <string name="filter_active">Active (%1$d)</string>
+                  <string name="filter_done">Done (%1$d)</string>
+                  <string name="progress_summary">%1$d of %2$d done</string>
+                  <string name="empty_title">Nothing to do… yet</string>
+                  <string name="empty_body">Tap + to add your first task, or import a few samples.</string>
+                  <string name="empty_search">No tasks match “%1$s”</string>
+                  <string name="task_deleted">Task deleted</string>
+                  <string name="undo">Undo</string>
+                  <string name="imported_count">Imported %1$d tasks</string>
+                  <string name="import_failed">Couldn\'t import tasks. Check your connection.</string>
+                  <string name="delete_task">Delete task</string>
+                  <string name="mark_done">Mark as done</string>
+                  <string name="due_on">Due %1$s</string>
+                  <string name="overdue">Overdue</string>
+
+                  <string name="new_task">New task</string>
+                  <string name="edit_task">Edit task</string>
+                  <string name="save">Save</string>
+                  <string name="back">Back</string>
+                  <string name="title_label">Title</string>
+                  <string name="title_error">Please enter a title</string>
+                  <string name="notes_label">Notes</string>
+                  <string name="priority">Priority</string>
+                  <string name="priority_low">Low</string>
+                  <string name="priority_medium">Medium</string>
+                  <string name="priority_high">High</string>
+                  <string name="due_date">Due date</string>
+                  <string name="no_due_date">No due date</string>
+                  <string name="pick_date">Pick date</string>
+                  <string name="clear">Clear</string>
+                  <string name="ok">OK</string>
+                  <string name="cancel">Cancel</string>
+                  <string name="remind_me">Remind me at 9:00 on the due date</string>
+                  <string name="remind_needs_date">Set a due date to enable reminders</string>
+
+                  <string name="appearance">Appearance</string>
+                  <string name="theme_system">System default</string>
+                  <string name="theme_light">Light</string>
+                  <string name="theme_dark">Dark</string>
+                  <string name="dynamic_color">Dynamic color (Android 12+)</string>
+                  <string name="sort_by">Sort tasks by</string>
+                  <string name="sort_due">Due date</string>
+                  <string name="sort_priority">Priority</string>
+                  <string name="sort_created">Newest first</string>
+                  <string name="about">About</string>
+                  <string name="version">Version %1$s</string>
+
+                  <string name="reminder_channel_name">Task reminders</string>
+                  <string name="reminder_channel_description">Notifications for tasks that are due</string>
+                  <string name="reminder_title">Task due today</string>
+              </resources>
+            </script>
+              <script type="text/plain" data-code="xml" data-file="res/mipmap-anydpi-v26/ic_launcher.xml" data-src="final-project/TaskFlow/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml">
+              <?xml version="1.0" encoding="utf-8"?>
+              <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+                  <background android:drawable="@color/ic_launcher_background" />
+                  <foreground android:drawable="@drawable/ic_launcher_foreground" />
+                  <monochrome android:drawable="@drawable/ic_launcher_foreground" />
+              </adaptive-icon>
+            </script>
+              <script type="text/plain" data-code="xml" data-file="res/drawable/ic_launcher_foreground.xml" data-src="final-project/TaskFlow/app/src/main/res/drawable/ic_launcher_foreground.xml">
+              <?xml version="1.0" encoding="utf-8"?>
+              <!-- 108dp adaptive-icon foreground: a check mark inside a rounded square (safe zone is the inner 66dp). -->
+              <vector xmlns:android="http://schemas.android.com/apk/res/android"
+                  android:width="108dp"
+                  android:height="108dp"
+                  android:viewportWidth="108"
+                  android:viewportHeight="108">
+                  <path
+                      android:fillColor="#7F52FF"
+                      android:pathData="M38,32h32a6,6 0,0 1,6 6v32a6,6 0,0 1,-6 6h-32a6,6 0,0 1,-6 -6v-32a6,6 0,0 1,6 -6z" />
+                  <path
+                      android:fillColor="#00000000"
+                      android:strokeColor="#FFFFFF"
+                      android:strokeWidth="6"
+                      android:strokeLineCap="round"
+                      android:strokeLineJoin="round"
+                      android:pathData="M42,55l8,8l16,-18" />
+              </vector>
+            </script>
+            </div>
+          </details>
+          <div class="callout note">
+            <div class="ci">✅</div>
+            <div><span class="ct">Checkpoint</span><p>Add a task with an empty title → error shown. Add a real one with a due date; edit it; switch to Dark theme and sort by Priority in Settings, kill the app, reopen: settings persist.</p></div>
+          </div>
+        </section>
+
+        <!-- ================================================================ M8 -->
+        <section class="doc-section" id="m8" data-title="M8 · Reminders">
+          <div class="milestone"><h3>Milestone 8 — Reminder notifications with WorkManager</h3><p>Goal: when a task with “Remind me” is due, a notification appears at 9:00 — even if the app was closed.</p></div>
+          <script type="text/plain" data-code="kotlin" data-file="reminders/ReminderScheduler.kt" data-src="final-project/TaskFlow/app/src/main/java/com/kotlinacademy/taskflow/reminders/ReminderScheduler.kt" data-numbered>
+              package com.kotlinacademy.taskflow.reminders
+
+              import androidx.work.ExistingWorkPolicy
+              import androidx.work.OneTimeWorkRequestBuilder
+              import androidx.work.WorkManager
+              import androidx.work.workDataOf
+              import java.time.Instant
+              import java.time.LocalTime
+              import java.time.ZoneId
+              import java.time.ZoneOffset
+              import java.util.concurrent.TimeUnit
+              import javax.inject.Inject
+              import javax.inject.Singleton
+
+              interface ReminderScheduler {
+                  /** Schedules (or re-schedules) a reminder for 9:00 local time on the due date. */
+                  fun schedule(taskId: Long, title: String, dueAt: Long)
+                  fun cancel(taskId: Long)
+              }
+
+              /**
+               * WorkManager guarantees the work runs even if the app is closed or the device restarts.
+               * One unique work request per task: re-scheduling REPLACEs the previous one.
+               */
+              @Singleton
+              class WorkManagerReminderScheduler @Inject constructor(
+                  private val workManager: WorkManager,
+              ) : ReminderScheduler {
+
+                  override fun schedule(taskId: Long, title: String, dueAt: Long) {
+                      val remindAt = reminderTime(dueAt)
+                      val delay = remindAt - System.currentTimeMillis()
+                      if (delay <= 0) {
+                          cancel(taskId)
+                          return
+                      }
+                      val request = OneTimeWorkRequestBuilder<ReminderWorker>()
+                          .setInitialDelay(delay, TimeUnit.MILLISECONDS)
+                          .setInputData(workDataOf(ReminderWorker.KEY_TASK_ID to taskId, ReminderWorker.KEY_TITLE to title))
+                          .addTag(TAG)
+                          .build()
+                      workManager.enqueueUniqueWork(workName(taskId), ExistingWorkPolicy.REPLACE, request)
+                  }
+
+                  override fun cancel(taskId: Long) {
+                      workManager.cancelUniqueWork(workName(taskId))
+                  }
+
+                  private fun workName(taskId: Long) = "reminder-$taskId"
+
+                  companion object {
+                      private const val TAG = "task-reminder"
+                      private val REMIND_AT: LocalTime = LocalTime.of(9, 0)
+
+                      /** dueAt is UTC midnight of the chosen date → 9:00 in the user's own time zone on that date. */
+                      fun reminderTime(dueAt: Long, zone: ZoneId = ZoneId.systemDefault()): Long =
+                          Instant.ofEpochMilli(dueAt).atZone(ZoneOffset.UTC).toLocalDate()
+                              .atTime(REMIND_AT).atZone(zone).toInstant().toEpochMilli()
+                  }
+              }
+            </script>
+          <script type="text/plain" data-code="kotlin" data-file="reminders/ReminderWorker.kt" data-src="final-project/TaskFlow/app/src/main/java/com/kotlinacademy/taskflow/reminders/ReminderWorker.kt">
+              package com.kotlinacademy.taskflow.reminders
+
+              import android.content.Context
+              import androidx.hilt.work.HiltWorker
+              import androidx.work.CoroutineWorker
+              import androidx.work.WorkerParameters
+              import com.kotlinacademy.taskflow.data.TaskRepository
+              import dagger.assisted.Assisted
+              import dagger.assisted.AssistedInject
+
+              /** Runs in the background at the scheduled time and shows a notification if the task is still open. */
+              @HiltWorker
+              class ReminderWorker @AssistedInject constructor(
+                  @Assisted appContext: Context,
+                  @Assisted params: WorkerParameters,
+                  private val repository: TaskRepository,
+                  private val notifier: ReminderNotifier,
+              ) : CoroutineWorker(appContext, params) {
+
+                  override suspend fun doWork(): Result {
+                      val id = inputData.getLong(KEY_TASK_ID, -1L)
+                      val task = repository.getTask(id)
+                      if (task == null || task.isDone || !task.remind) return Result.success()
+                      notifier.show(task.id, task.title)
+                      return Result.success()
+                  }
+
+                  companion object {
+                      const val KEY_TASK_ID = "task_id"
+                      const val KEY_TITLE = "title"
+                  }
+              }
+            </script>
+          <script type="text/plain" data-code="kotlin" data-file="reminders/ReminderNotifier.kt" data-src="final-project/TaskFlow/app/src/main/java/com/kotlinacademy/taskflow/reminders/ReminderNotifier.kt">
+              package com.kotlinacademy.taskflow.reminders
+
+              import android.Manifest
+              import android.annotation.SuppressLint
+              import android.app.NotificationChannel
+              import android.app.NotificationManager
+              import android.app.PendingIntent
+              import android.content.Context
+              import android.content.Intent
+              import android.content.pm.PackageManager
+              import android.os.Build
+              import androidx.core.app.NotificationCompat
+              import androidx.core.app.NotificationManagerCompat
+              import androidx.core.content.ContextCompat
+              import com.kotlinacademy.taskflow.MainActivity
+              import com.kotlinacademy.taskflow.R
+              import dagger.hilt.android.qualifiers.ApplicationContext
+              import javax.inject.Inject
+              import javax.inject.Singleton
+
+              @Singleton
+              class ReminderNotifier @Inject constructor(
+                  @ApplicationContext private val context: Context,
+              ) {
+                  /** Channels are required on Android 8+; creating an existing channel is a no-op. */
+                  fun createChannel() {
+                      val channel = NotificationChannel(
+                          CHANNEL_ID,
+                          context.getString(R.string.reminder_channel_name),
+                          NotificationManager.IMPORTANCE_DEFAULT,
+                      ).apply { description = context.getString(R.string.reminder_channel_description) }
+                      context.getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+                  }
+
+                  @SuppressLint("MissingPermission") // checked at the top of the function
+                  fun show(taskId: Long, title: String) {
+                      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                          ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
+                          PackageManager.PERMISSION_GRANTED
+                      ) {
+                          return // The user declined notifications; respect that.
+                      }
+                      val openApp = PendingIntent.getActivity(
+                          context,
+                          taskId.toInt(),
+                          Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
+                          PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+                      )
+                      val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+                          .setSmallIcon(R.drawable.ic_notification)
+                          .setContentTitle(context.getString(R.string.reminder_title))
+                          .setContentText(title)
+                          .setContentIntent(openApp)
+                          .setAutoCancel(true)
+                          .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                          .build()
+                      NotificationManagerCompat.from(context).notify(taskId.toInt(), notification)
+                  }
+
+                  private companion object {
+                      const val CHANNEL_ID = "task_reminders"
+                  }
+              }
+            </script>
+          <div class="callout tip">
+            <div class="ci">🧪</div>
+            <div><span class="ct">Test a reminder without waiting a day</span>
+              <p>Temporarily change <code>REMIND_AT</code> to a time a few minutes from now, set the due date to today and enable the reminder. Watch it in <b>App Inspection → Background Task Inspector</b>, then close the app and wait for the notification.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================================================================ M9 -->
+        <section class="doc-section" id="m9" data-title="M9 · Tests, CI & release">
+          <div class="milestone"><h3>Milestone 9 — Tests, CI &amp; release</h3><p>Goal: automated proof that TaskFlow works, on every push, plus a signed release bundle.</p></div>
+          <script type="text/plain" data-code="kotlin" data-file="src/test/.../testing/Fakes.kt" data-src="final-project/TaskFlow/app/src/test/java/com/kotlinacademy/taskflow/testing/Fakes.kt">
+              package com.kotlinacademy.taskflow.testing
+
+              import com.kotlinacademy.taskflow.data.TaskRepository
+              import com.kotlinacademy.taskflow.data.settings.SettingsRepository
+              import com.kotlinacademy.taskflow.domain.SortOrder
+              import com.kotlinacademy.taskflow.domain.Task
+              import com.kotlinacademy.taskflow.domain.ThemeMode
+              import com.kotlinacademy.taskflow.domain.UserSettings
+              import kotlinx.coroutines.flow.Flow
+              import kotlinx.coroutines.flow.MutableStateFlow
+              import kotlinx.coroutines.flow.update
+              import java.io.IOException
+
+              /** An in-memory repository: fast, deterministic, and no mocking library needed. */
+              class FakeTaskRepository(initial: List<Task> = emptyList()) : TaskRepository {
+                  private val tasks = MutableStateFlow(initial)
+                  private var nextId = (initial.maxOfOrNull { it.id } ?: 0) + 1
+                  var importResult: Result<Int> = Result.success(3)
+
+                  val current: List<Task> get() = tasks.value
+
+                  override fun observeTasks(): Flow<List<Task>> = tasks
+                  override suspend fun getTask(id: Long): Task? = tasks.value.find { it.id == id }
+
+                  override suspend fun upsert(task: Task): Long {
+                      val id = if (task.id == 0L) nextId++ else task.id
+                      tasks.update { list -> list.filterNot { it.id == id } + task.copy(id = id) }
+                      return id
+                  }
+
+                  override suspend fun setDone(id: Long, done: Boolean) =
+                      tasks.update { list -> list.map { if (it.id == id) it.copy(isDone = done) else it } }
+
+                  override suspend fun delete(id: Long) = tasks.update { list -> list.filterNot { it.id == id } }
+
+                  override suspend fun importSampleTasks(): Result<Int> = importResult
+
+                  fun failImports() {
+                      importResult = Result.failure(IOException("offline"))
+                  }
+              }
+
+              class FakeSettingsRepository(initial: UserSettings = UserSettings()) : SettingsRepository {
+                  private val state = MutableStateFlow(initial)
+                  override val settings: Flow<UserSettings> = state
+                  override suspend fun setThemeMode(mode: ThemeMode) = state.update { it.copy(themeMode = mode) }
+                  override suspend fun setDynamicColor(enabled: Boolean) = state.update { it.copy(dynamicColor = enabled) }
+                  override suspend fun setSortOrder(order: SortOrder) = state.update { it.copy(sortOrder = order) }
+              }
+            </script>
+          <script type="text/plain" data-code="kotlin" data-file="src/test/.../testing/MainDispatcherRule.kt" data-src="final-project/TaskFlow/app/src/test/java/com/kotlinacademy/taskflow/testing/MainDispatcherRule.kt">
+              package com.kotlinacademy.taskflow.testing
+
+              import kotlinx.coroutines.Dispatchers
+              import kotlinx.coroutines.ExperimentalCoroutinesApi
+              import kotlinx.coroutines.test.TestDispatcher
+              import kotlinx.coroutines.test.UnconfinedTestDispatcher
+              import kotlinx.coroutines.test.resetMain
+              import kotlinx.coroutines.test.setMain
+              import org.junit.rules.TestWatcher
+              import org.junit.runner.Description
+
+              /** viewModelScope uses Dispatchers.Main, which doesn't exist on the JVM — swap in a test dispatcher. */
+              @OptIn(ExperimentalCoroutinesApi::class)
+              class MainDispatcherRule(
+                  val testDispatcher: TestDispatcher = UnconfinedTestDispatcher(),
+              ) : TestWatcher() {
+                  override fun starting(description: Description) = Dispatchers.setMain(testDispatcher)
+                  override fun finished(description: Description) = Dispatchers.resetMain()
+              }
+            </script>
+          <script type="text/plain" data-code="kotlin" data-file="src/test/.../ui/tasks/TasksViewModelTest.kt" data-src="final-project/TaskFlow/app/src/test/java/com/kotlinacademy/taskflow/ui/tasks/TasksViewModelTest.kt" data-numbered>
+              package com.kotlinacademy.taskflow.ui.tasks
+
+              import app.cash.turbine.test
+              import com.kotlinacademy.taskflow.data.TaskRepository
+              import com.kotlinacademy.taskflow.domain.Priority
+              import com.kotlinacademy.taskflow.domain.SortOrder
+              import com.kotlinacademy.taskflow.domain.Task
+              import com.kotlinacademy.taskflow.domain.TaskFilter
+              import com.kotlinacademy.taskflow.domain.UserSettings
+              import com.kotlinacademy.taskflow.testing.FakeSettingsRepository
+              import com.kotlinacademy.taskflow.testing.FakeTaskRepository
+              import com.kotlinacademy.taskflow.testing.MainDispatcherRule
+              import kotlinx.coroutines.flow.collect
+              import kotlinx.coroutines.CompletableDeferred
+              import kotlinx.coroutines.ExperimentalCoroutinesApi
+              import kotlinx.coroutines.launch
+              import kotlinx.coroutines.test.UnconfinedTestDispatcher
+              import kotlinx.coroutines.test.advanceUntilIdle
+              import kotlinx.coroutines.test.runTest
+              import org.junit.Assert.assertEquals
+              import org.junit.Assert.assertFalse
+              import org.junit.Assert.assertTrue
+              import org.junit.Rule
+              import org.junit.Test
+
+              @OptIn(ExperimentalCoroutinesApi::class)
+              class TasksViewModelTest {
+
+                  @get:Rule
+                  val mainDispatcherRule = MainDispatcherRule()
+
+                  private val sampleTasks = listOf(
+                      Task(id = 1, title = "Buy milk", isDone = true, createdAt = 1),
+                      Task(id = 2, title = "Learn Flow", priority = Priority.HIGH, createdAt = 2),
+                      Task(id = 3, title = "Write tests", notes = "for the ViewModel", priority = Priority.LOW, createdAt = 3),
+                  )
+
+                  private fun createViewModel(
+                      repository: FakeTaskRepository = FakeTaskRepository(sampleTasks),
+                      settings: FakeSettingsRepository = FakeSettingsRepository(UserSettings(sortOrder = SortOrder.PRIORITY)),
+                  ) = TasksViewModel(repository, settings)
+
+                  @Test
+                  fun `state contains counts and tasks sorted by priority, done last`() = runTest {
+                      val viewModel = createViewModel()
+                      // stateIn(WhileSubscribed) only runs while someone collects; start a collector eagerly.
+                      backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiState.collect() }
+
+                      val state = viewModel.uiState.value
+                      assertFalse(state.isLoading)
+                      assertEquals(listOf("Learn Flow", "Write tests", "Buy milk"), state.tasks.map { it.title })
+                      assertEquals(3, state.totalCount)
+                      assertEquals(2, state.activeCount)
+                      assertEquals(1, state.doneCount)
+                  }
+
+                  @Test
+                  fun `filters by status and searches title and notes`() = runTest {
+                      val viewModel = createViewModel()
+                      backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiState.collect() }
+
+                      viewModel.setFilter(TaskFilter.DONE)
+                      assertEquals(listOf("Buy milk"), viewModel.uiState.value.tasks.map { it.title })
+
+                      viewModel.setFilter(TaskFilter.ALL)
+                      viewModel.setQuery("viewmodel")                        // matches notes, case-insensitive
+                      assertEquals(listOf("Write tests"), viewModel.uiState.value.tasks.map { it.title })
+                  }
+
+                  @Test
+                  fun `toggleDone updates the repository and the state`() = runTest {
+                      val repository = FakeTaskRepository(sampleTasks)
+                      val viewModel = createViewModel(repository)
+                      backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiState.collect() }
+
+                      viewModel.toggleDone(sampleTasks[1])
+
+                      assertTrue(repository.current.first { it.id == 2L }.isDone)
+                      assertEquals(2, viewModel.uiState.value.doneCount)
+                  }
+
+                  @Test
+                  fun `delete emits an event and undo restores the task`() = runTest {
+                      val repository = FakeTaskRepository(sampleTasks)
+                      val viewModel = createViewModel(repository)
+
+                      viewModel.events.test {
+                          viewModel.delete(sampleTasks[0])
+                          val event = awaitItem() as TasksEvent.TaskDeleted
+                          assertEquals(2, repository.current.size)
+
+                          viewModel.undoDelete(event.task)
+                          assertEquals(3, repository.current.size)
+                          assertEquals("Buy milk", repository.current.first { it.id == 1L }.title)
+                      }
+                  }
+
+                  @Test
+                  fun `import reports success and failure as events`() = runTest {
+                      val repository = FakeTaskRepository(sampleTasks)
+                      val viewModel = createViewModel(repository)
+
+                      viewModel.events.test {
+                          viewModel.importSamples()
+                          assertEquals(TasksEvent.Imported(3), awaitItem())
+
+                          repository.failImports()
+                          viewModel.importSamples()
+                          assertEquals(TasksEvent.ImportFailed, awaitItem())
+                      }
+                      assertFalse(viewModel.uiState.value.isImporting)
+                  }
+
+                  @Test
+                  fun `isImporting is true while the import runs`() = runTest {
+                      val gate = CompletableDeferred<Result<Int>>()
+                      val repository = object : TaskRepository by FakeTaskRepository() {
+                          override suspend fun importSampleTasks() = gate.await()
+                      }
+                      val viewModel = TasksViewModel(repository, FakeSettingsRepository())
+                      backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiState.collect() }
+
+                      viewModel.importSamples()
+                      assertTrue(viewModel.uiState.value.isImporting)
+
+                      gate.complete(Result.success(1))
+                      advanceUntilIdle()
+                      assertFalse(viewModel.uiState.value.isImporting)
+                  }
+              }
+            </script>
+          <script type="text/plain" data-code="kotlin" data-file="src/test/.../data/TaskMappersTest.kt" data-src="final-project/TaskFlow/app/src/test/java/com/kotlinacademy/taskflow/data/TaskMappersTest.kt">
+              package com.kotlinacademy.taskflow.data
+
+              import com.kotlinacademy.taskflow.data.remote.TodoDto
+              import com.kotlinacademy.taskflow.domain.Priority
+              import com.kotlinacademy.taskflow.domain.Task
+              import org.junit.Assert.assertEquals
+              import org.junit.Assert.assertFalse
+              import org.junit.Assert.assertTrue
+              import org.junit.Test
+
+              class TaskMappersTest {
+
+                  @Test
+                  fun `domain to entity and back keeps every field`() {
+                      val task = Task(id = 7, title = "Ship it", notes = "v1", priority = Priority.HIGH, dueAt = 123, remind = true, isDone = false, createdAt = 99)
+                      assertEquals(task, task.toEntity().toDomain())
+                  }
+
+                  @Test
+                  fun `entity trims text and drops reminders without a due date`() {
+                      val entity = Task(title = "  padded  ", notes = " n ", remind = true, dueAt = null).toEntity()
+                      assertEquals("padded", entity.title)
+                      assertEquals("n", entity.notes)
+                      assertFalse(entity.remind)
+                  }
+
+                  @Test
+                  fun `imported todos are capitalised and remember their remote id`() {
+                      val entity = TodoDto(id = 5, todo = "walk the dog", completed = true).toEntity(now = 1_000)
+                      assertEquals("Walk the dog", entity.title)
+                      assertEquals(5, entity.remoteId)
+                      assertTrue(entity.isDone)
+                  }
+              }
+            </script>
+          <script type="text/plain" data-code="kotlin" data-file="src/test/.../reminders/ReminderTimeTest.kt" data-src="final-project/TaskFlow/app/src/test/java/com/kotlinacademy/taskflow/reminders/ReminderTimeTest.kt">
+              package com.kotlinacademy.taskflow.reminders
+
+              import org.junit.Assert.assertEquals
+              import org.junit.Test
+              import java.time.LocalDate
+              import java.time.ZoneId
+              import java.time.ZoneOffset
+
+              class ReminderTimeTest {
+
+                  @Test
+                  fun `reminder fires at 9 local time on the picked date`() {
+                      val picked = LocalDate.of(2026, 3, 15)
+                      val dueAt = picked.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()   // what DatePicker returns
+                      val zone = ZoneId.of("Asia/Ho_Chi_Minh")
+
+                      val remindAt = WorkManagerReminderScheduler.reminderTime(dueAt, zone)
+
+                      assertEquals(picked.atTime(9, 0).atZone(zone).toInstant().toEpochMilli(), remindAt)
+                  }
+              }
+            </script>
+          <script type="text/plain" data-code="kotlin" data-file="src/androidTest/.../data/TaskDaoTest.kt" data-src="final-project/TaskFlow/app/src/androidTest/java/com/kotlinacademy/taskflow/data/TaskDaoTest.kt">
+              package com.kotlinacademy.taskflow.data
+
+              import android.content.Context
+              import androidx.room.Room
+              import androidx.test.core.app.ApplicationProvider
+              import androidx.test.ext.junit.runners.AndroidJUnit4
+              import com.kotlinacademy.taskflow.data.local.TaskDao
+              import com.kotlinacademy.taskflow.data.local.TaskDatabase
+              import com.kotlinacademy.taskflow.data.local.TaskEntity
+              import kotlinx.coroutines.flow.first
+              import kotlinx.coroutines.test.runTest
+              import org.junit.After
+              import org.junit.Assert.assertEquals
+              import org.junit.Assert.assertNull
+              import org.junit.Assert.assertTrue
+              import org.junit.Before
+              import org.junit.Test
+              import org.junit.runner.RunWith
+
+              /** Runs on a device/emulator against a real (in-memory) SQLite database: ./gradlew connectedDebugAndroidTest */
+              @RunWith(AndroidJUnit4::class)
+              class TaskDaoTest {
+
+                  private lateinit var database: TaskDatabase
+                  private lateinit var dao: TaskDao
+
+                  @Before
+                  fun createDb() {
+                      val context = ApplicationProvider.getApplicationContext<Context>()
+                      database = Room.inMemoryDatabaseBuilder(context, TaskDatabase::class.java).build()
+                      dao = database.taskDao()
+                  }
+
+                  @After
+                  fun closeDb() = database.close()
+
+                  private fun entity(title: String, createdAt: Long = 0) = TaskEntity(
+                      title = title, notes = "", priority = 1, dueAt = null, remind = false, isDone = false, createdAt = createdAt,
+                  )
+
+                  @Test
+                  fun upsertInsertsThenUpdates() = runTest {
+                      val id = dao.upsert(entity("Draft"))
+                      val updatedRowId = dao.upsert(entity("Final").copy(id = id))
+
+                      assertEquals(-1L, updatedRowId)                         // update → -1
+                      assertEquals("Final", dao.getById(id)?.title)
+                  }
+
+                  @Test
+                  fun observeAllEmitsNewestFirst() = runTest {
+                      dao.upsert(entity("old", createdAt = 1))
+                      dao.upsert(entity("new", createdAt = 2))
+
+                      assertEquals(listOf("new", "old"), dao.observeAll().first().map { it.title })
+                  }
+
+                  @Test
+                  fun setDoneAndDelete() = runTest {
+                      val id = dao.upsert(entity("Task"))
+                      dao.setDone(id, true)
+                      assertTrue(dao.getById(id)!!.isDone)
+
+                      dao.deleteById(id)
+                      assertNull(dao.getById(id))
+                  }
+              }
+            </script>
+          <script type="text/plain" data-code="kotlin" data-file="src/androidTest/.../ui/TasksContentTest.kt" data-src="final-project/TaskFlow/app/src/androidTest/java/com/kotlinacademy/taskflow/ui/TasksContentTest.kt">
+              package com.kotlinacademy.taskflow.ui
+
+              import androidx.compose.material3.SnackbarHostState
+              import androidx.compose.ui.test.assertIsDisplayed
+              import androidx.compose.ui.test.junit4.createComposeRule
+              import androidx.compose.ui.test.onNodeWithContentDescription
+              import androidx.compose.ui.test.onNodeWithText
+              import androidx.compose.ui.test.performClick
+              import com.kotlinacademy.taskflow.domain.Task
+              import com.kotlinacademy.taskflow.ui.tasks.TasksContent
+              import com.kotlinacademy.taskflow.ui.tasks.TasksUiState
+              import com.kotlinacademy.taskflow.ui.theme.TaskFlowTheme
+              import org.junit.Assert.assertEquals
+              import org.junit.Rule
+              import org.junit.Test
+
+              /** UI test of the stateless content composable: give it state, assert what's on screen, click things. */
+              class TasksContentTest {
+
+                  @get:Rule
+                  val composeRule = createComposeRule()
+
+                  @Test
+                  fun showsTasksAndReportsClicks() {
+                      var toggled: Task? = null
+                      var added = false
+                      val task = Task(id = 1, title = "Write UI tests")
+
+                      composeRule.setContent {
+                          TaskFlowTheme(dynamicColor = false) {
+                              TasksContent(
+                                  state = TasksUiState(isLoading = false, tasks = listOf(task), totalCount = 1, activeCount = 1),
+                                  snackbarHostState = SnackbarHostState(),
+                                  onQueryChange = {}, onFilterChange = {}, onDelete = {}, onImport = {},
+                                  onToggleDone = { toggled = it },
+                                  onAddTask = { added = true },
+                                  onOpenTask = {}, onOpenSettings = {},
+                              )
+                          }
+                      }
+
+                      composeRule.onNodeWithText("Write UI tests").assertIsDisplayed()
+                      composeRule.onNodeWithContentDescription("Toggle Write UI tests").performClick()
+                      composeRule.onNodeWithContentDescription("Add task").performClick()
+
+                      assertEquals(task, toggled)
+                      assertEquals(true, added)
+                  }
+
+                  @Test
+                  fun showsEmptyState() {
+                      composeRule.setContent {
+                          TaskFlowTheme(dynamicColor = false) {
+                              TasksContent(
+                                  state = TasksUiState(isLoading = false),
+                                  snackbarHostState = SnackbarHostState(),
+                                  onQueryChange = {}, onFilterChange = {}, onToggleDone = {}, onDelete = {}, onImport = {},
+                                  onAddTask = {}, onOpenTask = {}, onOpenSettings = {},
+                              )
+                          }
+                      }
+                      composeRule.onNodeWithText("Nothing to do… yet").assertIsDisplayed()
+                  }
+              }
+            </script>
+          <script type="text/plain" data-code="bash" data-file="Terminal">
+            $ ./gradlew testDebugUnitTest                # JVM tests: ViewModel, domain, mappers, reminder time
+            $ ./gradlew connectedDebugAndroidTest        # device tests: Room DAO + Compose UI (emulator running)
+            $ ./gradlew bundleRelease                    # signed .aab when keystore.properties exists (lesson 20)
+          </script>
+          <p>The repository's <a href="https://github.com/Thuongst97/Kotlin/blob/main/.github/workflows/android.yml" target="_blank" rel="noopener">GitHub Actions workflow</a> runs the build, unit tests and instrumented-test compilation on every push and uploads the debug APK as an artifact, so you can download and install a build without opening Android Studio.</p>
+        </section>
+
+        <section class="doc-section" id="stretch" data-title="Stretch goals">
+          <div class="sec-head"><h2><span class="sec-num">21.3</span>Stretch goals — make it yours</h2></div>
+          <p>Pick at least two. Each one exercises a different skill; the ★ count is difficulty.</p>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>Goal</th><th>You'll practise</th><th>Difficulty</th></tr></thead>
+              <tbody>
+                <tr><td>Swipe a task to delete it (<code>SwipeToDismissBox</code>)</td><td>Compose gestures, Material 3 APIs</td><td>★</td></tr>
+                <tr><td>Categories/tags with colors, and a filter by tag</td><td>Room relations, migrations (v2)</td><td>★★</td></tr>
+                <tr><td>Statistics screen (completed per week, by priority)</td><td>Flow transformations, Canvas drawing</td><td>★★</td></tr>
+                <tr><td>Subtasks with a progress ring</td><td>One-to-many relations, <code>@Transaction</code></td><td>★★</td></tr>
+                <tr><td>Home-screen widget with today's tasks</td><td>Jetpack Glance</td><td>★★★</td></tr>
+                <tr><td>Sync with a real backend (Firebase or Ktor server)</td><td>Offline-first sync, conflict resolution, WorkManager constraints</td><td>★★★</td></tr>
+                <tr><td>Adaptive layout: list + detail side by side on tablets</td><td>Window size classes, adaptive navigation</td><td>★★★</td></tr>
+                <tr><td>Kotlin Multiplatform: share domain + data with an iOS app</td><td>KMP, Room KMP, Compose Multiplatform</td><td>★★★★</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="doc-section" id="rubric" data-title="Self-assessment">
+          <div class="sec-head"><h2><span class="sec-num">21.4</span>Self-assessment rubric</h2></div>
+          <p>Review your project like a senior engineer would. You've mastered the course when every row is a confident “yes”:</p>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>Area</th><th>I can explain and show…</th></tr></thead>
+              <tbody>
+                <tr><td>Kotlin</td><td>why each model is immutable; where I used sealed types, extension functions, scope functions and generics — and why</td></tr>
+                <tr><td>Coroutines &amp; Flow</td><td>which scope each coroutine runs in, what cancels it, and how <code>combine</code> + <code>stateIn</code> produce the UI state</td></tr>
+                <tr><td>UI</td><td>which composables are stateless, how state is hoisted, and why lists use keys</td></tr>
+                <tr><td>Architecture</td><td>the layer of every class, and how data flows from Room to pixels and back</td></tr>
+                <tr><td>DI</td><td>how Hilt builds <code>TasksViewModel</code>, and how I'd swap the repository for a fake</td></tr>
+                <tr><td>Data</td><td>how a schema change would be migrated without losing user data</td></tr>
+                <tr><td>Quality</td><td>what my tests cover, what they don't, and how CI catches regressions</td></tr>
+                <tr><td>Release</td><td>how the app is shrunk, signed and rolled out safely</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="cta-band mt">
+            <h2>🎉 Congratulations!</h2>
+            <p class="muted">You went from installing a JDK to shipping a tested, production-style Android app in Kotlin. Keep building — and keep the <a href="cheatsheet.html">cheat sheet</a> close.</p>
+            <div class="hero-cta" style="justify-content:center">
+              <a class="btn primary" href="cheatsheet.html">📋 Open the cheat sheet</a>
+              <a class="btn" href="https://github.com/Thuongst97/Kotlin/tree/main/final-project/TaskFlow" target="_blank" rel="noopener">📂 Browse the source</a>
+            </div>
+          </div>
+        </section>
+
+        <div id="pager"></div>
+      </div>
+    </main>
+  </div>
+  <div id="site-footer"></div>
+  <script src="assets/js/core.js?v=__BUILD__"></script>
+</body>
+</html>

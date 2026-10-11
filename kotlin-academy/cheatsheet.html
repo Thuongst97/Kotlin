@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kotlin Cheat Sheet — Kotlin Academy</title>
+  <meta name="description" content="Kotlin syntax at a glance, Java-to-Kotlin translations, collection operations, scope functions, coroutines, Flow and Compose quick references, plus a mastery checklist.">
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <meta name="color-scheme" content="dark light">
+  <link rel="stylesheet" href="assets/css/main.css?v=__BUILD__">
+  <script>try{var t=localStorage.getItem("ka-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body data-page="cheatsheet">
+  <div id="site-header"></div>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="content">
+      <div class="content-inner">
+
+        <header class="page-hero">
+          <nav class="crumbs"><a href="index.html">Home</a><span>/</span><span>Reference</span></nav>
+          <div class="eyebrow">Reference</div>
+          <h1>Kotlin Cheat Sheet &amp; Mastery Checklist</h1>
+          <p class="lead">Everything from the course on one page. Bookmark it, print it (<kbd>Ctrl</kbd>+<kbd>P</kbd> — the layout is print-friendly), and come back whenever you forget a syntax detail.</p>
+        </header>
+
+        <section class="doc-section" id="syntax" data-title="Syntax at a glance">
+          <div class="sec-head"><h2><span class="sec-num">A.1</span>Syntax at a glance</h2></div>
+          <div class="grid grid-2">
+            <div>
+              <script type="text/plain" data-code="kotlin" data-file="Variables & types">
+                val name = "Ada"            // read-only, inferred String
+                var count: Int = 0          // mutable, explicit type
+                const val MAX = 10          // compile-time constant
+                val big = 3_000_000_000L    // Long
+                val pi = 3.14               // Double
+                val ch: Char = 'K'
+                val text = "Hi $name, ${count + 1}"
+                val raw = """multi
+                    line""".trimIndent()
+              </script>
+            </div>
+            <div>
+              <script type="text/plain" data-code="kotlin" data-file="Null safety">
+                var s: String? = null       // nullable type
+                s?.length                   // safe call → Int?
+                s?.length ?: 0              // Elvis default
+                s!!.length                  // assert non-null (avoid!)
+                s?.let { println(it) }      // run if not null
+                val n = x as? Int           // safe cast → Int?
+                if (s != null) s.length     // smart cast
+                lateinit var adapter: Foo
+                val heavy by lazy { load() }
+              </script>
+            </div>
+            <div>
+              <script type="text/plain" data-code="kotlin" data-file="Control flow">
+                val max = if (a > b) a else b
+                val label = when (x) {
+                    0 -> "zero"
+                    in 1..9 -> "digit"
+                    is String -> "text"
+                    else -> "other"
+                }
+                for (i in 0..<n) { }        // 0 until n
+                for (i in 10 downTo 0 step 2) { }
+                for ((i, v) in list.withIndex()) { }
+                repeat(3) { println(it) }
+                outer@ for (…) { break@outer }
+              </script>
+            </div>
+            <div>
+              <script type="text/plain" data-code="kotlin" data-file="Functions">
+                fun add(a: Int, b: Int = 0): Int = a + b
+                add(b = 2, a = 1)           // named args
+                fun log(vararg msgs: String) { }
+                log(*array)                 // spread
+                infix fun Int.times(s: String) = s.repeat(this)
+                3 times "ab"
+                fun String.shout() = uppercase() + "!"   // extension
+                tailrec fun gcd(a: Int, b: Int): Int = if (b == 0) a else gcd(b, a % b)
+                fun fail(): Nothing = throw IllegalStateException()
+              </script>
+            </div>
+            <div>
+              <script type="text/plain" data-code="kotlin" data-file="Classes">
+                class User(val name: String, var age: Int = 0) {
+                    init { require(age >= 0) }
+                    val isAdult get() = age >= 18
+                    fun greet() = "Hi, $name"
+                }
+                open class Animal { open fun sound() = "…" }
+                class Dog : Animal() { override fun sound() = "Woof" }
+                interface Clickable { fun click() = println("click") }
+                abstract class Shape { abstract fun area(): Double }
+              </script>
+            </div>
+            <div>
+              <script type="text/plain" data-code="kotlin" data-file="Special classes">
+                data class Point(val x: Int, val y: Int)
+                val p2 = p.copy(y = 5); val (x, y) = p
+                enum class Dir { N, E, S, W }
+                sealed interface Result {
+                    data class Ok(val v: Int) : Result
+                    data object Loading : Result
+                }
+                object Config { const val URL = "…" }
+                class Foo { companion object { fun create() = Foo() } }
+                @JvmInline value class Email(val raw: String)
+              </script>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="java" data-title="Java → Kotlin">
+          <div class="sec-head"><h2><span class="sec-num">A.2</span>Java → Kotlin translations</h2></div>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>Java</th><th>Kotlin</th></tr></thead>
+              <tbody>
+                <tr><td><code>final String s = "a";</code></td><td><code>val s = "a"</code></td></tr>
+                <tr><td><code>cond ? a : b</code></td><td><code>if (cond) a else b</code></td></tr>
+                <tr><td><code>switch</code></td><td><code>when</code></td></tr>
+                <tr><td><code>for (int i = 0; i &lt; n; i++)</code></td><td><code>for (i in 0..&lt;n)</code></td></tr>
+                <tr><td><code>a.equals(b)</code> / <code>a == b</code></td><td><code>a == b</code> / <code>a === b</code></td></tr>
+                <tr><td><code>x instanceof Foo</code></td><td><code>x is Foo</code> (+ smart cast)</td></tr>
+                <tr><td><code>(Foo) x</code></td><td><code>x as Foo</code> / <code>x as? Foo</code></td></tr>
+                <tr><td><code>static</code> members</td><td><code>companion object</code> or top-level declarations</td></tr>
+                <tr><td>POJO with getters/equals/hashCode</td><td><code>data class</code></td></tr>
+                <tr><td>Anonymous inner class</td><td><code>object : Interface { }</code> or a lambda</td></tr>
+                <tr><td><code>void</code></td><td><code>Unit</code></td></tr>
+                <tr><td><code>Object</code></td><td><code>Any</code></td></tr>
+                <tr><td><code>try (Resource r = …)</code></td><td><code>r.use { }</code></td></tr>
+                <tr><td><code>throws IOException</code></td><td>(nothing — no checked exceptions; <code>@Throws</code> for Java callers)</td></tr>
+                <tr><td><code>list.stream().filter(…).collect(toList())</code></td><td><code>list.filter { … }</code></td></tr>
+                <tr><td><code>new Thread(…)</code> / callbacks</td><td>coroutines: <code>scope.launch { }</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="doc-section" id="collections" data-title="Collections">
+          <div class="sec-head"><h2><span class="sec-num">A.3</span>Collection operations</h2></div>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>Goal</th><th>Operation</th></tr></thead>
+              <tbody>
+                <tr><td>Transform each</td><td><code>map</code>, <code>mapIndexed</code>, <code>mapNotNull</code>, <code>flatMap</code></td></tr>
+                <tr><td>Keep some</td><td><code>filter</code>, <code>filterNot</code>, <code>filterIsInstance&lt;T&gt;()</code>, <code>take</code>, <code>drop</code>, <code>distinct</code></td></tr>
+                <tr><td>Find one</td><td><code>first { }</code>, <code>firstOrNull { }</code>, <code>find</code>, <code>last</code>, <code>single</code>, <code>getOrNull(i)</code></td></tr>
+                <tr><td>Check</td><td><code>any</code>, <code>all</code>, <code>none</code>, <code>contains</code> / <code>in</code>, <code>isEmpty</code></td></tr>
+                <tr><td>Aggregate</td><td><code>count</code>, <code>sum</code>, <code>sumOf</code>, <code>average</code>, <code>maxByOrNull</code>, <code>minOf</code>, <code>fold</code>, <code>reduce</code></td></tr>
+                <tr><td>Group / split</td><td><code>groupBy</code>, <code>partition</code>, <code>chunked</code>, <code>windowed</code>, <code>groupingBy { }.eachCount()</code></td></tr>
+                <tr><td>To map</td><td><code>associate</code>, <code>associateBy</code>, <code>associateWith</code>, <code>toMap</code></td></tr>
+                <tr><td>Combine</td><td><code>zip</code>, <code>plus</code> (<code>+</code>), <code>union</code>, <code>intersect</code>, <code>subtract</code></td></tr>
+                <tr><td>Sort</td><td><code>sorted</code>, <code>sortedBy</code>, <code>sortedByDescending</code>, <code>sortedWith(compareBy { }.thenBy { })</code>, <code>reversed</code></td></tr>
+                <tr><td>Text</td><td><code>joinToString(", ", prefix = "[", postfix = "]")</code></td></tr>
+                <tr><td>Lazy</td><td><code>asSequence()</code>, <code>generateSequence</code>, <code>sequence { yield(x) }</code></td></tr>
+                <tr><td>Build</td><td><code>buildList { }</code>, <code>buildMap { }</code>, <code>List(n) { i -> … }</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="doc-section" id="scope" data-title="Scope functions">
+          <div class="sec-head"><h2><span class="sec-num">A.4</span>Scope functions</h2></div>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th></th><th>Object is</th><th>Returns</th><th>Use for</th><th>Example</th></tr></thead>
+              <tbody>
+                <tr><td><code>let</code></td><td><code>it</code></td><td>lambda result</td><td>null-safe blocks, transforms</td><td><code>user?.let { show(it) }</code></td></tr>
+                <tr><td><code>run</code></td><td><code>this</code></td><td>lambda result</td><td>compute with an object</td><td><code>req.run { "$method $url" }</code></td></tr>
+                <tr><td><code>with</code></td><td><code>this</code></td><td>lambda result</td><td>many calls on one object</td><td><code>with(sb) { append(1); toString() }</code></td></tr>
+                <tr><td><code>apply</code></td><td><code>this</code></td><td>the object</td><td>configure</td><td><code>Paint().apply { color = RED }</code></td></tr>
+                <tr><td><code>also</code></td><td><code>it</code></td><td>the object</td><td>side effects</td><td><code>list.also { log(it) }</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="doc-section" id="async" data-title="Coroutines & Flow">
+          <div class="sec-head"><h2><span class="sec-num">A.5</span>Coroutines &amp; Flow quick reference</h2></div>
+          <div class="grid grid-2">
+            <div>
+              <script type="text/plain" data-code="kotlin" data-file="Coroutines">
+                suspend fun load(): Data = withContext(Dispatchers.IO) { … }
+
+                viewModelScope.launch { … }          // fire and forget → Job
+                val d = async { compute() }          // → Deferred<T>
+                d.await()
+                coroutineScope { … }                 // wait for all children
+                supervisorScope { … }                // children fail independently
+                withTimeoutOrNull(1_000) { … }
+                job.cancel(); ensureActive()
+                // Dispatchers: Main (UI), IO (blocking I/O), Default (CPU)
+                // Rethrow CancellationException!
+              </script>
+            </div>
+            <div>
+              <script type="text/plain" data-code="kotlin" data-file="Flow">
+                val f = flow { emit(1); emit(2) }    // cold
+                f.map { }.filter { }.onEach { }
+                 .catch { emit(fallback) }
+                 .flowOn(Dispatchers.Default)
+                 .collect { }
+                combine(a, b) { x, y -> … }
+                query.debounce(300).flatMapLatest { search(it) }
+
+                private val _state = MutableStateFlow(UiState())
+                val state = _state.asStateFlow()
+                _state.update { it.copy(loading = false) }
+                flow.stateIn(scope, SharingStarted.WhileSubscribed(5_000), initial)
+              </script>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="compose" data-title="Compose quick reference">
+          <div class="sec-head"><h2><span class="sec-num">A.6</span>Compose quick reference</h2></div>
+          <div class="grid grid-2">
+            <div>
+              <script type="text/plain" data-code="kotlin" data-file="State">
+                var text by remember { mutableStateOf("") }
+                var tab by rememberSaveable { mutableIntStateOf(0) }
+                val ui by vm.state.collectAsStateWithLifecycle()
+                val show by remember { derivedStateOf { list.size > 5 } }
+                LaunchedEffect(key) { /* suspend work */ }
+                val scope = rememberCoroutineScope()
+                DisposableEffect(key) { onDispose { } }
+              </script>
+            </div>
+            <div>
+              <script type="text/plain" data-code="kotlin" data-file="Layout">
+                Column(Modifier.fillMaxSize().padding(16.dp),
+                       verticalArrangement = Arrangement.spacedBy(8.dp)) { }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("A", Modifier.weight(1f)); Icon(…)
+                }
+                Box(contentAlignment = Alignment.Center) { }
+                LazyColumn { items(list, key = { it.id }) { Item(it) } }
+                Scaffold(topBar = { }, floatingActionButton = { }) { padding -> }
+              </script>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="gradle" data-title="Gradle & adb commands">
+          <div class="sec-head"><h2><span class="sec-num">A.7</span>Gradle &amp; adb commands</h2></div>
+          <script type="text/plain" data-code="bash" data-file="Terminal">
+            $ ./gradlew assembleDebug | installDebug | bundleRelease
+            $ ./gradlew testDebugUnitTest | connectedDebugAndroidTest | lint
+            $ ./gradlew :app:dependencies --configuration releaseRuntimeClasspath
+            $ adb devices                         # list devices
+            $ adb install -r app-debug.apk        # (re)install
+            $ adb logcat --pid=$(adb shell pidof -s com.example.app)
+            $ adb shell am kill com.example.app   # simulate process death (app in background)
+            $ adb shell pm clear com.example.app  # wipe app data
+          </script>
+        </section>
+
+        <section class="doc-section" id="mastery" data-title="Mastery checklist">
+          <div class="sec-head"><h2><span class="sec-num">A.8</span>The Kotlin mastery checklist</h2></div>
+          <p>Can you do each of these without looking anything up? Then you've earned “Kotlin master”.</p>
+          <div class="grid grid-2">
+            <div class="glass card">
+              <h4>Language</h4>
+              <ul class="checklist small">
+                <li>Explain <code>val</code> vs immutability, and <code>==</code> vs <code>===</code></li>
+                <li>Model a domain with data, sealed and value classes</li>
+                <li>Write extension functions and higher-order functions with lambdas</li>
+                <li>Pick the right scope function in under 3 seconds</li>
+                <li>Explain variance (<code>in</code>/<code>out</code>) and when to use <code>reified</code></li>
+                <li>Implement a property delegate and a small type-safe DSL</li>
+              </ul>
+            </div>
+            <div class="glass card">
+              <h4>Concurrency</h4>
+              <ul class="checklist small">
+                <li>Explain suspension vs blocking</li>
+                <li>Use structured concurrency; never <code>GlobalScope</code></li>
+                <li>Choose dispatchers and make functions main-safe</li>
+                <li>Handle cancellation and exceptions correctly</li>
+                <li>Build UI state with <code>combine</code> + <code>stateIn</code></li>
+                <li>Test coroutines with <code>runTest</code> and Flows with Turbine</li>
+              </ul>
+            </div>
+            <div class="glass card">
+              <h4>Android</h4>
+              <ul class="checklist small">
+                <li>Explain the lifecycle, configuration changes and process death</li>
+                <li>Build screens with stateless, hoisted composables</li>
+                <li>Structure an app in UI / domain / data layers with Hilt</li>
+                <li>Persist with Room + migrations and DataStore</li>
+                <li>Call APIs with Retrofit and handle errors properly</li>
+                <li>Schedule reliable work with WorkManager</li>
+              </ul>
+            </div>
+            <div class="glass card">
+              <h4>Professional</h4>
+              <ul class="checklist small">
+                <li>Write unit tests with fakes and UI tests with Compose testing</li>
+                <li>Debug crashes from Logcat stack traces</li>
+                <li>Set up CI that builds and tests every push</li>
+                <li>Shrink, sign and publish a release to Google Play</li>
+                <li>Read the official docs and source to answer your own questions</li>
+                <li>Ship something of your own 🚀</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="resources" data-title="Where to go next">
+          <div class="sec-head"><h2><span class="sec-num">A.9</span>Where to go next</h2></div>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>Resource</th><th>Why</th></tr></thead>
+              <tbody>
+                <tr><td><a href="https://kotlinlang.org/docs/home.html" target="_blank" rel="noopener">Kotlin documentation</a></td><td>The authoritative language reference</td></tr>
+                <tr><td><a href="https://developer.android.com/courses" target="_blank" rel="noopener">Android Developers courses</a></td><td>Official, free, Compose-first training</td></tr>
+                <tr><td><a href="https://github.com/android/nowinandroid" target="_blank" rel="noopener">Now in Android</a></td><td>Google's reference architecture app — read its code</td></tr>
+                <tr><td><a href="https://kotlinlang.org/docs/koans.html" target="_blank" rel="noopener">Kotlin Koans</a></td><td>Bite-sized language exercises</td></tr>
+                <tr><td><a href="https://www.jetbrains.com/kotlin-multiplatform/" target="_blank" rel="noopener">Kotlin Multiplatform</a></td><td>Take your skills to iOS, desktop and web</td></tr>
+                <tr><td><a href="https://github.com/Thuongst97/Android-Knowledge" target="_blank" rel="noopener">Android-Knowledge (AAOS 14 Academy)</a></td><td>Next level: how Android Automotive OS works under the hood</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <div id="pager"></div>
+      </div>
+    </main>
+  </div>
+  <div id="site-footer"></div>
+  <script src="assets/js/core.js?v=__BUILD__"></script>
+</body>
+</html>
