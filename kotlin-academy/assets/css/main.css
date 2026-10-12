@@ -661,3 +661,25 @@ body.landing main { overflow-x: hidden; }
    otherwise wide code blocks push the page sideways. */
 .grid > *, .compare > *, .callout > div, .tab-panel, .ex-body, ol.steps > li { min-width: 0; }
 .quiz-q h4 > span, .quiz-opts button, .quiz-explain { min-width: 0; overflow-wrap: anywhere; }
+
+/* ------------------------------------------- Official documentation links */
+.doc-refs { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin: -4px 0 16px; }
+.doc-refs .dr-label { font: 700 0.68rem var(--mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-right: 2px; }
+.dr-link {
+  display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px;
+  font-size: 0.78rem; font-weight: 600; line-height: 1.5; text-decoration: none;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text-2);
+}
+.dr-link::before { content: ""; width: 8px; height: 8px; border-radius: 2px; flex: 0 0 auto; }
+.dr-link.kotlin::before { background: linear-gradient(135deg, #7f52ff, #e44857); }
+.dr-link.android::before { background: var(--android); border-radius: 50%; }
+.dr-link:hover { border-color: var(--purple); color: var(--text); text-decoration: none; }
+.ref-title { font-size: 1rem; }
+.ref-list { list-style: none; padding: 0; display: grid; gap: 6px; }
+.ref-list li { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.ref-list .ref-host { font: 0.72rem var(--mono); color: var(--faint); }
+.ref-link.kotlin::before { content: "◆ "; color: var(--purple); }
+.ref-link.android::before { content: "● "; color: var(--android); }
+.ref-list li { margin: 0; }
+table.t.rules td:first-child { white-space: nowrap; font: 700 0.8rem var(--mono); color: var(--purple); }
+table.t.rules td code { white-space: normal; overflow-wrap: anywhere; }

@@ -705,6 +705,48 @@
     return `<div class="code-block">${codeBlockHTML({ code: dedent(code), lang: "kotlin" })}</div>`;
   }
 
+  /* ------------------------------------------- Official documentation refs */
+  /* Data lives in refs.js (window.KA_REFS). Each mapped section gets a row of
+     "Official docs" links under its heading; the page's Further-reading section
+     then lists every official page used on the page (without duplicates). */
+  function docHost(url) {
+    return url.includes("kotlinlang.org") ? "kotlin" : url.includes("android.com") ? "android" : "other";
+  }
+  function docLink(doc, cls) {
+    const host = docHost(doc[1]);
+    return `<a class="${cls} ${host}" href="${doc[1]}" target="_blank" rel="noopener" title="${esc(doc[1])}">${esc(doc[0])}</a>`;
+  }
+  function renderDocRefs() {
+    const refs = window.KA_REFS;
+    if (!refs || !currentPage) return;
+    const map = refs.SECTIONS[pageId] || {};
+    const used = [];
+    Object.entries(map).forEach(([secId, keys]) => {
+      const sec = document.getElementById(secId);
+      if (!sec || !keys.length) return;
+      const docs = keys.map((k) => refs.DOCS[k]).filter(Boolean);
+      docs.forEach((d) => { if (!used.some((u) => u[1] === d[1])) used.push(d); });
+      const anchor = $(".sec-head", sec) || $(".milestone", sec);
+      if (!anchor || $(".doc-refs", sec)) return;
+      anchor.insertAdjacentHTML("afterend",
+        `<div class="doc-refs"><span class="dr-label">📘 Official docs</span>${docs.map((d) => docLink(d, "dr-link")).join("")}</div>`);
+    });
+    if (!used.length) return;
+    let host = $("section.doc-section#references, section.doc-section#references-reading, section.doc-section#resources");
+    const norm = (u) => u.replace(/#.*$/, "").replace(/\/$/, "");
+    const existing = host ? $$("a[href]", host).map((a) => norm(a.href)) : [];
+    const extra = used.filter((d) => !existing.includes(norm(d[1])));
+    if (!extra.length) return;
+    const list = `<h3 class="ref-title">📘 Official documentation used on this page</h3>
+      <ul class="ref-list">${extra.map((d) => `<li>${docLink(d, "ref-link")}<span class="ref-host">${esc(new URL(d[1]).host)}</span></li>`).join("")}</ul>`;
+    if (host) host.insertAdjacentHTML("beforeend", list);
+    else {
+      const pager = $("#pager");
+      if (!pager) return;
+      pager.insertAdjacentHTML("beforebegin", `<section class="doc-section" id="official-docs" data-title="Official documentation"><div class="sec-head"><h2>Official documentation</h2></div>${list}</section>`);
+    }
+  }
+
   /* ------------------------------------------------------------- Landing */
   function renderModuleGrid() {
     const host = $("#module-grid");
@@ -731,6 +773,7 @@
 
   /* ------------------------------------------------------------------ Boot */
   function boot() {
+    renderDocRefs();
     renderHeader();
     renderSidebar();
     renderFooter();
