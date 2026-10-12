@@ -27,7 +27,7 @@
       const rows = lanes.map((ln) => {
         const segs = (ln.segs || []).filter((s) => s.from < t).map((s) => {
           const end = Math.min(s.to, t);
-          return `<div class="sv-seg ${s.cls || "seg-run"}" style="left:${pct(s.from)};width:calc(${pct(end)} - ${pct(s.from)})" title="${esc(s.label || "")}">${esc(s.label || "")}</div>`;
+          return `<div class="sv-seg ${s.cls || "seg-run"}" style="left:${pct(s.from)};width:calc(${pct(end)} - ${pct(s.from)})" title="${esc(s.label || "")}"${s.short ? ` data-short="${esc(s.short)}"` : ""}>${esc(s.label || "")}</div>`;
         }).join("");
         const marks = (ln.marks || []).filter((m) => m.t <= t).map((m) =>
           `<div class="sv-mark ${m.cls || ""}" style="left:${pct(m.t)}"><span>${esc(m.label)}</span></div>`).join("");
@@ -90,6 +90,28 @@
     },
   };
 
+  /* A label that doesn't fit its bar falls back to its short form, then to
+     nothing (the full text stays in the tooltip) — never a cut-off word. */
+  function fitLabels(root) {
+    $$(".sv-seg", root).forEach((el) => {
+      if (el.scrollWidth <= el.clientWidth + 1) return;
+      if (el.dataset.short) el.textContent = el.dataset.short;
+      if (el.scrollWidth > el.clientWidth + 1) el.textContent = "";
+    });
+    // Event marks: flip labels near the right edge inward, and when two labels
+    // collide keep only the later one (the earlier stays in its tooltip).
+    $$(".sv-track", root).forEach((track) => {
+      const right = track.getBoundingClientRect().right;
+      let prev = null;
+      $$(".sv-mark span", track).forEach((sp) => {
+        sp.parentElement.title = sp.textContent;
+        if (sp.getBoundingClientRect().right > right - 1) sp.parentElement.classList.add("end");
+        if (prev && prev.getBoundingClientRect().right > sp.getBoundingClientRect().left - 2) prev.style.visibility = "hidden";
+        prev = sp;
+      });
+    });
+  }
+
   /* --------------------------------------------------------------- Engine */
   function register(id, spec) { SIMS[id] = spec; }
 
@@ -132,7 +154,9 @@
         if (top < codeEl.scrollTop || top > codeEl.scrollTop + codeEl.clientHeight - 30) codeEl.scrollTop = Math.max(0, top - 60);
       }
       viewEl.innerHTML = (spec.render || mode().render)(s.state || {}, mode(), step);
+      fitLabels(viewEl);
       sayEl.innerHTML = `<span class="sim-stepno">${step + 1}/${steps.length}</span>${s.say}`;
+      if (KA.addBreaks) KA.addBreaks(sayEl);
       const outs = [];
       steps.slice(0, step + 1).forEach((st, i) => [].concat(st.out || []).forEach((o) => outs.push([o, i === step])));
       outEl.innerHTML = outs.map(([o, fresh]) => `<span class="${fresh ? "new" : ""}">${esc(o)}</span>`).join("\n");
@@ -175,6 +199,12 @@
       if (e.key === "ArrowLeft") { stop(); go(step - 1); e.preventDefault(); }
     });
     drawCode(); draw();
+    // Bar widths are in %, so re-fit labels when the simulation's width changes.
+    let lastW = host.clientWidth, rt;
+    window.addEventListener("resize", () => {
+      clearTimeout(rt);
+      rt = setTimeout(() => { if (host.clientWidth !== lastW) { lastW = host.clientWidth; draw(); } }, 150);
+    });
   }
 
   /* ===================================================================== */
@@ -209,11 +239,11 @@
         lanes: [
           { label: "Thread main", sub: "what it executes", segs: [
             { from: 0, to: 40, cls: "seg-main", label: "main" }, { from: 40, to: 80, cls: "seg-a", label: "A" },
-            { from: 80, to: 120, cls: "seg-b", label: "B" }, { from: 120, to: 620, cls: "seg-idle", label: "idle — free for other work" },
+            { from: 80, to: 120, cls: "seg-b", label: "B" }, { from: 120, to: 620, cls: "seg-idle", label: "idle — free for other work", short: "idle" },
             { from: 620, to: 660, cls: "seg-b", label: "B" }, { from: 660, to: 1080, cls: "seg-idle", label: "idle" },
             { from: 1080, to: 1120, cls: "seg-a", label: "A" }, { from: 1120, to: 1160, cls: "seg-main", label: "main" }] },
-          { label: "Coroutine A", segs: [{ from: 40, to: 80, cls: "seg-a", label: "run" }, { from: 80, to: 1080, cls: "seg-wait", label: "suspended in delay(1000)" }, { from: 1080, to: 1120, cls: "seg-a", label: "run" }] },
-          { label: "Coroutine B", segs: [{ from: 80, to: 120, cls: "seg-b", label: "run" }, { from: 120, to: 620, cls: "seg-wait", label: "suspended in delay(500)" }, { from: 620, to: 660, cls: "seg-b", label: "run" }] },
+          { label: "Coroutine A", segs: [{ from: 40, to: 80, cls: "seg-a", label: "run" }, { from: 80, to: 1080, cls: "seg-wait", label: "suspended in delay(1000)", short: "suspended" }, { from: 1080, to: 1120, cls: "seg-a", label: "run" }] },
+          { label: "Coroutine B", segs: [{ from: 80, to: 120, cls: "seg-b", label: "run" }, { from: 120, to: 620, cls: "seg-wait", label: "suspended in delay(500)", short: "suspended" }, { from: 620, to: 660, cls: "seg-b", label: "run" }] },
         ],
         steps: [
           { line: 1, say: "<b>runBlocking</b> starts the main coroutine on the program's only thread, <code>main</code>.", state: { t: 40, chips: ch(["running", "running"], [], []) } },
@@ -233,11 +263,11 @@
         lanes: [
           { label: "Thread main", sub: "what it executes", segs: [
             { from: 0, to: 40, cls: "seg-main", label: "main" }, { from: 40, to: 80, cls: "seg-a", label: "A" },
-            { from: 80, to: 1080, cls: "seg-block", label: "A: Thread.sleep(1000) — BLOCKED" }, { from: 1080, to: 1120, cls: "seg-a", label: "A" },
-            { from: 1120, to: 1160, cls: "seg-b", label: "B" }, { from: 1160, to: 1660, cls: "seg-block", label: "B: sleep — BLOCKED" },
+            { from: 80, to: 1080, cls: "seg-block", label: "A: Thread.sleep(1000) — BLOCKED", short: "A: BLOCKED" }, { from: 1080, to: 1120, cls: "seg-a", label: "A" },
+            { from: 1120, to: 1160, cls: "seg-b", label: "B" }, { from: 1160, to: 1660, cls: "seg-block", label: "B: sleep — BLOCKED", short: "B: BLOCKED" },
             { from: 1660, to: 1700, cls: "seg-b", label: "B" }, { from: 1700, to: 1740, cls: "seg-main", label: "main" }] },
-          { label: "Coroutine A", segs: [{ from: 40, to: 80, cls: "seg-a", label: "run" }, { from: 80, to: 1080, cls: "seg-block", label: "holding the thread" }, { from: 1080, to: 1120, cls: "seg-a", label: "run" }] },
-          { label: "Coroutine B", segs: [{ from: 40, to: 1120, cls: "seg-idle", label: "ready, but no free thread" }, { from: 1120, to: 1160, cls: "seg-b", label: "run" }, { from: 1160, to: 1660, cls: "seg-block", label: "holding the thread" }, { from: 1660, to: 1700, cls: "seg-b", label: "run" }] },
+          { label: "Coroutine A", segs: [{ from: 40, to: 80, cls: "seg-a", label: "run" }, { from: 80, to: 1080, cls: "seg-block", label: "holding the thread", short: "blocking" }, { from: 1080, to: 1120, cls: "seg-a", label: "run" }] },
+          { label: "Coroutine B", segs: [{ from: 40, to: 1120, cls: "seg-idle", label: "ready, but no free thread", short: "ready" }, { from: 1120, to: 1160, cls: "seg-b", label: "run" }, { from: 1160, to: 1660, cls: "seg-block", label: "holding the thread", short: "blocking" }, { from: 1660, to: 1700, cls: "seg-b", label: "run" }] },
         ],
         steps: [
           { line: 1, say: "Same program, but the coroutines call <code>Thread.sleep</code> instead of <code>delay</code>.", state: { t: 40, chips: ch(["running", "running"], [], []) } },
@@ -308,25 +338,25 @@
       {
         label: "Sequential", tMax: 2200, code: priceCode(false),
         lanes: [
-          { label: "main coroutine", segs: [{ from: 0, to: 40, cls: "seg-main", label: "run" }, { from: 40, to: 1040, cls: "seg-wait", label: "suspended: waiting for coffee" }, { from: 1040, to: 2040, cls: "seg-wait", label: "suspended: waiting for tea" }, { from: 2040, to: 2080, cls: "seg-main", label: "print" }] },
-          { label: "loadPrice(coffee)", segs: [{ from: 40, to: 1040, cls: "seg-a", label: "delay(1000)" }] },
-          { label: "loadPrice(tea)", segs: [{ from: 1040, to: 2040, cls: "seg-b", label: "delay(1000)" }] },
+          { label: "main coroutine", short: "main", segs: [{ from: 0, to: 40, cls: "seg-main", label: "run" }, { from: 40, to: 1040, cls: "seg-wait", label: "suspended: waiting for coffee", short: "waiting" }, { from: 1040, to: 2040, cls: "seg-wait", label: "suspended: waiting for tea", short: "waiting" }, { from: 2040, to: 2080, cls: "seg-main", label: "print" }] },
+          { label: "loadPrice(coffee)", short: "coffee", segs: [{ from: 40, to: 1040, cls: "seg-a", label: "delay(1000)", short: "delay" }] },
+          { label: "loadPrice(tea)", short: "tea", segs: [{ from: 1040, to: 2040, cls: "seg-b", label: "delay(1000)", short: "delay" }] },
         ],
         steps: [
           { line: 6, say: "The main coroutine starts.", state: { t: 40, chips: [{ name: "main", status: "running" }] } },
-          { line: 7, say: "It calls <code>loadPrice(\"coffee\")</code> directly. A suspend call is <b>sequential</b>: main suspends until it returns.", state: { t: 40, chips: [{ name: "main", status: "suspended", label: "in loadPrice(coffee)" }] } },
-          { line: 2, say: "One second of network time…", state: { t: 600, chips: [{ name: "main", status: "suspended", label: "in loadPrice(coffee)" }] } },
-          { line: [3, 8], say: "Coffee returns 600. <b>Only now</b> does the tea request start — even though it never depended on coffee.", state: { t: 1040, chips: [{ name: "main", status: "suspended", label: "in loadPrice(tea)" }] } },
-          { line: 2, say: "Another full second.", state: { t: 1600, chips: [{ name: "main", status: "suspended", label: "in loadPrice(tea)" }] } },
+          { line: 7, say: "It calls <code>loadPrice(\"coffee\")</code> directly. A suspend call is <b>sequential</b>: main suspends until it returns.", state: { t: 40, chips: [{ name: "main", status: "suspended", label: "in loadPrice(coffee)", short: "coffee" }] } },
+          { line: 2, say: "One second of network time…", state: { t: 600, chips: [{ name: "main", status: "suspended", label: "in loadPrice(coffee)", short: "coffee" }] } },
+          { line: [3, 8], say: "Coffee returns 600. <b>Only now</b> does the tea request start — even though it never depended on coffee.", state: { t: 1040, chips: [{ name: "main", status: "suspended", label: "in loadPrice(tea)", short: "tea" }] } },
+          { line: 2, say: "Another full second.", state: { t: 1600, chips: [{ name: "main", status: "suspended", label: "in loadPrice(tea)", short: "tea" }] } },
           { line: 9, out: "total 900", say: "<b>≈ 2 s total</b>. Fine when the second call needs the first result; wasteful when the calls are independent.", state: { t: 2080, chips: [{ name: "main", status: "done" }], note: "Switch to the <b>async</b> scenario ↑" } },
         ],
       },
       {
         label: "async (parallel)", tMax: 2200, code: priceCode(true),
         lanes: [
-          { label: "main coroutine", segs: [{ from: 0, to: 40, cls: "seg-main", label: "run" }, { from: 40, to: 1040, cls: "seg-wait", label: "suspended in await()" }, { from: 1040, to: 1080, cls: "seg-main", label: "print" }] },
-          { label: "async { coffee }", segs: [{ from: 40, to: 1040, cls: "seg-a", label: "delay(1000)" }] },
-          { label: "async { tea }", segs: [{ from: 40, to: 1040, cls: "seg-b", label: "delay(1000)" }] },
+          { label: "main coroutine", short: "main", segs: [{ from: 0, to: 40, cls: "seg-main", label: "run" }, { from: 40, to: 1040, cls: "seg-wait", label: "suspended in await()", short: "await" }, { from: 1040, to: 1080, cls: "seg-main", label: "print" }] },
+          { label: "async { coffee }", segs: [{ from: 40, to: 1040, cls: "seg-a", label: "delay(1000)", short: "delay" }] },
+          { label: "async { tea }", segs: [{ from: 40, to: 1040, cls: "seg-b", label: "delay(1000)", short: "delay" }] },
         ],
         steps: [
           { line: 7, say: "<code>async</code> starts a <b>child coroutine</b> for coffee and immediately returns a <code>Deferred&lt;Int&gt;</code> — a promise of a future value.", state: { t: 40, chips: [{ name: "main", status: "running" }, { name: "coffee", status: "running" }] } },
@@ -436,7 +466,7 @@
     title: "Dispatchers & withContext: one coroutine hopping between threads",
     render: (s) => R.pools(POOLS, s.token, s.free || []) + R.note(s.note),
     modes: [{
-      label: "refresh", code: `
+      label: "refresh", short: "ref", code: `
         fun onRefreshClicked() {
             viewModelScope.launch {                    // Dispatchers.Main
                 showLoading()
@@ -450,13 +480,13 @@
             }
         }`,
       steps: [
-        { line: 2, say: "<code>viewModelScope</code> launches on <b>Dispatchers.Main</b> — the UI thread.", state: { token: { pool: "Main", thread: "main", label: "refresh" } } },
-        { line: 3, say: "<code>showLoading()</code> updates UI state on the main thread. Quick and safe.", state: { token: { pool: "Main", thread: "main", label: "refresh" } } },
-        { line: 4, say: "<code>withContext(Dispatchers.IO)</code> <b>suspends</b> the coroutine on Main and <b>resumes it on an IO thread</b>.", state: { token: { pool: "IO", thread: "worker-2", label: "refresh" }, free: ["main"] } },
-        { line: 5, say: "The blocking file read happens on <code>worker-2</code>. Meanwhile the main thread is <b>free</b> to draw frames and handle touches — no jank, no ANR.", state: { token: { pool: "IO", thread: "worker-2", label: "refresh" }, free: ["main"], note: "IO allows many threads because they mostly sit waiting on disks and networks." } },
-        { line: 7, say: "The block returns <code>config</code>; the next <code>withContext</code> hops to <b>Dispatchers.Default</b> for CPU work.", state: { token: { pool: "Default", thread: "worker-1 ", label: "refresh" }, free: ["main"], note: "IO and Default share the same underlying thread pool (<code>DefaultDispatcher-worker-N</code>), so this switch is cheap — often no real thread change at all." } },
-        { line: 8, say: "Number crunching runs on a CPU-sized pool, so parallel work doesn't oversubscribe the cores.", state: { token: { pool: "Default", thread: "worker-1 ", label: "refresh" }, free: ["main"] } },
-        { line: 10, say: "<code>withContext</code> returns the result and the coroutine <b>resumes on Main</b> — the dispatcher it started on — to render. The caller never had to think about threads: each function is <b>main-safe</b>.", state: { token: { pool: "Main", thread: "main", label: "refresh" }, note: "Room and Retrofit suspend functions do this switching for you internally." } },
+        { line: 2, say: "<code>viewModelScope</code> launches on <b>Dispatchers.Main</b> — the UI thread.", state: { token: { pool: "Main", thread: "main", label: "refresh", short: "ref" } } },
+        { line: 3, say: "<code>showLoading()</code> updates UI state on the main thread. Quick and safe.", state: { token: { pool: "Main", thread: "main", label: "refresh", short: "ref" } } },
+        { line: 4, say: "<code>withContext(Dispatchers.IO)</code> <b>suspends</b> the coroutine on Main and <b>resumes it on an IO thread</b>.", state: { token: { pool: "IO", thread: "worker-2", label: "refresh", short: "ref" }, free: ["main"] } },
+        { line: 5, say: "The blocking file read happens on <code>worker-2</code>. Meanwhile the main thread is <b>free</b> to draw frames and handle touches — no jank, no ANR.", state: { token: { pool: "IO", thread: "worker-2", label: "refresh", short: "ref" }, free: ["main"], note: "IO allows many threads because they mostly sit waiting on disks and networks." } },
+        { line: 7, say: "The block returns <code>config</code>; the next <code>withContext</code> hops to <b>Dispatchers.Default</b> for CPU work.", state: { token: { pool: "Default", thread: "worker-1 ", label: "refresh", short: "ref" }, free: ["main"], note: "IO and Default share the same underlying thread pool (<code>DefaultDispatcher-worker-N</code>), so this switch is cheap — often no real thread change at all." } },
+        { line: 8, say: "Number crunching runs on a CPU-sized pool, so parallel work doesn't oversubscribe the cores.", state: { token: { pool: "Default", thread: "worker-1 ", label: "refresh", short: "ref" }, free: ["main"] } },
+        { line: 10, say: "<code>withContext</code> returns the result and the coroutine <b>resumes on Main</b> — the dispatcher it started on — to render. The caller never had to think about threads: each function is <b>main-safe</b>.", state: { token: { pool: "Main", thread: "main", label: "refresh", short: "ref" }, note: "Room and Retrofit suspend functions do this switching for you internally." } },
       ],
     }],
   });
@@ -561,7 +591,7 @@
     title: "Flow operators: follow each element down the chain",
     render: (s) => R.marbles(s.rows),
     modes: [{
-      label: "map + filter", code: `
+      label: "map + filter", short: "map", code: `
         (1..4).asFlow()
             .map { it * 10 }
             .filter { it > 15 }
@@ -584,7 +614,7 @@
               .collect { search(it) }`,
         lanes: [
           { label: "keystrokes", marks: [{ t: 0, label: "k", cls: "m-in" }, { t: 100, label: "ko", cls: "m-in" }, { t: 200, label: "kot", cls: "m-in" }, { t: 600, label: "kotl", cls: "m-in" }, { t: 700, label: "kotli", cls: "m-in" }, { t: 800, label: "kotlin", cls: "m-in" }] },
-          { label: "300 ms timer", segs: [{ from: 0, to: 100, cls: "seg-cancel", label: "✗" }, { from: 100, to: 200, cls: "seg-cancel", label: "✗" }, { from: 200, to: 500, cls: "seg-a", label: "quiet ✓" }, { from: 600, to: 700, cls: "seg-cancel", label: "✗" }, { from: 700, to: 800, cls: "seg-cancel", label: "✗" }, { from: 800, to: 1100, cls: "seg-a", label: "quiet ✓" }] },
+          { label: "300 ms timer", segs: [{ from: 0, to: 100, cls: "seg-cancel", label: "✗" }, { from: 100, to: 200, cls: "seg-cancel", label: "✗" }, { from: 200, to: 500, cls: "seg-a", label: "quiet ✓", short: "✓" }, { from: 600, to: 700, cls: "seg-cancel", label: "✗" }, { from: 700, to: 800, cls: "seg-cancel", label: "✗" }, { from: 800, to: 1100, cls: "seg-a", label: "quiet ✓", short: "✓" }] },
           { label: "search()", marks: [{ t: 500, label: "kot", cls: "m-out" }, { t: 1100, label: "kotlin", cls: "m-out" }] },
         ],
         steps: [
@@ -605,10 +635,10 @@
               .collect { show(it) }`,
         lanes: [
           { label: "queries", marks: [{ t: 0, label: "ko", cls: "m-in" }, { t: 150, label: "kot", cls: "m-in" }, { t: 300, label: "kotlin", cls: "m-in" }] },
-          { label: "search(ko)", segs: [{ from: 0, to: 150, cls: "seg-cancel", label: "cancelled" }] },
-          { label: "search(kot)", segs: [{ from: 150, to: 300, cls: "seg-cancel", label: "cancelled" }] },
-          { label: "search(kotlin)", segs: [{ from: 300, to: 700, cls: "seg-a", label: "running…" }] },
-          { label: "show()", marks: [{ t: 700, label: "results: kotlin", cls: "m-out" }] },
+          { label: "search(ko)", short: "ko", segs: [{ from: 0, to: 150, cls: "seg-cancel", label: "cancelled" }] },
+          { label: "search(kot)", short: "kot", segs: [{ from: 150, to: 300, cls: "seg-cancel", label: "cancelled" }] },
+          { label: "search(kotlin)", short: "kotlin", segs: [{ from: 300, to: 700, cls: "seg-a", label: "running…", short: "run" }] },
+          { label: "show()", marks: [{ t: 700, label: "results: kotlin", short: "results", cls: "m-out" }] },
         ],
         steps: [
           { line: [1, 2], say: "Query <b>ko</b> arrives; <code>flatMapLatest</code> starts an inner flow that runs the 400 ms search.", state: { t: 80 } },

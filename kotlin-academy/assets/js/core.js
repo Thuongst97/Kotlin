@@ -772,6 +772,29 @@
   }
 
   /* ------------------------------------------------------------------ Boot */
+  /* ---------------------------------------------------------------------
+     Line-break opportunities for long identifiers and paths
+     (requireNotNull → require·Not·Null, data/local/TaskEntity.kt → data/·local/·…)
+     so narrow columns and phones wrap at word boundaries instead of
+     splitting a word in the middle.
+     --------------------------------------------------------------------- */
+  const BREAK_AT = /(?<=[a-z0-9])(?=[A-Z])|(?<=[./_,:=])(?=[^./_,:=\s])|(?<=\w)(?=[(<[{])/g;
+  function addBreaks(root = document) {
+    $$("code, .code-head .fname", root).forEach((el) => {
+      if (el.dataset.wb || el.closest("pre, .sim-code")) return;
+      el.dataset.wb = "1";
+      if (el.textContent.length < 10) { if (!/\s/.test(el.textContent)) el.classList.add("nb"); return; }
+      if ([...el.childNodes].some((n) => n.nodeType !== 3)) return;
+      const parts = el.textContent.split(BREAK_AT);
+      if (parts.length < 2) return;
+      el.textContent = "";
+      parts.forEach((part, i) => {
+        if (i) el.appendChild(document.createElement("wbr"));
+        el.appendChild(document.createTextNode(part));
+      });
+    });
+  }
+
   function boot() {
     renderDocRefs();
     renderHeader();
@@ -788,6 +811,7 @@
     renderModuleGrid();
     paintCourseProgress();
     initScrollspy();
+    addBreaks();
     document.addEventListener("ka:progress", paintCourseProgress);
     if (location.hash) {
       const t = document.getElementById(decodeURIComponent(location.hash.slice(1)));
@@ -796,7 +820,7 @@
   }
 
   const highlightLines = (code, lang = "kotlin") => toLines(tokenize(dedent(code), lang));
-  window.KA = { SITE, LESSONS, esc, $, $$, store, setDone, doneSet, highlightLines, dedent };
+  window.KA = { SITE, LESSONS, esc, $, $$, store, setDone, doneSet, highlightLines, dedent, addBreaks };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
   else boot();
 })();

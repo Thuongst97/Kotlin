@@ -365,7 +365,8 @@ table.t td code { white-space: nowrap; }
 .code-head .dots { display: flex; gap: 6px; }
 .code-head .dots i { width: 10px; height: 10px; border-radius: 50%; display: block; background: #3a3946; }
 .code-head .dots i:nth-child(1) { background: #ff6b7a; } .code-head .dots i:nth-child(2) { background: #fbbf24; } .code-head .dots i:nth-child(3) { background: #3ddc97; }
-.code-head .fname { font-family: var(--mono); color: #d8d5e3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+code.nb { white-space: nowrap; }
+.code-head .fname { font-family: var(--mono); color: #d8d5e3; min-width: 0; overflow-wrap: break-word; }
 .code-head .lang { margin-left: auto; font: 600 0.68rem var(--mono); text-transform: uppercase; letter-spacing: 0.08em; color: #7d7b8c; }
 .code-btn {
   font: 600 0.74rem var(--font); padding: 4px 10px; border-radius: 7px; cursor: pointer;
@@ -444,7 +445,7 @@ details.exercise > .ex-body { padding: 0 18px 14px; border-top: 1px solid var(--
 .quiz { margin: 18px 0; }
 .quiz-q { padding: 18px 20px; margin-bottom: 14px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--border); }
 .quiz-q h4 { margin: 0 0 10px; display: flex; gap: 10px; }
-.quiz-q h4 .qn { font: 800 0.8rem var(--mono); color: var(--purple); padding-top: 2px; }
+.quiz-q h4 .qn { font: 800 0.8rem var(--mono); color: var(--purple); padding-top: 2px; flex-shrink: 0; white-space: nowrap; }
 .quiz-opts { display: grid; gap: 8px; }
 .quiz-opts button {
   text-align: left; font: 500 0.92rem var(--font); line-height: 1.5; padding: 10px 14px; border-radius: 10px; cursor: pointer;
@@ -660,7 +661,7 @@ body.landing main { overflow-x: hidden; }
 /* Grid/flex children must be allowed to shrink below their content width,
    otherwise wide code blocks push the page sideways. */
 .grid > *, .compare > *, .callout > div, .tab-panel, .ex-body, ol.steps > li { min-width: 0; }
-.quiz-q h4 > span, .quiz-opts button, .quiz-explain { min-width: 0; overflow-wrap: anywhere; }
+.quiz-q h4 > span:not(.qn), .quiz-opts button, .quiz-explain { min-width: 0; overflow-wrap: break-word; }
 
 /* ------------------------------------------- Official documentation links */
 .doc-refs { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin: -4px 0 16px; }
@@ -681,8 +682,8 @@ body.landing main { overflow-x: hidden; }
 .ref-link.kotlin::before { content: "◆ "; color: var(--purple); }
 .ref-link.android::before { content: "● "; color: var(--android); }
 .ref-list li { margin: 0; }
-table.t.rules td:first-child { white-space: nowrap; font: 700 0.8rem var(--mono); color: var(--purple); }
-table.t.rules td code { white-space: normal; overflow-wrap: anywhere; }
+table.t.rules td:first-child:not([colspan]) { white-space: nowrap; font: 700 0.8rem var(--mono); color: var(--purple); }
+table.t.rules td code { white-space: normal; overflow-wrap: normal; }
 
 /* =========================================================================
    Simulations (assets/js/sim.js)
@@ -751,6 +752,7 @@ table.t.rules td code { white-space: normal; overflow-wrap: anywhere; }
 .seg-cancel { background: var(--faint); color: #fff; }
 .sv-mark { position: absolute; top: 2px; bottom: 2px; width: 2px; background: var(--text); }
 .sv-mark span { position: absolute; top: -1px; left: 4px; font: 700 0.6rem var(--mono); color: var(--text); white-space: nowrap; background: var(--bg-3); padding: 0 3px; border-radius: 3px; }
+.sv-mark.end span { left: auto; right: 4px; }
 .sv-mark.m-in { background: var(--blue); } .sv-mark.m-out { background: var(--green); } .sv-mark.m-x { background: var(--red); }
 .sv-cursor { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--amber); box-shadow: 0 0 8px var(--amber); transition: left 0.4s ease; z-index: 2; }
 .sv-axis { display: flex; justify-content: space-between; font: 0.62rem var(--mono); color: var(--faint); }
