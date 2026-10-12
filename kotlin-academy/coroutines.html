@@ -115,12 +115,14 @@
             Loading…
             User#7 has score 60
           </script>
+          <div class="sim" data-sim="coroutine-suspend"></div>
           <div class="callout note">
             <div class="ci">🔬</div>
             <div><span class="ct">Under the hood</span>
               <p>The compiler transforms every suspend function into a <b>state machine</b> and adds a hidden <code>Continuation</code> parameter — a callback that knows where to resume. You write sequential code; the compiler writes the callbacks. That's why calling a suspend function from regular code is a compile error: there's no continuation to pass.</p>
             </div>
           </div>
+          <div class="sim" data-sim="suspend-state-machine"></div>
         </section>
 
         <section class="doc-section" id="builders" data-title="launch & async">
@@ -173,6 +175,7 @@
             sequential ≈ 2s, parallel ≈ 1s
           </script>
           <p class="small muted">Notice “launched, doing other work” prints <em>before</em> the first tick: <code>launch</code> schedules the coroutine, and it starts once the current one suspends (here at <code>join()</code>).</p>
+          <div class="sim" data-sim="launch-async"></div>
         </section>
 
         <section class="doc-section" id="structured" data-title="Structured concurrency">
@@ -202,6 +205,7 @@
             </svg>
             <figcaption>Cancellation flows down the tree; failures propagate up.</figcaption>
           </figure>
+          <div class="sim" data-sim="structured-concurrency"></div>
           <script type="text/plain" data-code="kotlin" data-file="Structured.kt" data-run>
             import kotlinx.coroutines.*
 
@@ -286,6 +290,7 @@
             back on main: theme=dark, 333833500
           </script>
           <p class="small muted">IO and Default share threads (the pool is named <code>DefaultDispatcher-worker-N</code>), which makes switching between them cheap. Room and Retrofit's suspend functions are already main-safe, so you can call them directly from <code>viewModelScope</code>.</p>
+          <div class="sim" data-sim="dispatchers"></div>
         </section>
 
         <section class="doc-section" id="cancellation" data-title="Cancellation & timeouts">
@@ -581,5 +586,6 @@
   <div id="site-footer"></div>
   <script src="assets/js/refs.js?v=__BUILD__"></script>
   <script src="assets/js/core.js?v=__BUILD__"></script>
+  <script src="assets/js/sim.js?v=__BUILD__"></script>
 </body>
 </html>

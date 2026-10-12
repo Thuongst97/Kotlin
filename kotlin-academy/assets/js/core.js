@@ -795,7 +795,8 @@
     }
   }
 
-  window.KA = { SITE, LESSONS, esc, $, $$, store, setDone, doneSet };
+  const highlightLines = (code, lang = "kotlin") => toLines(tokenize(dedent(code), lang));
+  window.KA = { SITE, LESSONS, esc, $, $$, store, setDone, doneSet, highlightLines, dedent };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
   else boot();
 })();

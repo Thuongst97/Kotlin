@@ -14,7 +14,7 @@ A free, hands-on website that takes you from **installing your tools** to **ship
 | 🏁 Final project | 21 **TaskFlow** — a complete task-manager app built in 9 milestones |
 | 📋 Reference | A · Cheat sheet & mastery checklist · B · Coding conventions, rules & best practices |
 
-Every lesson has runnable examples (▶ **Run** opens them in the official Kotlin Playground), exercises with solutions, a quiz, and progress tracking saved in your browser.
+Every lesson has runnable examples (▶ **Run** opens them in the official Kotlin Playground), exercises with solutions, a quiz, and progress tracking saved in your browser. The coroutine, Flow and DSL lessons also include step-by-step simulations (`assets/js/sim.js`) that animate what the code does: suspension vs blocking, structured cancellation, dispatchers, cold vs hot flows, operator marbles and more.
 
 ## Repository layout
 
@@ -24,6 +24,8 @@ kotlin-academy/          The static website (plain HTML/CSS/JS, no build step)
   *.html                 One page per lesson
   assets/css/main.css    Design system (dark + light themes)
   assets/js/core.js      Shared layout, search, highlighter, Playground runner, quizzes, progress
+  assets/js/refs.js      Official Kotlin/Android documentation links shown on every lesson
+  assets/js/sim.js       Step-by-step simulations for coroutines, Flow and DSLs
 final-project/TaskFlow/  The complete Android app built in lesson 21
 tools/
   check_snippets.py      Compiles and runs every runnable lesson example and checks its output

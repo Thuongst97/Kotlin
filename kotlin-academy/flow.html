@@ -80,6 +80,7 @@
             [1, 4, 9]
             8
           </script>
+          <div class="sim" data-sim="flow-cold-hot"></div>
         </section>
 
         <section class="doc-section" id="operators" data-title="Operators">
@@ -141,6 +142,7 @@
               <p>A flow's emissions happen in the collector's coroutine context — you may not call <code>withContext</code> around <code>emit</code>. To run producing code elsewhere, put <code>.flowOn(Dispatchers.IO)</code> after it: everything <em>above</em> <code>flowOn</code> runs on IO, everything below (and the collector) stays where it was.</p>
             </div>
           </div>
+          <div class="sim" data-sim="flow-operators"></div>
         </section>
 
         <section class="doc-section" id="errors" data-title="Errors & completion">
@@ -230,6 +232,7 @@
             visible: [learn flow, write tests]
             results for 'kotlin'
           </script>
+          <div class="sim" data-sim="flow-time-operators"></div>
         </section>
 
         <section class="doc-section" id="stateflow" data-title="StateFlow">
@@ -374,6 +377,7 @@
             queued job 4
             [1, 2, 3, 4]
           </script>
+          <div class="sim" data-sim="channel-vs-sharedflow"></div>
         </section>
 
         <section class="doc-section" id="android-preview" data-title="Flow on Android">
@@ -543,5 +547,6 @@
   <div id="site-footer"></div>
   <script src="assets/js/refs.js?v=__BUILD__"></script>
   <script src="assets/js/core.js?v=__BUILD__"></script>
+  <script src="assets/js/sim.js?v=__BUILD__"></script>
 </body>
 </html>
