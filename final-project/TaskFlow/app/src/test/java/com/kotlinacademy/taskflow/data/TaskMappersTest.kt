@@ -12,13 +12,28 @@ class TaskMappersTest {
 
     @Test
     fun `domain to entity and back keeps every field`() {
-        val task = Task(id = 7, title = "Ship it", notes = "v1", priority = Priority.HIGH, dueAt = 123, remind = true, isDone = false, createdAt = 99)
+        val task =
+            Task(
+                id = 7,
+                title = "Ship it",
+                notes = "v1",
+                priority = Priority.HIGH,
+                dueAt = 123,
+                remind = true,
+                isDone = false,
+                createdAt = 99,
+            )
         assertEquals(task, task.toEntity().toDomain())
     }
 
     @Test
     fun `entity trims text and drops reminders without a due date`() {
-        val entity = Task(title = "  padded  ", notes = " n ", remind = true, dueAt = null).toEntity()
+        val entity = Task(
+            title = "  padded  ",
+            notes = " n ",
+            remind = true,
+            dueAt = null,
+        ).toEntity()
         assertEquals("padded", entity.title)
         assertEquals("n", entity.notes)
         assertFalse(entity.remind)

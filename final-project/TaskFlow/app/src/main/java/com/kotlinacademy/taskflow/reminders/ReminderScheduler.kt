@@ -23,9 +23,8 @@ interface ReminderScheduler {
  * One unique work request per task: re-scheduling REPLACEs the previous one.
  */
 @Singleton
-class WorkManagerReminderScheduler @Inject constructor(
-    private val workManager: WorkManager,
-) : ReminderScheduler {
+class WorkManagerReminderScheduler @Inject constructor(private val workManager: WorkManager) :
+    ReminderScheduler {
 
     override fun schedule(taskId: Long, title: String, dueAt: Long) {
         val remindAt = reminderTime(dueAt)
@@ -36,7 +35,12 @@ class WorkManagerReminderScheduler @Inject constructor(
         }
         val request = OneTimeWorkRequestBuilder<ReminderWorker>()
             .setInitialDelay(delay, TimeUnit.MILLISECONDS)
-            .setInputData(workDataOf(ReminderWorker.KEY_TASK_ID to taskId, ReminderWorker.KEY_TITLE to title))
+            .setInputData(
+                workDataOf(
+                    ReminderWorker.KEY_TASK_ID to taskId,
+                    ReminderWorker.KEY_TITLE to title,
+                ),
+            )
             .addTag(TAG)
             .build()
         workManager.enqueueUniqueWork(workName(taskId), ExistingWorkPolicy.REPLACE, request)
@@ -52,7 +56,7 @@ class WorkManagerReminderScheduler @Inject constructor(
         private const val TAG = "task-reminder"
         private val REMIND_AT: LocalTime = LocalTime.of(9, 0)
 
-        /** dueAt is UTC midnight of the chosen date → 9:00 in the user's own time zone on that date. */
+        /** [dueAt] is UTC midnight of the chosen date → 9:00 in the user's time zone that day. */
         fun reminderTime(dueAt: Long, zone: ZoneId = ZoneId.systemDefault()): Long =
             Instant.ofEpochMilli(dueAt).atZone(ZoneOffset.UTC).toLocalDate()
                 .atTime(REMIND_AT).atZone(zone).toInstant().toEpochMilli()

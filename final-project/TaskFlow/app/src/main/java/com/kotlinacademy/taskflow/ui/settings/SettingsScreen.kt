@@ -38,10 +38,7 @@ import com.kotlinacademy.taskflow.domain.ThemeMode
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(
-    onBack: () -> Unit,
-    viewModel: SettingsViewModel = hiltViewModel(),
-) {
+fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewModel()) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
 
     Scaffold(
@@ -50,7 +47,10 @@ fun SettingsScreen(
                 title = { Text(stringResource(R.string.settings)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.back),
+                        )
                     }
                 },
             )
@@ -70,7 +70,9 @@ fun SettingsScreen(
                         ThemeMode.LIGHT -> R.string.theme_light
                         ThemeMode.DARK -> R.string.theme_dark
                     }
-                    RadioRow(stringResource(label), settings.themeMode == mode) { viewModel.setThemeMode(mode) }
+                    RadioRow(stringResource(label), settings.themeMode == mode) {
+                        viewModel.setThemeMode(mode)
+                    }
                 }
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -79,7 +81,10 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(stringResource(R.string.dynamic_color), modifier = Modifier.weight(1f))
-                    Switch(checked = settings.dynamicColor, onCheckedChange = viewModel::setDynamicColor)
+                    Switch(
+                        checked = settings.dynamicColor,
+                        onCheckedChange = viewModel::setDynamicColor,
+                    )
                 }
             }
 
@@ -92,7 +97,9 @@ fun SettingsScreen(
                         SortOrder.PRIORITY -> R.string.sort_priority
                         SortOrder.CREATED -> R.string.sort_created
                     }
-                    RadioRow(stringResource(label), settings.sortOrder == order) { viewModel.setSortOrder(order) }
+                    RadioRow(stringResource(label), settings.sortOrder == order) {
+                        viewModel.setSortOrder(order)
+                    }
                 }
             }
 

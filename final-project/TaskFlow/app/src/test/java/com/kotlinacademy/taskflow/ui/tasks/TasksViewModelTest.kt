@@ -10,9 +10,9 @@ import com.kotlinacademy.taskflow.domain.UserSettings
 import com.kotlinacademy.taskflow.testing.FakeSettingsRepository
 import com.kotlinacademy.taskflow.testing.FakeTaskRepository
 import com.kotlinacademy.taskflow.testing.MainDispatcherRule
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -32,19 +32,28 @@ class TasksViewModelTest {
     private val sampleTasks = listOf(
         Task(id = 1, title = "Buy milk", isDone = true, createdAt = 1),
         Task(id = 2, title = "Learn Flow", priority = Priority.HIGH, createdAt = 2),
-        Task(id = 3, title = "Write tests", notes = "for the ViewModel", priority = Priority.LOW, createdAt = 3),
+        Task(
+            id = 3,
+            title = "Write tests",
+            notes = "for the ViewModel",
+            priority = Priority.LOW,
+            createdAt = 3,
+        ),
     )
 
     private fun createViewModel(
         repository: FakeTaskRepository = FakeTaskRepository(sampleTasks),
-        settings: FakeSettingsRepository = FakeSettingsRepository(UserSettings(sortOrder = SortOrder.PRIORITY)),
+        settings: FakeSettingsRepository =
+            FakeSettingsRepository(UserSettings(sortOrder = SortOrder.PRIORITY)),
     ) = TasksViewModel(repository, settings)
 
     @Test
     fun `state contains counts and tasks sorted by priority, done last`() = runTest {
         val viewModel = createViewModel()
         // stateIn(WhileSubscribed) only runs while someone collects; start a collector eagerly.
-        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiState.collect() }
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.uiState.collect()
+        }
 
         val state = viewModel.uiState.value
         assertFalse(state.isLoading)
@@ -57,13 +66,15 @@ class TasksViewModelTest {
     @Test
     fun `filters by status and searches title and notes`() = runTest {
         val viewModel = createViewModel()
-        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiState.collect() }
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.uiState.collect()
+        }
 
         viewModel.setFilter(TaskFilter.DONE)
         assertEquals(listOf("Buy milk"), viewModel.uiState.value.tasks.map { it.title })
 
         viewModel.setFilter(TaskFilter.ALL)
-        viewModel.setQuery("viewmodel")                        // matches notes, case-insensitive
+        viewModel.setQuery("viewmodel") // matches notes, case-insensitive
         assertEquals(listOf("Write tests"), viewModel.uiState.value.tasks.map { it.title })
     }
 
@@ -71,7 +82,9 @@ class TasksViewModelTest {
     fun `toggleDone updates the repository and the state`() = runTest {
         val repository = FakeTaskRepository(sampleTasks)
         val viewModel = createViewModel(repository)
-        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiState.collect() }
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.uiState.collect()
+        }
 
         viewModel.toggleDone(sampleTasks[1])
 
@@ -118,7 +131,9 @@ class TasksViewModelTest {
             override suspend fun importSampleTasks() = gate.await()
         }
         val viewModel = TasksViewModel(repository, FakeSettingsRepository())
-        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiState.collect() }
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.uiState.collect()
+        }
 
         viewModel.importSamples()
         assertTrue(viewModel.uiState.value.isImporting)

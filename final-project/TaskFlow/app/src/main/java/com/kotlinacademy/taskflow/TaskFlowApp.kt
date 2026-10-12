@@ -12,9 +12,12 @@ import javax.inject.Inject
  * Implementing Configuration.Provider lets WorkManager create workers through Hilt.
  */
 @HiltAndroidApp
-class TaskFlowApp : Application(), Configuration.Provider {
+class TaskFlowApp :
+    Application(),
+    Configuration.Provider {
 
     @Inject lateinit var workerFactory: HiltWorkerFactory
+
     @Inject lateinit var notifier: ReminderNotifier
 
     override val workManagerConfiguration: Configuration

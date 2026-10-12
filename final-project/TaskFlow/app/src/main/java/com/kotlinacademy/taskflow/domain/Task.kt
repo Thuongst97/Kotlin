@@ -19,16 +19,23 @@ data class Task(
 }
 
 enum class Priority(val weight: Int) {
-    LOW(0), MEDIUM(1), HIGH(2);
+    LOW(0),
+    MEDIUM(1),
+    HIGH(2),
+    ;
 
     companion object {
-        fun fromWeight(weight: Int): Priority = entries.firstOrNull { it.weight == weight } ?: MEDIUM
+        fun fromWeight(weight: Int): Priority =
+            entries.firstOrNull { it.weight == weight } ?: MEDIUM
     }
 }
 
 /** Which tasks the list shows. */
 enum class TaskFilter {
-    ALL, ACTIVE, DONE;
+    ALL,
+    ACTIVE,
+    DONE,
+    ;
 
     fun matches(task: Task): Boolean = when (this) {
         ALL -> true

@@ -7,7 +7,10 @@ import androidx.activity.enableEdgeToEdge
 import com.kotlinacademy.taskflow.ui.TaskFlowRoot
 import dagger.hilt.android.AndroidEntryPoint
 
-/** The app's only Activity: it just hosts Compose. Screens are composables + navigation destinations. */
+/**
+ * The app's only Activity: it just hosts Compose.
+ * Screens are composables + navigation destinations.
+ */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

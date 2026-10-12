@@ -82,7 +82,11 @@ fun TaskItem(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         textDecoration = if (task.isDone) TextDecoration.LineThrough else null,
-                        color = if (task.isDone) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                        color = if (task.isDone) {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        },
                     )
                 }
                 if (task.notes.isNotBlank()) {
@@ -103,16 +107,31 @@ fun TaskItem(
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         val overdue = task.isOverdue(now)
-                        val tint = if (overdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
-                        Icon(Icons.Filled.DateRange, contentDescription = null, tint = tint, modifier = Modifier.size(16.dp))
+                        val colors = MaterialTheme.colorScheme
+                        val tint = if (overdue) colors.error else colors.primary
+                        Icon(
+                            Icons.Filled.DateRange,
+                            contentDescription = null,
+                            tint = tint,
+                            modifier = Modifier.size(16.dp),
+                        )
                         Text(
-                            text = if (overdue) stringResource(R.string.overdue) + " · " + formatDueDate(due)
-                            else stringResource(R.string.due_on, formatDueDate(due)),
+                            text = if (overdue) {
+                                stringResource(R.string.overdue) + " · " +
+                                    formatDueDate(due)
+                            } else {
+                                stringResource(R.string.due_on, formatDueDate(due))
+                            },
                             style = MaterialTheme.typography.labelMedium,
                             color = tint,
                         )
                         if (task.remind) {
-                            Icon(Icons.Filled.Notifications, contentDescription = null, tint = tint, modifier = Modifier.size(16.dp))
+                            Icon(
+                                Icons.Filled.Notifications,
+                                contentDescription = null,
+                                tint = tint,
+                                modifier = Modifier.size(16.dp),
+                            )
                         }
                     }
                 }
@@ -129,9 +148,18 @@ fun TaskItem(
 private fun TaskItemPreview() {
     TaskFlowTheme(dynamicColor = false) {
         TaskItem(
-            task = Task(id = 1, title = "Finish lesson 17", notes = "Compose layouts and state", priority = Priority.HIGH, dueAt = 0, remind = true),
+            task = Task(
+                id = 1,
+                title = "Finish lesson 17",
+                notes = "Compose layouts and state",
+                priority = Priority.HIGH,
+                dueAt = 0,
+                remind = true,
+            ),
             now = System.currentTimeMillis(),
-            onToggleDone = {}, onClick = {}, onDelete = {},
+            onToggleDone = {},
+            onClick = {},
+            onDelete = {},
         )
     }
 }

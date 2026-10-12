@@ -9,12 +9,12 @@ import com.kotlinacademy.taskflow.domain.Priority
 import com.kotlinacademy.taskflow.domain.Task
 import com.kotlinacademy.taskflow.ui.navigation.EditTaskRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 data class EditTaskUiState(
     val isNew: Boolean = true,
@@ -51,24 +51,36 @@ class EditTaskViewModel @Inject constructor(
             val task = repository.getTask(id)
             original = task
             _state.update { s ->
-                if (task == null) s.copy(isLoading = false, isNew = true)
-                else s.copy(
-                    isLoading = false,
-                    title = task.title,
-                    notes = task.notes,
-                    priority = task.priority,
-                    dueAt = task.dueAt,
-                    remind = task.remind,
-                )
+                if (task == null) {
+                    s.copy(isLoading = false, isNew = true)
+                } else {
+                    s.copy(
+                        isLoading = false,
+                        title = task.title,
+                        notes = task.notes,
+                        priority = task.priority,
+                        dueAt = task.dueAt,
+                        remind = task.remind,
+                    )
+                }
             }
         }
     }
 
-    fun onTitleChange(value: String) = _state.update { it.copy(title = value, showTitleError = false) }
+    fun onTitleChange(value: String) = _state.update {
+        it.copy(title = value, showTitleError = false)
+    }
     fun onNotesChange(value: String) = _state.update { it.copy(notes = value) }
     fun onPriorityChange(value: Priority) = _state.update { it.copy(priority = value) }
-    fun onDueDateChange(value: Long?) = _state.update { it.copy(dueAt = value, remind = it.remind && value != null) }
-    fun onRemindChange(value: Boolean) = _state.update { it.copy(remind = value && it.dueAt != null) }
+    fun onDueDateChange(value: Long?) = _state.update {
+        it.copy(
+            dueAt = value,
+            remind =
+                it.remind && value != null,
+        )
+    }
+    fun onRemindChange(value: Boolean) =
+        _state.update { it.copy(remind = value && it.dueAt != null) }
 
     fun save() {
         val s = _state.value
@@ -79,7 +91,13 @@ class EditTaskViewModel @Inject constructor(
         viewModelScope.launch {
             val base = original ?: Task(title = s.title)
             repository.upsert(
-                base.copy(title = s.title, notes = s.notes, priority = s.priority, dueAt = s.dueAt, remind = s.remind),
+                base.copy(
+                    title = s.title,
+                    notes = s.notes,
+                    priority = s.priority,
+                    dueAt = s.dueAt,
+                    remind = s.remind,
+                ),
             )
             _state.update { it.copy(isSaved = true) }
         }

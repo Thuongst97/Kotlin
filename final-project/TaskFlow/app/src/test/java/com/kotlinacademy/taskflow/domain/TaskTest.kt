@@ -8,8 +8,8 @@ import org.junit.Test
 class TaskTest {
 
     private val day = 24 * 60 * 60 * 1000L
-    private val today = 20_000 * day                 // some UTC midnight
-    private val now = today + 10 * 60 * 60 * 1000L    // 10:00 UTC
+    private val today = 20_000 * day // some UTC midnight
+    private val now = today + 10 * 60 * 60 * 1000L // 10:00 UTC
 
     @Test
     fun `a task due yesterday is overdue, one due today is not`() {
@@ -27,7 +27,12 @@ class TaskTest {
             Task(id = 3, title = "done", dueAt = today - day, isDone = true),
             Task(id = 4, title = "sooner", dueAt = today),
         )
-        assertEquals(listOf(4L, 2L, 1L, 3L), tasks.sortedWith(SortOrder.DUE_DATE.comparator).map { it.id })
+        assertEquals(
+            listOf(4L, 2L, 1L, 3L),
+            tasks.sortedWith(SortOrder.DUE_DATE.comparator).map {
+                it.id
+            },
+        )
     }
 
     @Test

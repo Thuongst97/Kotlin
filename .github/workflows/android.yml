@@ -23,14 +23,19 @@ jobs:
           distribution: temurin
           java-version: 17
       - uses: gradle/actions/setup-gradle@v4
+      - name: Check coding conventions (ktlint) and static analysis (detekt)
+        run: ./gradlew --stacktrace ktlintCheck detekt
       - name: Build debug APK, run unit tests, compile instrumented tests
         run: ./gradlew --stacktrace assembleDebug testDebugUnitTest assembleDebugAndroidTest
       - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: unit-test-reports
-          path: final-project/TaskFlow/app/build/reports/tests/
+          name: test-and-lint-reports
+          path: |
+            final-project/TaskFlow/app/build/reports/tests/
+            final-project/TaskFlow/app/build/reports/detekt/
+            final-project/TaskFlow/app/build/reports/ktlint/
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:

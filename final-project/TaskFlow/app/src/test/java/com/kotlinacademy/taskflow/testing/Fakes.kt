@@ -6,10 +6,10 @@ import com.kotlinacademy.taskflow.domain.SortOrder
 import com.kotlinacademy.taskflow.domain.Task
 import com.kotlinacademy.taskflow.domain.ThemeMode
 import com.kotlinacademy.taskflow.domain.UserSettings
+import java.io.IOException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
-import java.io.IOException
 
 /** An in-memory repository: fast, deterministic, and no mocking library needed. */
 class FakeTaskRepository(initial: List<Task> = emptyList()) : TaskRepository {
@@ -44,6 +44,8 @@ class FakeSettingsRepository(initial: UserSettings = UserSettings()) : SettingsR
     private val state = MutableStateFlow(initial)
     override val settings: Flow<UserSettings> = state
     override suspend fun setThemeMode(mode: ThemeMode) = state.update { it.copy(themeMode = mode) }
-    override suspend fun setDynamicColor(enabled: Boolean) = state.update { it.copy(dynamicColor = enabled) }
-    override suspend fun setSortOrder(order: SortOrder) = state.update { it.copy(sortOrder = order) }
+    override suspend fun setDynamicColor(enabled: Boolean) =
+        state.update { it.copy(dynamicColor = enabled) }
+    override suspend fun setSortOrder(order: SortOrder) =
+        state.update { it.copy(sortOrder = order) }
 }

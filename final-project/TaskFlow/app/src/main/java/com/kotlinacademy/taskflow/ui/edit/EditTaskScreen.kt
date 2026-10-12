@@ -51,10 +51,7 @@ import com.kotlinacademy.taskflow.ui.components.formatDueDate
 import com.kotlinacademy.taskflow.ui.tasks.color
 
 @Composable
-fun EditTaskScreen(
-    onDone: () -> Unit,
-    viewModel: EditTaskViewModel = hiltViewModel(),
-) {
+fun EditTaskScreen(onDone: () -> Unit, viewModel: EditTaskViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     // Navigate back once the ViewModel reports a successful save.
@@ -102,14 +99,21 @@ fun EditTaskContent(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(if (state.isNew) R.string.new_task else R.string.edit_task)) },
+                title = {
+                    Text(stringResource(if (state.isNew) R.string.new_task else R.string.edit_task))
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.back),
+                        )
                     }
                 },
                 actions = {
-                    TextButton(onClick = onSave, enabled = !state.isLoading) { Text(stringResource(R.string.save)) }
+                    TextButton(onClick = onSave, enabled = !state.isLoading) {
+                        Text(stringResource(R.string.save))
+                    }
                 },
             )
         },
@@ -136,7 +140,9 @@ fun EditTaskContent(
                 isError = state.showTitleError,
                 supportingText = if (state.showTitleError) {
                     { Text(stringResource(R.string.title_error)) }
-                } else null,
+                } else {
+                    null
+                },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -159,20 +165,40 @@ fun EditTaskContent(
                     FilterChip(
                         selected = state.priority == p,
                         onClick = { onPriorityChange(p) },
-                        label = { Text(stringResource(label), color = if (state.priority == p) p.color() else MaterialTheme.colorScheme.onSurface) },
+                        label = {
+                            Text(
+                                stringResource(label),
+                                color = if (state.priority ==
+                                    p
+                                ) {
+                                    p.color()
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
+                                },
+                            )
+                        },
                     )
                 }
             }
 
             Text(stringResource(R.string.due_date), style = MaterialTheme.typography.titleSmall)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 AssistChip(
                     onClick = { showDatePicker = true },
-                    label = { Text(state.dueAt?.let(::formatDueDate) ?: stringResource(R.string.pick_date)) },
+                    label = {
+                        Text(
+                            state.dueAt?.let(::formatDueDate) ?: stringResource(R.string.pick_date),
+                        )
+                    },
                     leadingIcon = { Icon(Icons.Filled.DateRange, contentDescription = null) },
                 )
                 if (state.dueAt != null) {
-                    TextButton(onClick = { onDueDateChange(null) }) { Text(stringResource(R.string.clear)) }
+                    TextButton(onClick = {
+                        onDueDateChange(null)
+                    }) { Text(stringResource(R.string.clear)) }
                 }
             }
 
@@ -187,7 +213,12 @@ fun EditTaskContent(
                         )
                     }
                 }
-                Switch(checked = state.remind, onCheckedChange = onRemindChange, enabled = state.dueAt != null)
+                Switch(
+                    checked = state.remind,
+                    onCheckedChange = onRemindChange,
+                    enabled =
+                        state.dueAt != null,
+                )
             }
         }
     }
@@ -203,7 +234,9 @@ fun EditTaskContent(
                 }) { Text(stringResource(R.string.ok)) }
             },
             dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.cancel)) }
+                TextButton(onClick = {
+                    showDatePicker = false
+                }) { Text(stringResource(R.string.cancel)) }
             },
         ) {
             DatePicker(state = pickerState)

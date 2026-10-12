@@ -6,17 +6,17 @@ import com.kotlinacademy.taskflow.data.TaskRepository
 import com.kotlinacademy.taskflow.data.settings.SettingsRepository
 import com.kotlinacademy.taskflow.domain.Task
 import com.kotlinacademy.taskflow.domain.TaskFilter
+import com.kotlinacademy.taskflow.ui.WhileUiSubscribed
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 /** Everything the task list screen needs to draw itself — one immutable snapshot. */
 data class TasksUiState(
@@ -63,7 +63,10 @@ class TasksViewModel @Inject constructor(
     ) { tasks, settings, filter, query, importing ->
         val visible = tasks
             .filter(filter::matches)
-            .filter { query.isBlank() || it.title.contains(query, ignoreCase = true) || it.notes.contains(query, ignoreCase = true) }
+            .filter {
+                query.isBlank() || it.title.contains(query, ignoreCase = true) ||
+                    it.notes.contains(query, ignoreCase = true)
+            }
             .sortedWith(settings.sortOrder.comparator)
         TasksUiState(
             isLoading = false,
@@ -75,7 +78,7 @@ class TasksViewModel @Inject constructor(
             doneCount = tasks.count { it.isDone },
             isImporting = importing,
         )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TasksUiState())
+    }.stateIn(viewModelScope, WhileUiSubscribed, TasksUiState())
 
     fun setFilter(newFilter: TaskFilter) {
         filter.value = newFilter
@@ -96,7 +99,7 @@ class TasksViewModel @Inject constructor(
         }
     }
 
-    /** Re-inserts a deleted task with its original id, so the Snackbar's Undo restores it exactly. */
+    /** Re-inserts a deleted task with its original id, so Undo restores it exactly. */
     fun undoDelete(task: Task) {
         viewModelScope.launch { repository.upsert(task) }
     }

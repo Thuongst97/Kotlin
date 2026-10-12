@@ -14,7 +14,10 @@ import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 
-/** UI test of the stateless content composable: give it state, assert what's on screen, click things. */
+/**
+ * UI test of the stateless content composable:
+ * give it state, assert what's on screen, click things.
+ */
 class TasksContentTest {
 
     @get:Rule
@@ -29,7 +32,12 @@ class TasksContentTest {
         composeRule.setContent {
             TaskFlowTheme(dynamicColor = false) {
                 TasksContent(
-                    state = TasksUiState(isLoading = false, tasks = listOf(task), totalCount = 1, activeCount = 1),
+                    state = TasksUiState(
+                        isLoading = false,
+                        tasks = listOf(task),
+                        totalCount = 1,
+                        activeCount = 1,
+                    ),
                     snackbarHostState = SnackbarHostState(),
                     onQueryChange = {}, onFilterChange = {}, onDelete = {}, onImport = {},
                     onToggleDone = { toggled = it },
@@ -54,7 +62,8 @@ class TasksContentTest {
                 TasksContent(
                     state = TasksUiState(isLoading = false),
                     snackbarHostState = SnackbarHostState(),
-                    onQueryChange = {}, onFilterChange = {}, onToggleDone = {}, onDelete = {}, onImport = {},
+                    onQueryChange = {
+                    }, onFilterChange = {}, onToggleDone = {}, onDelete = {}, onImport = {},
                     onAddTask = {}, onOpenTask = {}, onOpenSettings = {},
                 )
             }

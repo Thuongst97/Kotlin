@@ -8,7 +8,10 @@ import com.kotlinacademy.taskflow.data.TaskRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 
-/** Runs in the background at the scheduled time and shows a notification if the task is still open. */
+/**
+ * Runs in the background at the scheduled time and shows a notification
+ * if the task is still open.
+ */
 @HiltWorker
 class ReminderWorker @AssistedInject constructor(
     @Assisted appContext: Context,

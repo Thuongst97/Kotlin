@@ -9,6 +9,8 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
     alias(libs.plugins.room)
+    alias(libs.plugins.detekt)
+    alias(libs.plugins.ktlint)
 }
 
 // Release signing secrets live in keystore.properties, which is git-ignored (see lesson 20).
@@ -50,7 +52,10 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
             if (keystoreProperties.isNotEmpty()) signingConfig = signingConfigs.getByName("release")
         }
     }
@@ -73,6 +78,33 @@ android {
 kotlin {
     compilerOptions {
         jvmTarget.set(JvmTarget.JVM_17)
+    }
+}
+
+// Static analysis (see the "Coding Conventions & Rules" page):
+//   ./gradlew ktlintCheck   – formatting & style (rules come from .editorconfig)
+//   ./gradlew ktlintFormat  – auto-fix formatting
+//   ./gradlew detekt        – code smells, complexity, potential bugs
+ktlint {
+    version.set(libs.versions.ktlint)
+    filter {
+        // Never lint generated code (KSP, Hilt, Room output lives under build/).
+        exclude { it.file.path.contains("${File.separator}build${File.separator}") }
+    }
+}
+
+detekt {
+    buildUponDefaultConfig = true
+    config.setFrom(rootProject.file("config/detekt/detekt.yml"))
+    source.setFrom("src/main/java", "src/test/java", "src/androidTest/java")
+}
+
+// detekt 1.23 embeds its own Kotlin compiler; keep Gradle from upgrading it to the project's version.
+configurations.matching { it.name == "detekt" }.all {
+    resolutionStrategy.eachDependency {
+        if (requested.group == "org.jetbrains.kotlin") {
+            useVersion(io.gitlab.arturbosch.detekt.getSupportedKotlinVersion())
+        }
     }
 }
 

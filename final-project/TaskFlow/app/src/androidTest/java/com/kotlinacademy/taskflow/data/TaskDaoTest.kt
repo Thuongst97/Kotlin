@@ -17,7 +17,10 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** Runs on a device/emulator against a real (in-memory) SQLite database: ./gradlew connectedDebugAndroidTest */
+/**
+ * Runs on a device/emulator against a real (in-memory) SQLite database:
+ * `./gradlew connectedDebugAndroidTest`
+ */
 @RunWith(AndroidJUnit4::class)
 class TaskDaoTest {
 
@@ -35,7 +38,13 @@ class TaskDaoTest {
     fun closeDb() = database.close()
 
     private fun entity(title: String, createdAt: Long = 0) = TaskEntity(
-        title = title, notes = "", priority = 1, dueAt = null, remind = false, isDone = false, createdAt = createdAt,
+        title = title,
+        notes = "",
+        priority = 1,
+        dueAt = null,
+        remind = false,
+        isDone = false,
+        createdAt = createdAt,
     )
 
     @Test
@@ -43,7 +52,7 @@ class TaskDaoTest {
         val id = dao.upsert(entity("Draft"))
         val updatedRowId = dao.upsert(entity("Final").copy(id = id))
 
-        assertEquals(-1L, updatedRowId)                         // update → -1
+        assertEquals(-1L, updatedRowId) // update → -1
         assertEquals("Final", dao.getById(id)?.title)
     }
 

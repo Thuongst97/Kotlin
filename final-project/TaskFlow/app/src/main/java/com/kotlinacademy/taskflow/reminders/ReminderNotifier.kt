@@ -19,9 +19,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class ReminderNotifier @Inject constructor(
-    @ApplicationContext private val context: Context,
-) {
+class ReminderNotifier @Inject constructor(@ApplicationContext private val context: Context) {
     /** Channels are required on Android 8+; creating an existing channel is a no-op. */
     fun createChannel() {
         val channel = NotificationChannel(
@@ -43,7 +41,10 @@ class ReminderNotifier @Inject constructor(
         val openApp = PendingIntent.getActivity(
             context,
             taskId.toInt(),
-            Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
+            Intent(
+                context,
+                MainActivity::class.java,
+            ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)

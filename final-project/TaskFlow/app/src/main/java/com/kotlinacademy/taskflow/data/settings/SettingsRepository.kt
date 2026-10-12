@@ -9,12 +9,12 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import com.kotlinacademy.taskflow.domain.SortOrder
 import com.kotlinacademy.taskflow.domain.ThemeMode
 import com.kotlinacademy.taskflow.domain.UserSettings
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.map
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.map
 
 interface SettingsRepository {
     val settings: Flow<UserSettings>
@@ -23,7 +23,7 @@ interface SettingsRepository {
     suspend fun setSortOrder(order: SortOrder)
 }
 
-/** Stores small key-value settings with Jetpack DataStore (asynchronous, transactional, Flow-based). */
+/** Stores small key-value settings with Jetpack DataStore (async, transactional, Flow-based). */
 @Singleton
 class DataStoreSettingsRepository @Inject constructor(
     private val dataStore: DataStore<Preferences>,

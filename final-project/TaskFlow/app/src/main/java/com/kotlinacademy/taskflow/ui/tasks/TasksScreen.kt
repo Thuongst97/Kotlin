@@ -81,8 +81,12 @@ fun TasksScreen(
                     )
                     if (result == SnackbarResult.ActionPerformed) viewModel.undoDelete(event.task)
                 }
+
                 is TasksEvent.Imported ->
-                    snackbarHostState.showSnackbar(context.getString(R.string.imported_count, event.count))
+                    snackbarHostState.showSnackbar(
+                        context.getString(R.string.imported_count, event.count),
+                    )
+
                 TasksEvent.ImportFailed ->
                     snackbarHostState.showSnackbar(context.getString(R.string.import_failed))
             }
@@ -124,14 +128,23 @@ fun TasksContent(
                 title = { Text(stringResource(R.string.tasks_title)) },
                 actions = {
                     if (state.isImporting) {
-                        CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            strokeWidth = 2.dp,
+                        )
                     } else {
                         IconButton(onClick = onImport) {
-                            Icon(Icons.Filled.Refresh, contentDescription = stringResource(R.string.import_samples))
+                            Icon(
+                                Icons.Filled.Refresh,
+                                contentDescription = stringResource(R.string.import_samples),
+                            )
                         }
                     }
                     IconButton(onClick = onOpenSettings) {
-                        Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.settings))
+                        Icon(
+                            Icons.Filled.Settings,
+                            contentDescription = stringResource(R.string.settings),
+                        )
                     }
                 },
             )
@@ -150,18 +163,32 @@ fun TasksContent(
         ) {
             SearchField(query = state.query, onQueryChange = onQueryChange)
             FilterRow(state = state, onFilterChange = onFilterChange)
-            if (state.totalCount > 0) ProgressSummary(done = state.doneCount, total = state.totalCount)
+            if (state.totalCount >
+                0
+            ) {
+                ProgressSummary(done = state.doneCount, total = state.totalCount)
+            }
 
             when {
-                state.isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                state.isLoading -> Box(
+                    Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center,
+                ) {
                     CircularProgressIndicator()
                 }
+
                 state.tasks.isEmpty() -> EmptyState(query = state.query)
+
                 else -> LazyColumn(
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 88.dp),
+                    contentPadding = PaddingValues(
+                        start = 16.dp,
+                        end = 16.dp,
+                        top = 8.dp,
+                        bottom = 88.dp,
+                    ),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    // A stable key lets Compose keep each row's state and animate changes correctly.
+                    // A stable key lets Compose keep each row's state and animate changes.
                     items(state.tasks, key = { it.id }) { task ->
                         TaskItem(
                             task = task,
@@ -191,7 +218,10 @@ private fun SearchField(query: String, onQueryChange: (String) -> Unit) {
         trailingIcon = {
             if (query.isNotEmpty()) {
                 IconButton(onClick = { onQueryChange("") }) {
-                    Icon(Icons.Filled.Clear, contentDescription = stringResource(R.string.clear_search))
+                    Icon(
+                        Icons.Filled.Clear,
+                        contentDescription = stringResource(R.string.clear_search),
+                    )
                 }
             }
         },
@@ -249,7 +279,11 @@ private fun EmptyState(query: String) {
         Text("📝", style = MaterialTheme.typography.displayMedium)
         Spacer(Modifier.height(12.dp))
         if (query.isNotBlank()) {
-            Text(stringResource(R.string.empty_search, query), style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
+            Text(
+                stringResource(R.string.empty_search, query),
+                style = MaterialTheme.typography.titleMedium,
+                textAlign = TextAlign.Center,
+            )
         } else {
             Text(stringResource(R.string.empty_title), style = MaterialTheme.typography.titleMedium)
             Text(
@@ -272,9 +306,16 @@ private fun TasksContentPreview() {
     )
     TaskFlowTheme(dynamicColor = false) {
         TasksContent(
-            state = TasksUiState(isLoading = false, tasks = tasks, totalCount = 3, activeCount = 2, doneCount = 1),
+            state = TasksUiState(
+                isLoading = false,
+                tasks = tasks,
+                totalCount = 3,
+                activeCount = 2,
+                doneCount = 1,
+            ),
             snackbarHostState = SnackbarHostState(),
-            onQueryChange = {}, onFilterChange = {}, onToggleDone = {}, onDelete = {}, onImport = {},
+            onQueryChange = {
+            }, onFilterChange = {}, onToggleDone = {}, onDelete = {}, onImport = {},
             onAddTask = {}, onOpenTask = {}, onOpenSettings = {},
         )
     }

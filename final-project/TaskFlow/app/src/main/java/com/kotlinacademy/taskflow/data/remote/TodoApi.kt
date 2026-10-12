@@ -22,8 +22,4 @@ interface TodoApi {
 data class TodosResponse(val todos: List<TodoDto>)
 
 @Serializable
-data class TodoDto(
-    val id: Int,
-    val todo: String,
-    val completed: Boolean,
-)
+data class TodoDto(val id: Int, val todo: String, val completed: Boolean)
