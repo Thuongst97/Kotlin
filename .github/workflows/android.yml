@@ -25,8 +25,8 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - name: Check coding conventions (ktlint) and static analysis (detekt)
         run: ./gradlew --stacktrace ktlintCheck detekt
-      - name: Build debug APK, run unit tests, compile instrumented tests
-        run: ./gradlew --stacktrace assembleDebug testDebugUnitTest assembleDebugAndroidTest
+      - name: Build debug APK, run unit tests with coverage, compile instrumented tests
+        run: ./gradlew --stacktrace assembleDebug testDebugUnitTest koverHtmlReportDebug assembleDebugAndroidTest
       - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -34,6 +34,7 @@ jobs:
           name: test-and-lint-reports
           path: |
             final-project/TaskFlow/app/build/reports/tests/
+            final-project/TaskFlow/app/build/reports/kover/
             final-project/TaskFlow/app/build/reports/detekt/
             final-project/TaskFlow/app/build/reports/ktlint/
       - name: Upload debug APK

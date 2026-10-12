@@ -1,0 +1,35 @@
+name: Unit testing sample
+
+on:
+  push:
+    paths:
+      - "samples/unit-testing/**"
+      - ".github/workflows/unit-tests-sample.yml"
+  pull_request:
+    paths:
+      - "samples/unit-testing/**"
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: samples/unit-testing
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Run unit tests, coverage report and coverage gate
+        run: ./gradlew --stacktrace test koverHtmlReport koverVerify
+      - name: Upload test and coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-testing-reports
+          path: |
+            samples/unit-testing/build/reports/tests/test/
+            samples/unit-testing/build/reports/kover/html/

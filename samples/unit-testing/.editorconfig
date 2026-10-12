@@ -1,0 +1,22 @@
+# Shared formatting rules for the IDE and ktlint (lesson: Coding Conventions & Rules).
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[*.{kt,kts}]
+# Android Kotlin style guide flavour of the official Kotlin conventions (100-column limit).
+ktlint_code_style = android_studio
+max_line_length = 100
+ij_kotlin_allow_trailing_comma = true
+ij_kotlin_allow_trailing_comma_on_call_site = true
+# Composables are PascalCase nouns (Compose API guidelines), not camelCase verbs.
+ktlint_function_naming_ignore_when_annotated_with = Composable
+
+[*.{xml,toml}]
+indent_size = 4
