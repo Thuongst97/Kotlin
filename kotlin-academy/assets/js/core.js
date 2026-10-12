@@ -75,6 +75,9 @@
     { id: "cheatsheet", file: "cheatsheet.html", num: "A", group: "Reference", level: "All", minutes: 15,
       title: "Kotlin Cheat Sheet & Mastery Checklist", short: "Cheat Sheet", icon: "📋", accent: "#9a98a8",
       desc: "Syntax at a glance, Java → Kotlin translations and the checklist to call yourself a Kotlin master." },
+    { id: "conventions", file: "conventions.html", num: "B", group: "Reference", level: "All", minutes: 60,
+      title: "Coding Conventions, Rules & Best Practices", short: "Conventions & Best Practices", icon: "📏", accent: "#9a98a8",
+      desc: "Official Kotlin & Android conventions, a numbered rule set (vs. MISRA/AUTOSAR C++), best practices, ktlint and detekt." },
   ];
   const LESSONS = SITE.filter((p) => p.group !== "Reference");
 
@@ -121,6 +124,7 @@
           ${nav("setup", "Setup", "setup.html")}
           ${nav("compose", "Compose", "compose.html")}
           ${nav("final-project", "Final Project", "final-project.html")}
+          ${nav("conventions", "Conventions", "conventions.html")}
           ${nav("cheatsheet", "Cheat Sheet", "cheatsheet.html")}
         </nav>
         <div class="header-spacer"></div>
@@ -183,7 +187,7 @@
   let indexPromise = null;
   function loadIndex() {
     if (indexPromise) return indexPromise;
-    const base = SITE.map((p) => ({ title: p.title, sub: p.desc, page: p.num === "A" ? "Ref" : "Lesson " + p.num, href: p.file, text: p.desc }));
+    const base = SITE.map((p) => ({ title: p.title, sub: p.desc, page: p.group === "Reference" ? "Ref " + p.num : "Lesson " + p.num, href: p.file, text: p.desc }));
     let cached = null;
     try { cached = JSON.parse(sessionStorage.getItem("ka-index-v2") || "null"); } catch (e) { /* ignore */ }
     if (cached) return (indexPromise = Promise.resolve(base.concat(cached)));
@@ -366,6 +370,7 @@
           <a href="https://developer.android.com/kotlin" target="_blank" rel="noopener">Android Kotlin ↗</a>
           <a href="https://developer.android.com/develop/ui/compose" target="_blank" rel="noopener">Jetpack Compose ↗</a>
           <a href="https://play.kotlinlang.org/" target="_blank" rel="noopener">Kotlin Playground ↗</a>
+          <a href="conventions.html">Conventions</a>
           <a href="cheatsheet.html">Cheat sheet</a>
         </div>
       </div></footer>
@@ -419,7 +424,7 @@
   const KT_KW = new Set(("as as? break class continue do else false for fun if in !in interface is !is null object package return super this throw true try typealias typeof val var when while " +
     "by catch constructor delegate dynamic field file finally get import init param property receiver set setparam value where " +
     "abstract actual annotation companion const crossinline data enum expect external final infix inline inner internal lateinit noinline open operator out override private protected public reified sealed suspend tailrec vararg it").split(" "));
-  const LANG_NAMES = { kotlin: "Kotlin", kts: "Gradle KTS", java: "Java", xml: "XML", bash: "Shell", shell: "Shell", powershell: "PowerShell", toml: "TOML", json: "JSON", properties: "Properties", text: "Text", proguard: "ProGuard", groovy: "Groovy" };
+  const LANG_NAMES = { kotlin: "Kotlin", kts: "Gradle KTS", java: "Java", xml: "XML", bash: "Shell", shell: "Shell", powershell: "PowerShell", toml: "TOML", json: "JSON", yaml: "YAML", editorconfig: "EditorConfig", properties: "Properties", text: "Text", proguard: "ProGuard", groovy: "Groovy" };
   const JAVA_KW = new Set("abstract assert boolean break byte case catch char class const continue default do double else enum extends final finally float for goto if implements import instanceof int interface long native new package private protected public return short static strictfp super switch synchronized this throw throws transient try void volatile while var record null true false".split(" "));
 
   function tokenize(code, lang) {
@@ -456,7 +461,19 @@
       });
       return out;
     }
-    if (lang === "toml" || lang === "properties") {
+    if (lang === "yaml") {
+      const re = /(#.*$)|(^\s*-?\s*[\w.-]+(?=:))|("(?:[^"\\]|\\.)*"|'[^']*')|(\b\d[\w.]*\b|\btrue\b|\bfalse\b)|([\s\S])/gm;
+      let m;
+      while ((m = re.exec(code))) {
+        if (m[1]) push("com", m[1]);
+        else if (m[2]) push("attr", m[2]);
+        else if (m[3]) push("str", m[3]);
+        else if (m[4]) push("num", m[4]);
+        else push("", m[5]);
+      }
+      return out;
+    }
+    if (lang === "toml" || lang === "properties" || lang === "editorconfig") {
       const re = /(#.*$)|(^\s*\[[^\]]*\])|("(?:[^"\\]|\\.)*")|(^\s*[\w.-]+(?=\s*=))|(\b\d[\w.]*\b|\btrue\b|\bfalse\b)|([\s\S])/gm;
       let m;
       while ((m = re.exec(code))) {
@@ -700,7 +717,7 @@
       <div class="mod-group-title"><h3>${esc(g)}</h3></div>
       <div class="grid grid-3">${pages.map((p) => `
         <a class="module-card glass ${done.has(p.id) ? "is-done" : ""}" href="${p.file}" style="--accent:${p.accent}">
-          <div class="mc-top"><div class="mc-icon">${p.icon}</div><span class="badge ${lvl[p.level]}">${p.num === "A" ? "Ref" : p.num}</span></div>
+          <div class="mc-top"><div class="mc-icon">${p.icon}</div><span class="badge ${lvl[p.level]}">${p.group === "Reference" ? "Ref " + p.num : p.num}</span></div>
           <h3>${esc(p.title)}</h3>
           <p>${esc(p.desc)}</p>
           <div class="mc-foot"><span>⏱ ${p.minutes >= 120 ? Math.round(p.minutes / 60) + " h" : p.minutes + " min"}</span><span>· ${esc(p.level)}</span><span class="mc-go">Open →</span></div>

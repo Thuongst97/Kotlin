@@ -2392,6 +2392,40 @@
                   }
               }
             </script>
+          <script type="text/plain" data-code="kotlin" data-file="ui/WhileUiSubscribed.kt" data-src="final-project/TaskFlow/app/src/main/java/com/kotlinacademy/taskflow/ui/WhileUiSubscribed.kt">
+              package com.kotlinacademy.taskflow.ui
+
+              import kotlinx.coroutines.flow.SharingStarted
+
+              /**
+               * How long a ViewModel keeps its upstream Flows running after the UI stops collecting.
+               * Five seconds outlives a configuration change (no restart on rotation) but stops work
+               * soon after the app goes to the background.
+               */
+              private const val STOP_TIMEOUT_MILLIS = 5_000L
+
+              /** The sharing policy used by every screen's `stateIn`. */
+              val WhileUiSubscribed: SharingStarted = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS)
+            </script>
+          <script type="text/plain" data-code="kotlin" data-file="ui/MainViewModel.kt" data-src="final-project/TaskFlow/app/src/main/java/com/kotlinacademy/taskflow/ui/MainViewModel.kt">
+              package com.kotlinacademy.taskflow.ui
+
+              import androidx.lifecycle.ViewModel
+              import androidx.lifecycle.viewModelScope
+              import com.kotlinacademy.taskflow.data.settings.SettingsRepository
+              import com.kotlinacademy.taskflow.domain.UserSettings
+              import dagger.hilt.android.lifecycle.HiltViewModel
+              import javax.inject.Inject
+              import kotlinx.coroutines.flow.StateFlow
+              import kotlinx.coroutines.flow.stateIn
+
+              /** Exposes the user's appearance settings to [TaskFlowRoot]. */
+              @HiltViewModel
+              class MainViewModel @Inject constructor(settingsRepository: SettingsRepository) : ViewModel() {
+                  val settings: StateFlow<UserSettings> = settingsRepository.settings
+                      .stateIn(viewModelScope, WhileUiSubscribed, UserSettings())
+              }
+            </script>
           <script type="text/plain" data-code="kotlin" data-file="ui/TaskFlowRoot.kt" data-src="final-project/TaskFlow/app/src/main/java/com/kotlinacademy/taskflow/ui/TaskFlowRoot.kt">
               package com.kotlinacademy.taskflow.ui
 
@@ -3242,7 +3276,71 @@
                   }
               }
             </script>
+          <h3>Coding conventions, enforced</h3>
+          <p>TaskFlow follows the <a href="conventions.html">official conventions and rule set</a>. ktlint checks formatting against the <code>.editorconfig</code>; detekt checks complexity, naming, error handling and coroutine misuse with a few Compose-aware overrides. CI runs both before building.</p>
+          <script type="text/plain" data-code="editorconfig" data-file=".editorconfig" data-src="final-project/TaskFlow/.editorconfig">
+              # Shared formatting rules for the IDE and ktlint (lesson: Coding Conventions & Rules).
+              root = true
+
+              [*]
+              charset = utf-8
+              end_of_line = lf
+              insert_final_newline = true
+              trim_trailing_whitespace = true
+              indent_style = space
+              indent_size = 4
+
+              [*.{kt,kts}]
+              # Android Kotlin style guide flavour of the official Kotlin conventions (100-column limit).
+              ktlint_code_style = android_studio
+              max_line_length = 100
+              ij_kotlin_allow_trailing_comma = true
+              ij_kotlin_allow_trailing_comma_on_call_site = true
+              # Composables are PascalCase nouns (Compose API guidelines), not camelCase verbs.
+              ktlint_function_naming_ignore_when_annotated_with = Composable
+
+              [*.{xml,toml}]
+              indent_size = 4
+            </script>
+          <script type="text/plain" data-code="yaml" data-file="config/detekt/detekt.yml" data-src="final-project/TaskFlow/config/detekt/detekt.yml">
+              # Project overrides on top of detekt's default rule set (buildUponDefaultConfig = true).
+              # Only deviations are listed; every other default rule stays active.
+              # Compose-specific settings follow detekt's "Compose" recommendations.
+
+              naming:
+                FunctionNaming:
+                  # Composables are PascalCase nouns (Kotlin & Compose conventions).
+                  ignoreAnnotated: ['Composable']
+                TopLevelPropertyNaming:
+                  constantPattern: '[A-Z][_A-Z0-9]*'
+
+              complexity:
+                LongParameterList:
+                  # Stateless composables take state + one callback per event by design (state hoisting).
+                  ignoreAnnotated: ['Composable']
+                  ignoreDefaultParameters: true
+                LongMethod:
+                  # A screen's layout reads top-to-bottom; split it when it hurts readability, not at 60 lines.
+                  ignoreAnnotated: ['Composable']
+
+              style:
+                MagicNumber:
+                  # Color tokens and dp values in the theme are named by the property they initialize.
+                  ignorePropertyDeclaration: true
+                  ignoreAnnotated: ['Composable', 'Preview']
+                UnusedPrivateMember:
+                  # @Preview functions are used by Android Studio, not by code.
+                  ignoreAnnotated: ['Preview']
+                MaxLineLength:
+                  maxLineLength: 100
+
+              coroutines:
+                GlobalCoroutineUsage:
+                  # Off by default in detekt; we forbid GlobalScope (structured concurrency, lesson 13).
+                  active: true
+            </script>
           <script type="text/plain" data-code="bash" data-file="Terminal">
+            $ ./gradlew ktlintCheck detekt               # conventions & static analysis
             $ ./gradlew testDebugUnitTest                # JVM tests: ViewModel, domain, mappers, reminder time
             $ ./gradlew connectedDebugAndroidTest        # device tests: Room DAO + Compose UI (emulator running)
             $ ./gradlew bundleRelease                    # signed .aab when keystore.properties exists (lesson 20)

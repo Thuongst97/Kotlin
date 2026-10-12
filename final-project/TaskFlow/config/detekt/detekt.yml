@@ -28,3 +28,8 @@ style:
     ignoreAnnotated: ['Preview']
   MaxLineLength:
     maxLineLength: 100
+
+coroutines:
+  GlobalCoroutineUsage:
+    # Off by default in detekt; we forbid GlobalScope (structured concurrency, lesson 13).
+    active: true

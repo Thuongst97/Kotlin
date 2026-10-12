@@ -16,6 +16,7 @@ Turbine, Compose UI tests.
 ./gradlew installDebug               # install on a connected device/emulator
 ./gradlew testDebugUnitTest          # JVM unit tests
 ./gradlew connectedDebugAndroidTest  # Room + Compose UI tests on a device
+./gradlew ktlintCheck detekt         # coding conventions & static analysis
 ```
 
 Requirements: Android Studio (latest stable), JDK 17+ (Android Studio's bundled JBR works), Android SDK 36.

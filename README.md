@@ -12,7 +12,7 @@ A free, hands-on website that takes you from **installing your tools** to **ship
 | ⚡ Advanced | 13 Coroutines · 14 Flow, StateFlow & channels · 15 DSLs, testing & Multiplatform |
 | 🤖 Android | 16 App fundamentals · 17 Jetpack Compose · 18 Architecture (MVVM, Hilt, Navigation) · 19 Room, DataStore, Retrofit, WorkManager · 20 Testing, debugging & publishing |
 | 🏁 Final project | 21 **TaskFlow** — a complete task-manager app built in 9 milestones |
-| 📋 Reference | Cheat sheet & mastery checklist |
+| 📋 Reference | A · Cheat sheet & mastery checklist · B · Coding conventions, rules & best practices |
 
 Every lesson has runnable examples (▶ **Run** opens them in the official Kotlin Playground), exercises with solutions, a quiz, and progress tracking saved in your browser.
 

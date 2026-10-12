@@ -1,0 +1,985 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Coding Conventions, Rules & Best Practices — Kotlin Academy</title>
+  <meta name="description" content="Kotlin coding conventions and rules from the official Kotlin and Android style guides, compared with C++ guidelines (MISRA, AUTOSAR, Core Guidelines), plus best practices for coroutines, Android, Compose, testing and security, enforced with ktlint and detekt.">
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <meta name="color-scheme" content="dark light">
+  <link rel="stylesheet" href="assets/css/main.css?v=__BUILD__">
+  <script>try{var t=localStorage.getItem("ka-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body data-page="conventions">
+  <div id="site-header"></div>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="content">
+      <div class="content-inner">
+
+        <header class="page-hero">
+          <nav class="crumbs"><a href="index.html">Home</a><span>/</span><span>Reference</span><span>/</span><span>B</span></nav>
+          <div class="eyebrow">Reference B · Professional Kotlin</div>
+          <h1>Coding Conventions, Rules &amp; Best Practices</h1>
+          <p class="lead">Yes — Kotlin has coding conventions, and unlike C++ there is <b>one official guide</b> that the whole ecosystem follows. This page collects the official conventions, a numbered rule set you can adopt as a team standard (in the spirit of MISRA/AUTOSAR for C++), the best practices for coroutines, Android, Compose, testing and security — and shows how to enforce all of it automatically with ktlint and detekt, exactly as the final project does.</p>
+          <div class="page-meta"><span>⏱ 60 min read · keep as reference</span><span>🎯 All levels</span><span>📏 Kotlin conventions · Android style guide</span></div>
+          <div class="objectives">
+            <h4>You will be able to</h4>
+            <ul>
+              <li>Name, organize and format Kotlin code the official way</li>
+              <li>Map C++ guidelines you know to their Kotlin equivalents</li>
+              <li>Apply a numbered rule set with clear rationale</li>
+              <li>Follow best practices for coroutines, Android and Compose</li>
+              <li>Enforce rules with .editorconfig, ktlint, detekt and CI</li>
+              <li>Review code with a professional checklist</li>
+            </ul>
+          </div>
+        </header>
+
+        <section class="doc-section" id="sources" data-title="The official sources">
+          <div class="sec-head"><h2><span class="sec-num">B.1</span>The official sources</h2></div>
+          <p>Six documents define how professional Kotlin is written. Everything on this page is derived from them; when they disagree, the more specific one wins for its domain (e.g. the Android guide for Android apps).</p>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>Document</th><th>Published by</th><th>Covers</th><th>Use it for</th></tr></thead>
+              <tbody>
+                <tr><td><a href="https://kotlinlang.org/docs/coding-conventions.html" target="_blank" rel="noopener"><b>Kotlin Coding Conventions</b></a></td><td>JetBrains (Kotlin team)</td><td>Source organization, naming, formatting, KDoc, idiomatic use of features</td><td>Every Kotlin project — the baseline</td></tr>
+                <tr><td><a href="https://developer.android.com/kotlin/style-guide" target="_blank" rel="noopener"><b>Android Kotlin Style Guide</b></a></td><td>Google</td><td>A stricter, more prescriptive version: 100-column limit, no wildcard imports, braces rules</td><td>Android apps and libraries</td></tr>
+                <tr><td><a href="https://kotlinlang.org/docs/idioms.html" target="_blank" rel="noopener"><b>Kotlin Idioms</b></a></td><td>JetBrains</td><td>The idiomatic way to do common tasks</td><td>Writing “Kotlin-y” code, not Java in Kotlin syntax</td></tr>
+                <tr><td><a href="https://kotlinlang.org/docs/api-guidelines-introduction.html" target="_blank" rel="noopener"><b>Library authors' guidelines</b></a></td><td>JetBrains</td><td>Public API design, compatibility, documentation</td><td>Libraries and shared modules</td></tr>
+                <tr><td><a href="https://developer.android.com/kotlin/coroutines/coroutines-best-practices" target="_blank" rel="noopener"><b>Best practices for coroutines in Android</b></a></td><td>Google</td><td>Dispatchers, scopes, main-safety, testing</td><td>All asynchronous Android code</td></tr>
+                <tr><td><a href="https://developer.android.com/topic/architecture/recommendations" target="_blank" rel="noopener"><b>Recommendations for Android architecture</b></a></td><td>Google</td><td>Layers, UDF, ViewModels, DI, testing</td><td>App structure</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="small muted">Jetpack Compose additionally has the <a href="https://github.com/androidx/androidx/blob/androidx-main/compose/docs/compose-api-guidelines.md" target="_blank" rel="noopener">Compose API guidelines</a>, and Java interop has the <a href="https://developer.android.com/kotlin/interop" target="_blank" rel="noopener">Kotlin–Java interop guide</a>.</p>
+          <div class="callout tip">
+            <div class="ci">⚙️</div>
+            <div><span class="ct">Apply the official style in 10 seconds</span>
+              <p>IntelliJ IDEA / Android Studio: <b>Settings → Editor → Code Style → Kotlin → Set from… → Kotlin style guide</b>. Then enable <b>Settings → Editor → Inspections → General → Incorrect formatting</b>. Add <code>kotlin.code.style=official</code> to <code>gradle.properties</code> so everyone who opens the project gets the same style.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="cpp" data-title="Coming from C++ guidelines">
+          <div class="sec-head"><h2><span class="sec-num">B.2</span>Coming from C++: MISRA, AUTOSAR &amp; Core Guidelines</h2></div>
+          <p>C++ has no official style; teams adopt the <b>C++ Core Guidelines</b>, the <b>Google C++ Style Guide</b>, or — in automotive and safety-critical work — <b>MISRA C++</b> and <b>AUTOSAR C++14</b>. Many MISRA/AUTOSAR rules exist to prevent undefined behaviour that simply <em>cannot happen</em> in Kotlin. The table maps the familiar rule themes to how Kotlin handles them:</p>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>C++ rule theme</th><th>Kotlin answer</th><th>Enforced by</th></tr></thead>
+              <tbody>
+                <tr><td>Initialize every variable before use</td><td>Every <code>val</code>/<code>var</code> must be definitely assigned before it's read; <code>lateinit</code> is an explicit, checked opt-out</td><td>🟢 Compiler</td></tr>
+                <tr><td>No null-pointer dereference</td><td>Nullability is part of the type: <code>String</code> vs <code>String?</code></td><td>🟢 Compiler</td></tr>
+                <tr><td>No implicit narrowing / widening conversions</td><td>No implicit numeric conversions at all (<code>Int</code> → <code>Long</code> needs <code>toLong()</code>)</td><td>🟢 Compiler</td></tr>
+                <tr><td><code>switch</code> must handle all cases</td><td><code>when</code> over enum/sealed/Boolean must be exhaustive (expressions and statements)</td><td>🟢 Compiler</td></tr>
+                <tr><td>No <code>goto</code>; restricted <code>break</code></td><td>No <code>goto</code>; only labeled <code>break</code>/<code>continue</code>/<code>return</code></td><td>🟢 Language</td></tr>
+                <tr><td>No preprocessor macros</td><td>No preprocessor; use <code>const val</code>, <code>inline</code> functions, build variants</td><td>🟢 Language</td></tr>
+                <tr><td>RAII, no raw <code>new</code>/<code>delete</code></td><td>Garbage collection for memory; <code>use { }</code> for resources (files, sockets)</td><td>🟢 Runtime + 🟡 convention</td></tr>
+                <tr><td>Prefer <code>const</code> / immutability</td><td><code>val</code>, read-only collection types, data classes with <code>copy</code></td><td>🟡 Convention + detekt <code>VarCouldBeVal</code></td></tr>
+                <tr><td>Don't catch everything / don't swallow errors</td><td>No checked exceptions; catch narrowly, never swallow</td><td>🔵 detekt <code>TooGenericExceptionCaught</code>, <code>SwallowedException</code>, <code>EmptyCatchBlock</code></td></tr>
+                <tr><td>Limit function size and complexity</td><td>Small, single-purpose functions</td><td>🔵 detekt <code>LongMethod</code>, <code>CyclomaticComplexMethod</code>, <code>NestedBlockDepth</code></td></tr>
+                <tr><td>No magic numbers</td><td>Named constants (<code>const val</code>)</td><td>🔵 detekt <code>MagicNumber</code></td></tr>
+                <tr><td>Avoid global mutable state; data races</td><td>Structured concurrency, immutable state, <code>Mutex</code>; no <code>GlobalScope</code></td><td>🔵 detekt <code>GlobalCoroutineUsage</code>, <code>InjectDispatcher</code></td></tr>
+                <tr><td>Naming &amp; formatting rules</td><td>Official conventions</td><td>🔵 ktlint + detekt <code>naming</code> rules</td></tr>
+                <tr><td>Documented deviations (MISRA “deviation permits”)</td><td><code>@Suppress("RuleId")</code> with a justification comment, or a reviewed detekt baseline</td><td>🟣 Code review</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="small muted">🟢 impossible to violate · 🔵 checked by a tool in CI · 🟡 convention, partly tool-checked · 🟣 human review. There is no widely adopted MISRA-style certification standard for Kotlin; the combination of the compiler, official conventions and static analysis plays that role in practice.</p>
+        </section>
+
+        <section class="doc-section" id="organization" data-title="Source code organization">
+          <div class="sec-head"><h2><span class="sec-num">B.3</span>Source code organization</h2></div>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>Topic</th><th>Rule</th></tr></thead>
+              <tbody>
+                <tr><td>Directory structure</td><td>Directories follow the package structure. In pure Kotlin projects the common root package may be omitted; in projects with Java, Kotlin files live in the same source root and mirror the package exactly.</td></tr>
+                <tr><td>File name — one class</td><td>Same as the class: <code>TaskRepository.kt</code>.</td></tr>
+                <tr><td>File name — several declarations</td><td>PascalCase name describing the contents: <code>TaskMappers.kt</code>, <code>ProcessDeclarations.kt</code>. Avoid meaningless names like <code>Util.kt</code>.</td></tr>
+                <tr><td>Multiplatform</td><td>Platform files get a suffix: <code>Platform.android.kt</code>, <code>Platform.ios.kt</code>; common file has none.</td></tr>
+                <tr><td>Several declarations per file</td><td>Encouraged when closely related and the file stays “a few hundred lines” at most. Put extensions for a class next to the class (if useful to all clients) or next to their only client.</td></tr>
+                <tr><td>Encoding</td><td>UTF-8 (Android guide).</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <h3>Class layout</h3>
+          <script type="text/plain" data-code="kotlin" data-file="Layout.kt">
+            class TaskEditor(private val repository: TaskRepository) {   // 1. header
+                // 2. Properties and init blocks
+                private val history = ArrayDeque<Task>()
+                var current: Task? = null
+                    private set
+
+                init { require(history.isEmpty()) }
+
+                // 3. Secondary constructors (rare in Kotlin)
+
+                // 4. Functions — grouped by what they do, NOT sorted alphabetically or by visibility.
+                //    Overloads stay next to each other; interface members keep the interface's order.
+                fun open(task: Task) { /* … */ }
+                fun undo() { /* … */ }
+                private fun remember(task: Task) { /* … */ }
+
+                // 5. Companion object last
+                companion object {
+                    const val MAX_HISTORY = 20
+                }
+            }
+          </script>
+        </section>
+
+        <section class="doc-section" id="naming" data-title="Naming rules">
+          <div class="sec-head"><h2><span class="sec-num">B.4</span>Naming rules</h2></div>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>What</th><th>Style</th><th>✅ Good</th><th>❌ Bad</th></tr></thead>
+              <tbody>
+                <tr><td>Package</td><td>lowercase, no underscores</td><td><code>com.example.deepspace</code></td><td><code>com.example.deep_space</code>, <code>deepSpace</code></td></tr>
+                <tr><td>Class, interface, object, enum, typealias</td><td>PascalCase, noun</td><td><code>TaskRepository</code>, <code>Readable</code></td><td><code>taskRepo</code>, <code>TaskManagerHelperUtil</code></td></tr>
+                <tr><td>Function</td><td>camelCase, verb</td><td><code>loadTasks()</code>, <code>sorted()</code></td><td><code>Load_Tasks()</code>, <code>tasksLoader()</code></td></tr>
+                <tr><td>Property, variable, parameter</td><td>camelCase, noun</td><td><code>taskCount</code>, <code>isDone</code></td><td><code>mCount</code>, <code>s_name</code>, <code>kMax</code></td></tr>
+                <tr><td>Constant (<code>const</code>, or top-level/object <code>val</code> holding deeply immutable data)</td><td>SCREAMING_SNAKE_CASE</td><td><code>MAX_RETRIES</code>, <code>val NAMES = listOf("a")</code></td><td><code>maxRetries</code> for a <code>const val</code></td></tr>
+                <tr><td>Object/top-level property with behaviour or mutable data</td><td>camelCase</td><td><code>val logger = …</code>, <code>val cache = HashMap()</code></td><td><code>val CACHE = HashMap()</code></td></tr>
+                <tr><td>Backing property</td><td><code>_</code> + public name</td><td><code>_state</code> / <code>state</code></td><td><code>mState</code>, <code>stateInternal</code></td></tr>
+                <tr><td>Enum constants</td><td>SCREAMING_SNAKE_CASE or PascalCase</td><td><code>RED</code>, <code>HIGH</code></td><td>mixing both in one enum</td></tr>
+                <tr><td>Type parameter</td><td>One capital letter (+digit) or <code>NameT</code></td><td><code>T</code>, <code>E</code>, <code>RequestT</code></td><td><code>Type</code>, <code>t</code></td></tr>
+                <tr><td>Composable returning Unit</td><td>PascalCase noun</td><td><code>TaskItem()</code></td><td><code>showTaskItem()</code></td></tr>
+                <tr><td>Factory function for an abstract type</td><td>May use the type's name</td><td><code>fun Foo(): Foo = FooImpl()</code></td><td>—</td></tr>
+                <tr><td>Test class / test function</td><td><code>ClassNameTest</code>; descriptive names</td><td><code>TaskDaoTest</code>, <code>pop_emptyStack()</code></td><td><code>Test1</code>, <code>testIt()</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <h3>Acronyms</h3>
+          <p>The two guides differ slightly. <b>Kotlin conventions:</b> two-letter acronyms stay uppercase (<code>IOStream</code>), longer ones capitalize only the first letter (<code>XmlFormatter</code>, <code>HttpInputStream</code>). <b>Android guide:</b> treat every acronym as a word (<code>XmlHttpRequest</code>, <code>customerId</code>, <code>supportsIpv6OnIos</code>). Pick one per project — Android apps should follow the Android guide.</p>
+          <h3>Test function names</h3>
+          <p>Kotlin allows backtick names with spaces <b>in tests only</b>: <code>fun `adds tax to the subtotal`()</code>. They work in JVM unit tests (<code>src/test</code>), but Android's runtime supports them only from API 30, so the Android guide forbids spaces — use underscores in instrumented tests: <code>fun upsert_updatesExistingRow()</code>. TaskFlow follows exactly this split.</p>
+          <h3>Choose good names</h3>
+          <ul>
+            <li>Classes are nouns (<code>PersonReader</code>); functions are verbs (<code>readPersons</code>).</li>
+            <li>The name says whether a function mutates or returns a new value: <code>sort()</code> sorts in place, <code>sorted()</code> returns a copy.</li>
+            <li>Avoid meaningless words: <code>Manager</code>, <code>Wrapper</code>, <code>Helper</code>, <code>Util</code>, <code>Data</code>, <code>Info</code>.</li>
+            <li>Booleans read as questions: <code>isVisible</code>, <code>hasError</code>, <code>canEdit</code>, <code>shouldRetry</code>.</li>
+            <li>No Hungarian or member prefixes (<code>mName</code>, <code>sInstance</code>, <code>strTitle</code>) — the type system and IDE already tell you.</li>
+          </ul>
+        </section>
+
+        <section class="doc-section" id="formatting" data-title="Formatting rules">
+          <div class="sec-head"><h2><span class="sec-num">B.5</span>Formatting rules</h2></div>
+          <div class="grid grid-2">
+            <div class="glass card">
+              <h4>Layout</h4>
+              <ul class="small">
+                <li>4 spaces per indent level; <b>no tabs</b>.</li>
+                <li>Opening brace at the end of the line (“K&amp;R / Egyptian” style); closing brace on its own line.</li>
+                <li>One statement per line; omit semicolons.</li>
+                <li>Line limit: <b>100</b> columns (Android guide). Package and import lines are exempt.</li>
+                <li>Imports: single ASCII-sorted list, <b>no wildcard imports</b> (Android guide).</li>
+                <li>Never align code horizontally — renaming must not force re-formatting other lines.</li>
+              </ul>
+            </div>
+            <div class="glass card">
+              <h4>Whitespace</h4>
+              <ul class="small">
+                <li>Spaces around binary operators <code>a + b</code>, but not around <code>..</code>: <code>0..i</code>.</li>
+                <li>No space around unary operators <code>a++</code>, <code>!done</code>.</li>
+                <li>Space after <code>if</code>, <code>when</code>, <code>for</code>, <code>while</code>; none before <code>(</code> in calls/declarations.</li>
+                <li>No spaces around <code>.</code>, <code>?.</code>, <code>::</code>, <code>&lt;T&gt;</code>, or before <code>?</code> in <code>String?</code>.</li>
+                <li>Colon: <code>val x: Int</code> (no space before) but <code>class A : B</code> (space before when separating type/supertype or after <code>object</code>).</li>
+                <li>Space after <code>//</code>.</li>
+              </ul>
+            </div>
+          </div>
+          <h3>Long declarations, calls and chains</h3>
+          <script type="text/plain" data-code="kotlin" data-file="Wrapping.kt">
+            // Class header: one parameter per line, trailing comma, supertypes after ")".
+            class Person(
+                val id: Int,
+                val name: String,
+                val surname: String,
+            ) : Human(id, name),
+                KotlinMaker {
+            }
+
+            // Function signature that doesn't fit on one line.
+            fun longMethodName(
+                argument: ArgumentType = defaultValue,
+                argument2: AnotherArgumentType,
+            ): ReturnType {
+                // body
+            }
+
+            // Expression body that doesn't fit: "=" stays on the first line.
+            fun f(x: String, y: String, z: String) =
+                veryLongFunctionCallWithManyWords(andLongParametersToo(), x, y, z)
+
+            // Chained calls: break BEFORE each "." or "?." with one indent.
+            val anchor = owner
+                ?.firstChild
+                ?.siblings(forward = true)
+                ?.dropWhile { it is PsiComment || it is PsiWhiteSpace }
+
+            // Named arguments: spaces around "=", related arguments may share a line.
+            drawSquare(
+                x = 10, y = 10,
+                width = 100, height = 100,
+                fill = true,
+            )
+
+            // Multi-line condition: braces always, closing ") {" on its own line.
+            if (!component.isSyncing &&
+                !hasAnyKotlinRuntimeInScope(module)
+            ) {
+                return createKotlinNotConfiguredPanel(module)
+            }
+          </script>
+          <h3>Braces in control flow</h3>
+          <div class="compare">
+            <div><div class="cmp-label c-green">✅ Allowed</div>
+              <script type="text/plain" data-code="kotlin" data-file="Good">
+                if (string.isEmpty()) return
+
+                val result =
+                    if (string.isEmpty()) DEFAULT else string
+
+                when (value) {
+                    0 -> return
+                    else -> process(value)
+                }
+
+                if (string.isEmpty()) {
+                    return
+                } else {
+                    process(string)
+                }
+              </script>
+            </div>
+            <div><div class="cmp-label c-red">❌ Not allowed (Android guide)</div>
+              <script type="text/plain" data-code="kotlin" data-file="Bad">
+                if (string.isEmpty())
+                    return                   // body on next line without braces
+
+                if (string.isEmpty()) return // braceless if/else
+                else process(string)
+
+                when (foo) {
+                    false -> { baz() }       // braces around a one-liner
+                }
+
+                try { work() }
+                catch (e: Exception) {}      // empty block not K&R, swallows error
+              </script>
+            </div>
+          </div>
+          <h3>Modifier order</h3>
+          <p>Annotations first, then modifiers in this order (the IDE and ktlint fix it for you):</p>
+          <div class="filetree">annotations → public / protected / private / internal → expect / actual
+→ final / open / abstract / sealed / const → external → override → lateinit
+→ tailrec → vararg → suspend → inner → enum / annotation / fun (as in fun interface)
+→ companion → inline / value → infix → operator → data</div>
+          <script type="text/plain" data-code="kotlin" data-file="Modifiers.kt">
+            @Named("Foo")
+            private val foo: Foo                       // annotations before modifiers
+
+            protected abstract suspend fun load()      // visibility → modality → suspend
+            internal inline fun <reified T> parse()    // visibility → inline
+            override operator fun plus(o: Vec) = …     // override → operator
+            public data class Point(…)                 // omit redundant "public" in apps
+          </script>
+          <h3>Trailing commas</h3>
+          <p>The official guide <b>encourages trailing commas at declaration sites</b> (parameters, enum entries, class properties) and leaves call sites to your discretion. They make diffs cleaner and reordering trivial. Enable in the IDE: <b>Code Style → Kotlin → Other → Use trailing comma</b>.</p>
+        </section>
+
+        <section class="doc-section" id="kdoc" data-title="Documentation comments">
+          <div class="sec-head"><h2><span class="sec-num">B.6</span>Documentation comments (KDoc)</h2></div>
+          <p>Document every public API. The official guide prefers weaving parameters into the sentence with <code>[links]</code> over <code>@param</code>/<code>@return</code> blocks; use the tags only when a long description doesn't fit the flow.</p>
+          <div class="compare">
+            <div><div class="cmp-label c-red">❌ Avoid</div>
+              <script type="text/plain" data-code="kotlin" data-file="Bad">
+                /**
+                 * Returns the absolute value of the given number.
+                 * @param number The number to return the absolute value for.
+                 * @return The absolute value.
+                 */
+                fun abs(number: Int): Int
+              </script>
+            </div>
+            <div><div class="cmp-label c-green">✅ Prefer</div>
+              <script type="text/plain" data-code="kotlin" data-file="Good">
+                /**
+                 * Returns the absolute value of the given [number].
+                 */
+                fun abs(number: Int): Int
+
+                /** Short comments fit on one line. */
+                val isEmpty: Boolean get() = size == 0
+              </script>
+            </div>
+          </div>
+          <ul>
+            <li>The first sentence is the summary fragment (shown in IDE pop-ups and generated docs).</li>
+            <li>Comments explain <b>why</b>, not what the code obviously does. Delete commented-out code — git remembers it.</li>
+            <li>Generate HTML docs with <a href="https://kotlinlang.org/docs/dokka-introduction.html" target="_blank" rel="noopener">Dokka</a>. Syntax reference: <a href="https://kotlinlang.org/docs/kotlin-doc.html" target="_blank" rel="noopener">Document Kotlin code: KDoc</a>.</li>
+          </ul>
+        </section>
+
+        <section class="doc-section" id="redundant" data-title="Avoid redundant constructs">
+          <div class="sec-head"><h2><span class="sec-num">B.7</span>Avoid redundant constructs</h2></div>
+          <p>Official rule: <em>if a construct is optional and the IDE highlights it as redundant, omit it</em> — don't keep it “for clarity”.</p>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>❌ Redundant</th><th>✅ Idiomatic</th></tr></thead>
+              <tbody>
+                <tr><td><code>fun log(msg: String): Unit { … }</code></td><td><code>fun log(msg: String) { … }</code></td></tr>
+                <tr><td><code>val x = 5;</code></td><td><code>val x = 5</code></td></tr>
+                <tr><td><code>"Hello ${name}"</code></td><td><code>"Hello $name"</code> (braces only for expressions: <code>"${user.name}"</code>)</td></tr>
+                <tr><td><code>public class Foo</code> (in an app)</td><td><code>class Foo</code></td></tr>
+                <tr><td><code>val list: List&lt;String&gt; = listOf&lt;String&gt;("a")</code></td><td><code>val list = listOf("a")</code></td></tr>
+                <tr><td><code>items.forEach { it -&gt; println(it) }</code></td><td><code>items.forEach { println(it) }</code></td></tr>
+                <tr><td><code>if (flag == true)</code> on a non-null Boolean</td><td><code>if (flag)</code> (but <b>do</b> write <code>== true</code> for a <code>Boolean?</code>)</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="doc-section" id="idioms" data-title="Idiomatic use of language features">
+          <div class="sec-head"><h2><span class="sec-num">B.8</span>Idiomatic use of language features</h2></div>
+          <p>The heart of the official conventions. Each item is a rule you can cite in code review.</p>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>Rule</th><th>❌ Instead of</th><th>✅ Write</th></tr></thead>
+              <tbody>
+                <tr><td>Prefer immutability</td><td><code>var</code> never reassigned; <code>arrayListOf()</code> for data you don't mutate</td><td><code>val</code>; <code>listOf()</code>; parameter types <code>List</code>/<code>Set</code>/<code>Map</code></td></tr>
+                <tr><td>Default parameters over overloads</td><td><code>fun foo() = foo("a")</code> + <code>fun foo(a: String)</code></td><td><code>fun foo(a: String = "a")</code></td></tr>
+                <tr><td>Type aliases for repeated complex types</td><td><code>(Any, MouseEvent) -&gt; Unit</code> everywhere</td><td><code>typealias MouseClickHandler = (Any, MouseEvent) -&gt; Unit</code></td></tr>
+                <tr><td><code>it</code> only in short, non-nested lambdas</td><td>nested lambdas both using <code>it</code></td><td>explicit names in nested lambdas: <code>users.forEach { user -&gt; user.roles.filter { it.active } }</code></td></tr>
+                <tr><td>One exit point per lambda</td><td>multiple <code>return@label</code></td><td>restructure, or use an anonymous function</td></tr>
+                <tr><td>Named arguments for same-typed or Boolean params</td><td><code>drawSquare(10, 10, 100, 100, true)</code></td><td><code>drawSquare(x = 10, y = 10, width = 100, height = 100, fill = true)</code></td></tr>
+                <tr><td>Expression form of <code>if</code>/<code>when</code>/<code>try</code></td><td><code>if (x) return foo() else return bar()</code></td><td><code>return if (x) foo() else bar()</code></td></tr>
+                <tr><td><code>if</code> for two branches, <code>when</code> for three+</td><td><code>when (x) { null -&gt; …; else -&gt; … }</code></td><td><code>if (x == null) … else …</code></td></tr>
+                <tr><td>Nullable Boolean checks</td><td><code>if (value!!)</code></td><td><code>if (value == true)</code></td></tr>
+                <tr><td>Higher-order functions over loops…</td><td>manual accumulate loops</td><td><code>filter</code>, <code>map</code>, <code>sumOf</code></td></tr>
+                <tr><td>…but <code>for</code> over a plain <code>forEach</code></td><td><code>items.forEach { process(it) }</code> as a statement</td><td><code>for (item in items) process(item)</code> (keep <code>forEach</code> for nullable receivers or long chains)</td></tr>
+                <tr><td>Open-ended ranges</td><td><code>for (i in 0..n - 1)</code></td><td><code>for (i in 0..&lt;n)</code></td></tr>
+                <tr><td>String templates and raw strings</td><td><code>"a: " + a + "\n"</code></td><td><code>"a: $a"</code>; <code>"""…""".trimIndent()</code></td></tr>
+                <tr><td>Property vs function</td><td><code>fun isEmpty()</code> that is cheap and side-effect free</td><td>a property if it doesn't throw, is cheap/cached, and returns the same value for the same state</td></tr>
+                <tr><td>Extension functions liberally, visibility narrowly</td><td>static <code>Utils</code> classes</td><td><code>private fun Task.isStale() = …</code> near its use</td></tr>
+                <tr><td><code>infix</code> only for symmetric operations</td><td><code>list add item</code> (mutating)</td><td><code>a to b</code>, <code>a zip b</code>, <code>x and y</code></td></tr>
+                <tr><td>Factory functions with meaningful names</td><td>several overloaded constructors</td><td><code>Point.fromPolar(angle, radius)</code></td></tr>
+                <tr><td>Explicit types for platform types</td><td><code>fun name() = javaApi.getName()</code> (public)</td><td><code>fun name(): String = javaApi.getName()</code></td></tr>
+                <tr><td>Parenthesize guard conditions</td><td><code>is Ok if a || b -&gt;</code></td><td><code>is Ok if (a || b) -&gt;</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>A before/after refactoring that applies most of the table at once:</p>
+          <div class="compare">
+            <div><div class="cmp-label c-red">❌ Java-in-Kotlin</div>
+              <script type="text/plain" data-code="kotlin" data-file="Before.kt">
+                fun summary(orders: ArrayList<Order>, onlyPaid: Boolean?): String {
+                    var total: Double = 0.0;
+                    var count: Int = 0;
+                    for (i in 0..orders.size - 1) {
+                        val o = orders.get(i)
+                        if (onlyPaid!! == true) {
+                            if (o.paid == false) continue
+                        }
+                        total = total + o.amount
+                        count = count + 1
+                    }
+                    return "Orders: " + count + ", total: " + total
+                }
+              </script>
+            </div>
+            <div><div class="cmp-label c-green">✅ Idiomatic Kotlin</div>
+              <script type="text/plain" data-code="kotlin" data-file="After.kt" data-run>
+                data class Order(val amount: Double, val paid: Boolean)
+
+                fun summary(orders: List<Order>, onlyPaid: Boolean = false): String {
+                    val selected = if (onlyPaid) orders.filter { it.paid } else orders
+                    return "Orders: ${selected.size}, total: ${selected.sumOf { it.amount }}"
+                }
+
+                fun main() {
+                    val orders = listOf(Order(10.0, true), Order(5.5, false), Order(4.5, true))
+                    println(summary(orders))
+                    println(summary(orders, onlyPaid = true))
+                }
+              </script>
+              <script type="text/plain" data-output>
+                Orders: 3, total: 20.0
+                Orders: 2, total: 14.5
+              </script>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="rules" data-title="The rule set (KR-01 … KR-30)">
+          <div class="sec-head"><h2><span class="sec-num">B.9</span>A numbered rule set: KR-01 … KR-30</h2></div>
+          <p>Teams coming from MISRA/AUTOSAR often want <b>numbered, citable rules</b> with a category and an enforcement mechanism. Here is such a set, distilled from the official guides and this course. <span class="badge red">Required</span> rules must not be violated without a documented deviation; <span class="badge blue">Advisory</span> rules should be followed unless there's a good reason. The detekt rule IDs are real (detekt 1.23) and are what TaskFlow's CI runs.</p>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>ID</th><th>Rule</th><th>Level</th><th>Rationale</th><th>Enforced by</th></tr></thead>
+              <tbody>
+                <tr><td colspan="5"><b>Types &amp; null safety</b></td></tr>
+                <tr><td>KR-01</td><td>Do not use <code>!!</code>; use <code>?.</code>, <code>?:</code>, <code>requireNotNull</code>/<code>checkNotNull</code></td><td><span class="badge red">Required</span></td><td>Each <code>!!</code> is a potential crash with no message</td><td>detekt <code>UnsafeCallOnNullableType</code>, <code>MapGetWithNotNullAssertionOperator</code></td></tr>
+                <tr><td>KR-02</td><td>Declare explicit Kotlin types for values coming from unannotated Java (platform types) in public API</td><td><span class="badge red">Required</span></td><td>Moves null-checking to the boundary</td><td>Review</td></tr>
+                <tr><td>KR-03</td><td>Prefer <code>val</code> and read-only collection types; never both <code>var</code> and a mutable collection</td><td><span class="badge red">Required</span></td><td>Fewer moving parts, thread safety, Compose/StateFlow change detection</td><td>detekt <code>VarCouldBeVal</code>, <code>DoubleMutabilityForCollection</code></td></tr>
+                <tr><td>KR-04</td><td>Model closed sets of states with <code>sealed</code>/<code>enum</code> and handle them with exhaustive <code>when</code> (no <code>else</code> branch for them)</td><td><span class="badge red">Required</span></td><td>The compiler flags every place to update when a case is added</td><td>Compiler + review</td></tr>
+                <tr><td>KR-05</td><td>Use value classes or distinct types for IDs and units instead of raw <code>Long</code>/<code>String</code> in public APIs</td><td><span class="badge blue">Advisory</span></td><td>Prevents swapped arguments</td><td>Review</td></tr>
+                <tr><td colspan="5"><b>Errors &amp; exceptions</b></td></tr>
+                <tr><td>KR-06</td><td>Validate arguments with <code>require</code>, state with <code>check</code>; give a message</td><td><span class="badge red">Required</span></td><td>Fail fast with a useful error</td><td>detekt <code>UseRequire</code>, <code>UseCheckOrError</code>, <code>ThrowingExceptionsWithoutMessageOrCause</code></td></tr>
+                <tr><td>KR-07</td><td>Catch specific exceptions; never catch <code>Exception</code>/<code>Throwable</code> around suspend calls without rethrowing <code>CancellationException</code></td><td><span class="badge red">Required</span></td><td>Generic catches hide bugs and break coroutine cancellation</td><td>detekt <code>TooGenericExceptionCaught</code></td></tr>
+                <tr><td>KR-08</td><td>Never swallow an exception (empty catch, ignoring the cause)</td><td><span class="badge red">Required</span></td><td>Silent failures are the hardest bugs</td><td>detekt <code>EmptyCatchBlock</code>, <code>SwallowedException</code>, <code>PrintStackTrace</code></td></tr>
+                <tr><td>KR-09</td><td>Throw specific exception types, not <code>Exception</code>/<code>RuntimeException</code></td><td><span class="badge blue">Advisory</span></td><td>Callers can handle what they understand</td><td>detekt <code>TooGenericExceptionThrown</code></td></tr>
+                <tr><td>KR-10</td><td>Close resources with <code>use { }</code></td><td><span class="badge red">Required</span></td><td>Kotlin's RAII: closed even on exceptions</td><td>Review</td></tr>
+                <tr><td colspan="5"><b>Functions &amp; complexity</b></td></tr>
+                <tr><td>KR-11</td><td>Keep functions short (≈ 60 lines) and shallow (nesting ≤ 4)</td><td><span class="badge blue">Advisory</span></td><td>Readability, testability</td><td>detekt <code>LongMethod</code>, <code>NestedBlockDepth</code></td></tr>
+                <tr><td>KR-12</td><td>Limit cyclomatic complexity (≤ 15) and complex conditions</td><td><span class="badge blue">Advisory</span></td><td>Every branch needs a test</td><td>detekt <code>CyclomaticComplexMethod</code>, <code>ComplexCondition</code></td></tr>
+                <tr><td>KR-13</td><td>≤ 6 function parameters (7 for constructors); group the rest in a data class</td><td><span class="badge blue">Advisory</span></td><td>Long parameter lists are error-prone</td><td>detekt <code>LongParameterList</code> (composables exempt)</td></tr>
+                <tr><td>KR-14</td><td>No magic numbers: name them with <code>const val</code></td><td><span class="badge blue">Advisory</span></td><td>Intent and single point of change</td><td>detekt <code>MagicNumber</code>, <code>MayBeConst</code></td></tr>
+                <tr><td>KR-15</td><td>Prefer default and named arguments over overloads and Boolean flags</td><td><span class="badge blue">Advisory</span></td><td>Self-documenting calls</td><td>Review</td></tr>
+                <tr><td colspan="5"><b>Concurrency</b></td></tr>
+                <tr><td>KR-16</td><td>Never use <code>GlobalScope</code>; launch in a lifecycle-bound scope</td><td><span class="badge red">Required</span></td><td>Structured concurrency: no leaks, cancellation works</td><td>detekt <code>GlobalCoroutineUsage</code> (enabled in TaskFlow)</td></tr>
+                <tr><td>KR-17</td><td>Inject <code>CoroutineDispatcher</code>s; don't hard-code <code>Dispatchers.IO</code> in classes</td><td><span class="badge blue">Advisory</span></td><td>Testability (replace with a test dispatcher)</td><td>detekt <code>InjectDispatcher</code></td></tr>
+                <tr><td>KR-18</td><td>Suspend functions must be main-safe; never block a coroutine with <code>Thread.sleep</code></td><td><span class="badge red">Required</span></td><td>No ANRs or starved threads</td><td>detekt <code>SleepInsteadOfDelay</code>; Android <code>StrictMode</code></td></tr>
+                <tr><td>KR-19</td><td>No <code>runBlocking</code> in production Android code</td><td><span class="badge red">Required</span></td><td>Blocks the calling (often main) thread</td><td>Review / detekt <code>ForbiddenMethodCall</code> (configurable)</td></tr>
+                <tr><td>KR-20</td><td>Expose read-only <code>StateFlow</code>/<code>Flow</code>; keep <code>Mutable…</code> private</td><td><span class="badge red">Required</span></td><td>Only the owner mutates state (UDF)</td><td>Review</td></tr>
+                <tr><td colspan="5"><b>Style &amp; structure</b></td></tr>
+                <tr><td>KR-21</td><td>Follow official naming (B.4)</td><td><span class="badge red">Required</span></td><td>Consistency</td><td>ktlint + detekt <code>naming</code> rule set</td></tr>
+                <tr><td>KR-22</td><td>Follow official formatting (B.5); 100-column lines; no wildcard imports</td><td><span class="badge red">Required</span></td><td>Readable diffs, zero style debates</td><td>ktlint; detekt <code>MaxLineLength</code>, <code>WildcardImport</code></td></tr>
+                <tr><td>KR-23</td><td>File name matches its single top-level class</td><td><span class="badge blue">Advisory</span></td><td>Find code by name</td><td>detekt <code>MatchingDeclarationName</code></td></tr>
+                <tr><td>KR-24</td><td>No unused code, parameters or imports; no commented-out code</td><td><span class="badge red">Required</span></td><td>Dead code misleads readers</td><td>detekt <code>UnusedPrivateMember</code>; ktlint <code>no-unused-imports</code></td></tr>
+                <tr><td>KR-25</td><td>Smallest possible visibility; <code>internal</code> for module-private API</td><td><span class="badge blue">Advisory</span></td><td>Encapsulation, faster builds</td><td>Review; <code>explicitApi()</code> for libraries</td></tr>
+                <tr><td>KR-26</td><td>KDoc on all public API (libraries: required)</td><td><span class="badge blue">Advisory</span></td><td>Discoverability</td><td>detekt <code>UndocumentedPublicClass</code>/<code>Function</code> (opt-in)</td></tr>
+                <tr><td colspan="5"><b>Android &amp; security</b></td></tr>
+                <tr><td>KR-27</td><td>No <code>Context</code>/<code>Activity</code>/<code>View</code> references in ViewModels or singletons</td><td><span class="badge red">Required</span></td><td>Memory leaks</td><td>Android Lint <code>StaticFieldLeak</code>; review</td></tr>
+                <tr><td>KR-28</td><td>No secrets in source; no logging of personal data or tokens in release builds</td><td><span class="badge red">Required</span></td><td>APKs are easy to decompile</td><td>Review; secret scanning in CI</td></tr>
+                <tr><td>KR-29</td><td><code>PendingIntent</code>s are immutable; components are not exported unless needed</td><td><span class="badge red">Required</span></td><td>Prevents intent hijacking</td><td>Android Lint</td></tr>
+                <tr><td>KR-30</td><td>Every deviation is local, justified and reviewed: <code>@Suppress("RuleId") // reason</code></td><td><span class="badge red">Required</span></td><td>Like a MISRA deviation record</td><td>Code review</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <script type="text/plain" data-code="kotlin" data-file="Deviation.kt">
+            // KR-30: a documented, local deviation — not a blanket suppression.
+            @Suppress("MagicNumber") // HTTP status codes are self-explanatory and fixed by the spec.
+            fun isRetryable(status: Int): Boolean = status == 429 || status in 500..599
+          </script>
+        </section>
+
+        <section class="doc-section" id="bp-design" data-title="Best practices: design & readability">
+          <div class="sec-head"><h2><span class="sec-num">B.10</span>Best practices: design &amp; readability</h2></div>
+          <p>Conventions make code <em>look</em> consistent; best practices make it <em>work</em> well over years. These are the habits experienced Kotlin teams apply every day.</p>
+          <ul class="checklist">
+            <li><b>Make illegal states unrepresentable.</b> A <code>sealed interface UiState</code> beats three nullable fields and two Booleans.</li>
+            <li><b>Immutable data, pure functions.</b> Data classes with <code>val</code>; transformations that return new values. Side effects live at the edges (repository, ViewModel).</li>
+            <li><b>Composition over inheritance.</b> Depend on interfaces passed through constructors; reserve <code>open</code>/<code>abstract</code> for genuine “is-a” hierarchies.</li>
+            <li><b>Small, focused units.</b> One reason to change per class; one level of abstraction per function.</li>
+            <li><b>Push nullability to the boundary.</b> Parse/validate once (DTO → domain), then work with non-null types.</li>
+            <li><b>Prefer the standard library</b> (<code>buildList</code>, <code>groupingBy</code>, <code>runCatching</code>, <code>use</code>, <code>require</code>) over hand-written equivalents.</li>
+            <li><b>Use scope functions for one purpose each</b> — and stop at one level of nesting. A local <code>val</code> is often clearer.</li>
+            <li><b>Avoid premature abstraction.</b> Duplicate twice; abstract on the third occurrence.</li>
+          </ul>
+          <div class="compare">
+            <div><div class="cmp-label c-red">❌ Flags allow impossible states</div>
+              <script type="text/plain" data-code="kotlin" data-file="Bad">
+                data class ScreenState(
+                    val isLoading: Boolean,
+                    val items: List<Item>?,
+                    val error: String?,
+                )
+                // What does isLoading = true AND error != null mean?
+              </script>
+            </div>
+            <div><div class="cmp-label c-green">✅ One state at a time</div>
+              <script type="text/plain" data-code="kotlin" data-file="Good">
+                sealed interface ScreenState {
+                    data object Loading : ScreenState
+                    data class Ready(val items: List<Item>) : ScreenState
+                    data class Failed(val message: String) : ScreenState
+                }
+              </script>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="bp-errors" data-title="Best practices: null safety & errors">
+          <div class="sec-head"><h2><span class="sec-num">B.11</span>Best practices: null safety &amp; error handling</h2></div>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>Situation</th><th>Best practice</th></tr></thead>
+              <tbody>
+                <tr><td>Programmer error / broken invariant</td><td><code>require</code>, <code>check</code>, <code>error()</code> — crash early in development</td></tr>
+                <tr><td>“Not found” without details</td><td>Return <code>null</code>: <code>fun findUser(id): User?</code></td></tr>
+                <tr><td>Expected I/O failure (network, disk, parsing)</td><td>Catch the specific exceptions at the data-layer boundary and return <code>Result</code> or a sealed result</td></tr>
+                <tr><td>Domain outcomes the UI must distinguish</td><td>A sealed type: <code>LoginResult.WrongPassword</code>, <code>.Locked</code>, <code>.Success(user)</code></td></tr>
+                <tr><td><code>runCatching</code> around suspend calls</td><td>Avoid, or rethrow <code>CancellationException</code> — it catches everything</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <script type="text/plain" data-code="kotlin" data-file="ErrorHandling.kt" data-run>
+            import kotlinx.coroutines.*
+            import java.io.IOException
+
+            sealed interface LoadResult {
+                data class Success(val names: List<String>) : LoadResult
+                data class Failure(val reason: String) : LoadResult
+            }
+
+            suspend fun fetchNames(fail: Boolean): List<String> {
+                delay(10)
+                if (fail) throw IOException("timeout")
+                return listOf("Ada", "Linh")
+            }
+
+            // ✅ Catch the expected failure, let cancellation and bugs propagate.
+            suspend fun loadNames(fail: Boolean): LoadResult = try {
+                LoadResult.Success(fetchNames(fail))
+            } catch (e: IOException) {
+                LoadResult.Failure(e.message ?: "I/O error")
+            }
+
+            fun main() = runBlocking {
+                println(loadNames(fail = false))
+                println(loadNames(fail = true))
+            }
+          </script>
+          <script type="text/plain" data-output>
+            Success(names=[Ada, Linh])
+            Failure(reason=timeout)
+          </script>
+        </section>
+
+        <section class="doc-section" id="bp-coroutines" data-title="Best practices: coroutines & Flow">
+          <div class="sec-head"><h2><span class="sec-num">B.12</span>Best practices: coroutines &amp; Flow</h2></div>
+          <p>Based on Google's <a href="https://developer.android.com/kotlin/coroutines/coroutines-best-practices" target="_blank" rel="noopener">Best practices for coroutines in Android</a> and the <a href="https://kotlinlang.org/docs/coroutines-guide.html" target="_blank" rel="noopener">Kotlin coroutines guide</a>:</p>
+          <ol class="steps">
+            <li><b>Inject dispatchers</b>Pass <code>CoroutineDispatcher</code> through the constructor (default <code>Dispatchers.IO</code>) so tests can substitute a <code>TestDispatcher</code>.</li>
+            <li><b>Suspend functions are main-safe</b>The function that does blocking work moves itself off the main thread with <code>withContext</code>; callers never have to think about threads.</li>
+            <li><b>The ViewModel creates coroutines</b>Use <code>viewModelScope</code> for UI work; expose <code>suspend</code> functions and <code>Flow</code>s from lower layers rather than launching there.</li>
+            <li><b>Don't expose mutable types</b><code>private val _state = MutableStateFlow(…)</code>, <code>val state = _state.asStateFlow()</code>.</li>
+            <li><b>Data and business layers expose suspend functions and Flows</b>One-shot calls are <code>suspend</code>; streams are <code>Flow</code>.</li>
+            <li><b>Avoid <code>GlobalScope</code></b>For work that must outlive a screen, inject an application-level <code>CoroutineScope</code> — or use WorkManager if it must survive process death.</li>
+            <li><b>Make coroutines cancellable</b>Long CPU loops call <code>ensureActive()</code> or <code>yield()</code>; cleanup goes in <code>finally</code>.</li>
+            <li><b>Watch out for exceptions</b>Uncaught exceptions crash the app; catch them where you can handle them and never swallow <code>CancellationException</code>.</li>
+            <li><b>Collect Flows lifecycle-aware</b>Compose: <code>collectAsStateWithLifecycle()</code>; Views: <code>repeatOnLifecycle(STARTED)</code>.</li>
+            <li><b>Share upstream work</b>Convert to hot state with <code>stateIn(scope, WhileSubscribed(5_000), initial)</code>; update state atomically with <code>update { }</code>.</li>
+          </ol>
+          <div class="compare">
+            <div><div class="cmp-label c-red">❌ Hard-coded, untestable, leaks</div>
+              <script type="text/plain" data-code="kotlin" data-file="Bad">
+                class NewsRepository(private val api: NewsApi) {
+                    val latest = MutableStateFlow<List<Article>>(emptyList())
+
+                    fun refresh() {
+                        GlobalScope.launch(Dispatchers.IO) {
+                            try {
+                                latest.value = api.fetch()
+                            } catch (e: Exception) { }
+                        }
+                    }
+                }
+              </script>
+            </div>
+            <div><div class="cmp-label c-green">✅ Injected, main-safe, structured</div>
+              <script type="text/plain" data-code="kotlin" data-file="Good">
+                class NewsRepository(
+                    private val api: NewsApi,
+                    private val io: CoroutineDispatcher = Dispatchers.IO,
+                ) {
+                    /** Main-safe: switches to [io] for the blocking call. */
+                    suspend fun latest(): List<Article> =
+                        withContext(io) { api.fetchBlocking() }
+                }
+                // The ViewModel decides WHEN to call it, in viewModelScope,
+                // and catches IOException where it can update the UI state.
+              </script>
+            </div>
+          </div>
+          <p class="small muted">Want to <em>see</em> these rules in motion? The <a href="coroutines.html">Coroutines</a> and <a href="flow.html">Flow</a> lessons include step-by-step simulators.</p>
+        </section>
+
+        <section class="doc-section" id="bp-android" data-title="Best practices: Android architecture">
+          <div class="sec-head"><h2><span class="sec-num">B.13</span>Best practices: Android architecture</h2></div>
+          <p>Condensed from Google's <a href="https://developer.android.com/topic/architecture/recommendations" target="_blank" rel="noopener">Recommendations for Android architecture</a>, with how TaskFlow applies each one:</p>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>Recommendation</th><th>In TaskFlow</th></tr></thead>
+              <tbody>
+                <tr><td>Use a clearly defined data layer; repositories are the single source of truth</td><td><code>OfflineFirstTaskRepository</code> over Room</td></tr>
+                <tr><td>Use a clearly defined UI layer with unidirectional data flow</td><td>Repository Flows → ViewModel <code>StateFlow</code> → Compose → events back</td></tr>
+                <tr><td>ViewModels are agnostic of the Android lifecycle; no <code>Context</code> or views</td><td>ViewModels only depend on repositories</td></tr>
+                <tr><td>Expose one UI state per screen; use <code>stateIn</code> with <code>WhileSubscribed</code></td><td><code>TasksUiState</code> + shared <code>WhileUiSubscribed</code> policy</td></tr>
+                <tr><td>Collect UI state lifecycle-aware</td><td><code>collectAsStateWithLifecycle()</code></td></tr>
+                <tr><td>Use dependency injection (Hilt)</td><td>Constructor injection everywhere; modules only for third-party types</td></tr>
+                <tr><td>Expose data as Flows / suspend functions from the data layer</td><td><code>observeTasks(): Flow</code>, <code>suspend fun upsert</code></td></tr>
+                <tr><td>Test ViewModels, repositories and UI; prefer fakes</td><td><code>FakeTaskRepository</code>, <code>MainDispatcherRule</code>, Compose UI tests</td></tr>
+                <tr><td>Use WorkManager for persistent background work</td><td><code>ReminderWorker</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="doc-section" id="bp-compose" data-title="Best practices: Jetpack Compose">
+          <div class="sec-head"><h2><span class="sec-num">B.14</span>Best practices: Jetpack Compose</h2></div>
+          <ul class="checklist">
+            <li><b>Unit-returning composables are PascalCase nouns</b>; composables that return a value are camelCase (<code>rememberScrollState()</code>).</li>
+            <li><b>Every reusable composable accepts <code>modifier: Modifier = Modifier</code></b> as its first optional parameter and applies it to its root.</li>
+            <li><b>Hoist state:</b> stateless content composables take values + callbacks; one stateful wrapper reads the ViewModel.</li>
+            <li><b>No side effects in composition:</b> use <code>LaunchedEffect</code>, <code>DisposableEffect</code>, <code>rememberCoroutineScope</code>.</li>
+            <li><b>Never write state you just read during composition</b> (backwards writes cause infinite recomposition).</li>
+            <li><b>Keys in lazy lists</b> (<code>items(list, key = { it.id })</code>) and <code>remember(key)</code> for expensive calculations.</li>
+            <li><b>Stable, immutable parameters</b> (data classes with <code>val</code>, read-only collections) let Compose skip unchanged UI.</li>
+            <li><b>Defer fast-changing reads</b> (scroll position, animation values) into lambdas or <code>derivedStateOf</code>.</li>
+            <li><b>Theme tokens, not literals:</b> <code>MaterialTheme.colorScheme.primary</code>, <code>stringResource(R.string…)</code>.</li>
+            <li><b>Accessibility:</b> <code>contentDescription</code> for meaningful icons, 48 dp touch targets, semantic roles.</li>
+            <li><b>Previews</b> for each meaningful state (empty, loading, error, long text, dark theme).</li>
+          </ul>
+          <script type="text/plain" data-code="kotlin" data-file="ComposeConventions.kt">
+            @Composable
+            fun TaskBadge(
+                count: Int,                         // required parameters first
+                modifier: Modifier = Modifier,      // then modifier — the first optional parameter
+                onClick: () -> Unit = {},           // other optional parameters
+                content: @Composable () -> Unit = {}, // a trailing composable lambda goes last
+            ) {
+                BadgedBox(
+                    badge = { if (count > 0) Badge { Text("$count") } },
+                    modifier = modifier.clickable(onClick = onClick),   // applied to the root only
+                ) { content() }
+            }
+          </script>
+        </section>
+
+        <section class="doc-section" id="bp-performance" data-title="Best practices: performance">
+          <div class="sec-head"><h2><span class="sec-num">B.15</span>Best practices: performance</h2></div>
+          <ul class="checklist">
+            <li><b>Measure first</b> (profiler, Macrobenchmark, release builds) — optimize what the numbers show.</li>
+            <li>Use <b>sequences</b> for long chains on large collections or short-circuiting terminals; plain lists for small ones.</li>
+            <li>Pick the right structure: <code>Set</code>/<code>Map</code> for lookups (O(1)), not <code>list.contains</code> in a loop.</li>
+            <li>Avoid allocations in hot paths (drawing, scrolling): no lambdas creating lists per frame; reuse objects.</li>
+            <li><code>inline</code> small higher-order functions you write for hot code; primitive arrays (<code>IntArray</code>) for numeric work.</li>
+            <li>Lazy-initialize expensive objects (<code>by lazy</code>, Hilt <code>Lazy&lt;T&gt;</code>, <code>Provider&lt;T&gt;</code>).</li>
+            <li>Ship with R8 enabled and Baseline Profiles for faster startup.</li>
+          </ul>
+        </section>
+
+        <section class="doc-section" id="bp-testing" data-title="Best practices: testing">
+          <div class="sec-head"><h2><span class="sec-num">B.16</span>Best practices: testing</h2></div>
+          <ul class="checklist">
+            <li>Follow the <b>test pyramid</b>: many fast JVM tests, fewer device tests.</li>
+            <li><b>Fakes over mocks</b> for your own interfaces; mocks for things you can't fake easily.</li>
+            <li>One behaviour per test, <b>Arrange → Act → Assert</b>, and a name that states the behaviour.</li>
+            <li>Deterministic coroutines: <code>runTest</code>, injected <code>TestDispatcher</code>s, <code>MainDispatcherRule</code>, Turbine for Flows.</li>
+            <li>Test the <b>stateless</b> composable with plain state; test the ViewModel separately.</li>
+            <li>Never sleep in tests; advance virtual time instead (<code>advanceTimeBy</code>, <code>advanceUntilIdle</code>).</li>
+            <li>CI runs the tests and the linters on every push; a red build blocks merging.</li>
+          </ul>
+        </section>
+
+        <section class="doc-section" id="bp-security" data-title="Best practices: security">
+          <div class="sec-head"><h2><span class="sec-num">B.17</span>Best practices: security</h2></div>
+          <div class="grid grid-2">
+            <div class="glass card"><h4>🔐 Data</h4><ul class="small">
+              <li>No API keys, passwords or tokens in source or <code>BuildConfig</code> — keep secrets on a server.</li>
+              <li>HTTPS only; consider certificate pinning for high-value APIs.</li>
+              <li>Store tokens with the Android Keystore; never in plain DataStore.</li>
+              <li>No personal data or tokens in logs; guard debug logging with <code>BuildConfig.DEBUG</code>.</li>
+            </ul></div>
+            <div class="glass card"><h4>🛡️ Platform</h4><ul class="small">
+              <li>Components <code>android:exported="false"</code> unless other apps must start them.</li>
+              <li><code>PendingIntent.FLAG_IMMUTABLE</code> by default.</li>
+              <li>Request the minimum permissions, at the moment they're needed.</li>
+              <li>Validate all external input (deep links, intents, network JSON) at the boundary.</li>
+              <li>Keep dependencies updated; run dependency and secret scanning in CI.</li>
+            </ul></div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="tooling" data-title="Enforce it: tools & CI">
+          <div class="sec-head"><h2><span class="sec-num">B.18</span>Enforce it automatically: .editorconfig, ktlint, detekt &amp; CI</h2></div>
+          <p>Rules that aren't checked automatically erode. The final project enforces this page with three layers — the files below are the real ones from <a href="final-project.html">TaskFlow</a>:</p>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>Tool</th><th>Checks</th><th>Command</th></tr></thead>
+              <tbody>
+                <tr><td><b>.editorconfig</b></td><td>Shared settings for the IDE <em>and</em> ktlint (indent, line length, trailing commas, code style flavour)</td><td>— (read automatically)</td></tr>
+                <tr><td><b>ktlint</b> 1.8</td><td>Formatting and style (official/Android conventions); can auto-fix</td><td><code>./gradlew ktlintCheck</code> · <code>ktlintFormat</code></td></tr>
+                <tr><td><b>detekt</b> 1.23</td><td>Code smells, complexity, potential bugs, naming, coroutine misuse</td><td><code>./gradlew detekt</code></td></tr>
+                <tr><td><b>Android Lint</b></td><td>Android-specific correctness, security, performance, accessibility</td><td><code>./gradlew lint</code></td></tr>
+                <tr><td><b>Kotlin compiler</b></td><td>Warnings as errors (<code>allWarningsAsErrors</code>), explicit API mode for libraries</td><td>— (build)</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <script type="text/plain" data-code="editorconfig" data-file="final-project/TaskFlow/.editorconfig" data-src="final-project/TaskFlow/.editorconfig">
+              # Shared formatting rules for the IDE and ktlint (lesson: Coding Conventions & Rules).
+              root = true
+
+              [*]
+              charset = utf-8
+              end_of_line = lf
+              insert_final_newline = true
+              trim_trailing_whitespace = true
+              indent_style = space
+              indent_size = 4
+
+              [*.{kt,kts}]
+              # Android Kotlin style guide flavour of the official Kotlin conventions (100-column limit).
+              ktlint_code_style = android_studio
+              max_line_length = 100
+              ij_kotlin_allow_trailing_comma = true
+              ij_kotlin_allow_trailing_comma_on_call_site = true
+              # Composables are PascalCase nouns (Compose API guidelines), not camelCase verbs.
+              ktlint_function_naming_ignore_when_annotated_with = Composable
+
+              [*.{xml,toml}]
+              indent_size = 4
+            </script>
+          <script type="text/plain" data-code="yaml" data-file="final-project/TaskFlow/config/detekt/detekt.yml" data-src="final-project/TaskFlow/config/detekt/detekt.yml">
+              # Project overrides on top of detekt's default rule set (buildUponDefaultConfig = true).
+              # Only deviations are listed; every other default rule stays active.
+              # Compose-specific settings follow detekt's "Compose" recommendations.
+
+              naming:
+                FunctionNaming:
+                  # Composables are PascalCase nouns (Kotlin & Compose conventions).
+                  ignoreAnnotated: ['Composable']
+                TopLevelPropertyNaming:
+                  constantPattern: '[A-Z][_A-Z0-9]*'
+
+              complexity:
+                LongParameterList:
+                  # Stateless composables take state + one callback per event by design (state hoisting).
+                  ignoreAnnotated: ['Composable']
+                  ignoreDefaultParameters: true
+                LongMethod:
+                  # A screen's layout reads top-to-bottom; split it when it hurts readability, not at 60 lines.
+                  ignoreAnnotated: ['Composable']
+
+              style:
+                MagicNumber:
+                  # Color tokens and dp values in the theme are named by the property they initialize.
+                  ignorePropertyDeclaration: true
+                  ignoreAnnotated: ['Composable', 'Preview']
+                UnusedPrivateMember:
+                  # @Preview functions are used by Android Studio, not by code.
+                  ignoreAnnotated: ['Preview']
+                MaxLineLength:
+                  maxLineLength: 100
+
+              coroutines:
+                GlobalCoroutineUsage:
+                  # Off by default in detekt; we forbid GlobalScope (structured concurrency, lesson 13).
+                  active: true
+            </script>
+          <script type="text/plain" data-code="kts" data-file="app/build.gradle.kts (excerpt)">
+            plugins {
+                alias(libs.plugins.detekt)      // io.gitlab.arturbosch.detekt 1.23.8
+                alias(libs.plugins.ktlint)      // org.jlleitschuh.gradle.ktlint 14.2.0
+            }
+
+            ktlint {
+                version.set(libs.versions.ktlint)   // ktlint 1.8.0; rules come from .editorconfig
+                filter { exclude { it.file.path.contains("${File.separator}build${File.separator}") } }
+            }
+
+            detekt {
+                buildUponDefaultConfig = true       // all default rules + our overrides
+                config.setFrom(rootProject.file("config/detekt/detekt.yml"))
+                source.setFrom("src/main/java", "src/test/java", "src/androidTest/java")
+            }
+          </script>
+          <script type="text/plain" data-code="bash" data-file="Terminal">
+            $ ./gradlew ktlintFormat                 # fix formatting automatically
+            $ ./gradlew ktlintCheck detekt           # what CI runs before building
+            $ ./gradlew detektBaseline               # legacy code: record existing issues, fail only on new ones
+          </script>
+          <div class="callout tip">
+            <div class="ci">🚦</div>
+            <div><span class="ct">Adopting rules in an existing codebase</span>
+              <p>Run the formatter once in a dedicated commit (so blame stays readable), create a <b>detekt baseline</b> for the remaining legacy findings, and make CI fail only on <em>new</em> violations. Then pay the baseline down gradually.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="review" data-title="Code review checklist">
+          <div class="sec-head"><h2><span class="sec-num">B.19</span>Code review checklist</h2></div>
+          <div class="grid grid-2">
+            <div class="glass card"><h4>Correctness</h4><ul class="checklist small">
+              <li>Does it do what the ticket says, including edge cases (empty, null, max)?</li>
+              <li>Are errors handled where they can be handled, and nowhere swallowed?</li>
+              <li>Is cancellation respected; no <code>GlobalScope</code>, no blocking calls on main?</li>
+              <li>Are there tests for the new behaviour, and do they fail without the change?</li>
+            </ul></div>
+            <div class="glass card"><h4>Design</h4><ul class="checklist small">
+              <li>Is the code in the right layer? Does the UI contain business logic?</li>
+              <li>Can illegal states be represented? Could a sealed type help?</li>
+              <li>Is state immutable and owned by one place?</li>
+              <li>Smallest visibility? Any new public API documented?</li>
+            </ul></div>
+            <div class="glass card"><h4>Readability</h4><ul class="checklist small">
+              <li>Would a newcomer understand names without explanation?</li>
+              <li>Idiomatic Kotlin (B.8) rather than Java-in-Kotlin?</li>
+              <li>Comments explain <em>why</em>; no commented-out code.</li>
+            </ul></div>
+            <div class="glass card"><h4>Android</h4><ul class="checklist small">
+              <li>Survives rotation and process death?</li>
+              <li>No Context leaks; lifecycle-aware collection?</li>
+              <li>Strings in resources, accessibility, dark mode?</li>
+              <li>CI green: ktlint, detekt, tests, build?</li>
+            </ul></div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="exercises" data-title="Exercises">
+          <div class="sec-head"><h2><span class="sec-num">B.20</span>Exercises</h2></div>
+          <details class="exercise">
+            <summary>Exercise 1 — Spot the violations <span class="badge green">Easy</span></summary>
+            <div class="ex-body">
+              <p>List every convention or rule this code breaks (aim for 10+), then rewrite it.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Task">
+                import java.util.*
+
+                class user_manager {
+                    var Users : ArrayList<String> = ArrayList()
+                    val max_users = 100;
+
+                    fun AddUser(name : String?) : Unit {
+                        if (Users.size >= 100) return
+                        else Users.add(name!!)
+                    }
+
+                    fun getCount() : Int { return Users.size }
+                }
+              </script>
+              <script type="text/plain" data-code="kotlin" data-file="Solution" data-run>
+                // Fixes: class name PascalCase noun without "Manager"; no wildcard import; private
+                // mutable list + read-only view; constant named and in companion; no magic number;
+                // camelCase function; no !!; no redundant ": Unit"/semicolons; colon spacing;
+                // braces for if/else; property instead of a getter-style function.
+                class UserRegistry {
+                    private val _users = mutableListOf<String>()
+                    val users: List<String> get() = _users
+                    val count: Int get() = _users.size
+
+                    /** Adds [name] if it is not blank and there is room; returns whether it was added. */
+                    fun add(name: String?): Boolean {
+                        if (name.isNullOrBlank() || _users.size >= MAX_USERS) return false
+                        _users += name
+                        return true
+                    }
+
+                    companion object {
+                        const val MAX_USERS = 100
+                    }
+                }
+
+                fun main() {
+                    val registry = UserRegistry()
+                    println(registry.add("Ada"))
+                    println(registry.add(null))
+                    println("${registry.users} count=${registry.count}")
+                }
+              </script>
+              <script type="text/plain" data-output>
+                true
+                false
+                [Ada] count=1
+              </script>
+            </div>
+          </details>
+          <details class="exercise">
+            <summary>Exercise 2 — Make it idiomatic <span class="badge blue">Medium</span></summary>
+            <div class="ex-body">
+              <p>Rewrite using expression bodies, <code>when</code>, named arguments and no <code>var</code>:</p>
+              <script type="text/plain" data-code="kotlin" data-file="Task">
+                fun shippingCost(weightKg: Double, express: Boolean, international: Boolean): Double {
+                    var cost = 0.0
+                    if (weightKg <= 1) {
+                        cost = 5.0
+                    } else if (weightKg <= 5) {
+                        cost = 9.0
+                    } else {
+                        cost = 9.0 + (weightKg - 5) * 1.5
+                    }
+                    if (express == true) cost = cost * 2
+                    if (international == true) cost = cost + 12
+                    return cost
+                }
+                // call site: shippingCost(3.0, true, false)
+              </script>
+              <script type="text/plain" data-code="kotlin" data-file="Solution" data-run>
+                private const val EXPRESS_FACTOR = 2
+                private const val INTERNATIONAL_FEE = 12.0
+
+                fun shippingCost(
+                    weightKg: Double,
+                    express: Boolean = false,
+                    international: Boolean = false,
+                ): Double {
+                    val base = when {
+                        weightKg <= 1 -> 5.0
+                        weightKg <= 5 -> 9.0
+                        else -> 9.0 + (weightKg - 5) * 1.5
+                    }
+                    val speed = if (express) base * EXPRESS_FACTOR else base
+                    return if (international) speed + INTERNATIONAL_FEE else speed
+                }
+
+                fun main() {
+                    println(shippingCost(3.0, express = true))
+                    println(shippingCost(weightKg = 7.0, international = true))
+                }
+              </script>
+              <script type="text/plain" data-output>
+                18.0
+                24.0
+              </script>
+            </div>
+          </details>
+          <details class="exercise">
+            <summary>Exercise 3 — Add the tools to your project <span class="badge amber">Challenge</span></summary>
+            <div class="ex-body">
+              <p>Copy TaskFlow's <code>.editorconfig</code>, <code>config/detekt/detekt.yml</code> and the Gradle setup from B.18 into your own project. Run <code>./gradlew ktlintFormat</code>, then <code>./gradlew detekt</code>, fix or justify (KR-30) every finding, and add a CI step that runs <code>ktlintCheck detekt</code>.</p>
+            </div>
+          </details>
+        </section>
+
+        <section class="doc-section" id="quiz" data-title="Quiz">
+          <div class="sec-head"><h2><span class="sec-num">B.21</span>Quiz</h2></div>
+          <script type="application/json" data-quiz>
+          [
+            {"q": "Which name follows the conventions for a `const val`?", "options": ["`maxRetries`", "`MaxRetries`", "`MAX_RETRIES`", "`kMaxRetries`"], "answer": 2, "explain": "Constants use SCREAMING_SNAKE_CASE; member prefixes like k/m/s are never used."},
+            {"q": "According to the Kotlin conventions, how should class members be ordered?", "options": ["Alphabetically", "By visibility: public first", "Properties & init blocks, secondary constructors, functions (grouped logically), companion object", "Companion object first"], "answer": 2, "explain": "Don't sort methods alphabetically or by visibility; keep related code together."},
+            {"q": "Which formatting is correct?", "options": ["`for (i in 0 .. n)`", "`val x : Int = 1`", "`class Foo : Bar()`", "`foo ?. bar()`"], "answer": 2, "explain": "Space before `:` when separating type and supertype; no spaces around `..` or `?.`; no space before `:` in `val x: Int`."},
+            {"q": "The Android style guide limits lines to…", "options": ["80 columns", "100 columns", "120 columns", "No limit"], "answer": 1, "explain": "100 columns, with package and import statements exempt."},
+            {"q": "Which C++ (MISRA-style) rule needs NO tool in Kotlin because the compiler enforces it?", "options": ["Limit function length", "No implicit numeric conversions", "No magic numbers", "Don't catch generic exceptions"], "answer": 1, "explain": "Kotlin has no implicit numeric conversions. The others are checked by detekt."},
+            {"q": "How should a test function be named in an Android instrumented test (src/androidTest)?", "options": ["A backtick name with spaces, like \"adds a task\"", "`fun addsTask_updatesList()`", "`fun Test1()`", "`fun ADDS_TASK()`"], "answer": 1, "explain": "Names with spaces are only supported by the Android runtime from API 30; the Android guide uses camelCase with underscores."},
+            {"q": "What's the proper way to deviate from a detekt rule in one place?", "options": ["Disable the rule globally", "Delete detekt from CI", "`@Suppress(\"RuleId\")` on the narrowest declaration with a comment explaining why", "Rename the variable"], "answer": 2, "explain": "Local, justified, reviewed — like a MISRA deviation record (KR-30)."},
+            {"q": "Which is a coroutine best practice from Google's guide?", "options": ["Launch from repositories with GlobalScope", "Inject CoroutineDispatchers", "Use runBlocking in ViewModels", "Expose MutableStateFlow publicly"], "answer": 1, "explain": "Injected dispatchers make code testable; the others violate KR-16, KR-19 and KR-20."}
+          ]
+          </script>
+        </section>
+
+        <section class="doc-section" id="references" data-title="Further reading">
+          <div class="sec-head"><h2><span class="sec-num">B.22</span>Further reading</h2></div>
+          <ul>
+            <li><a href="https://kotlinlang.org/docs/coding-conventions.html" target="_blank" rel="noopener">Kotlin docs — Coding conventions</a> · <a href="https://kotlinlang.org/docs/idioms.html" target="_blank" rel="noopener">Idioms</a></li>
+            <li><a href="https://developer.android.com/kotlin/style-guide" target="_blank" rel="noopener">Android Kotlin style guide</a> · <a href="https://developer.android.com/kotlin/interop" target="_blank" rel="noopener">Kotlin–Java interop guide</a></li>
+            <li><a href="https://kotlinlang.org/docs/api-guidelines-introduction.html" target="_blank" rel="noopener">Library authors' guidelines</a></li>
+            <li><a href="https://developer.android.com/kotlin/coroutines/coroutines-best-practices" target="_blank" rel="noopener">Best practices for coroutines in Android</a> · <a href="https://developer.android.com/topic/architecture/recommendations" target="_blank" rel="noopener">Recommendations for Android architecture</a></li>
+            <li><a href="https://github.com/androidx/androidx/blob/androidx-main/compose/docs/compose-api-guidelines.md" target="_blank" rel="noopener">Compose API guidelines</a></li>
+            <li><a href="https://detekt.dev/" target="_blank" rel="noopener">detekt</a> · <a href="https://pinterest.github.io/ktlint/" target="_blank" rel="noopener">ktlint</a> · <a href="https://developer.android.com/studio/write/lint" target="_blank" rel="noopener">Android Lint</a></li>
+          </ul>
+        </section>
+
+        <div id="pager"></div>
+      </div>
+    </main>
+  </div>
+  <div id="site-footer"></div>
+  <script src="assets/js/core.js?v=__BUILD__"></script>
+</body>
+</html>
