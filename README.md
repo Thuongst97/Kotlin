@@ -12,7 +12,7 @@ A free, hands-on website that takes you from **installing your tools** to **ship
 | ⚡ Advanced | 13 Coroutines · 14 Flow, StateFlow & channels · 15 DSLs, testing & Multiplatform |
 | 🤖 Android | 16 App fundamentals · 17 Jetpack Compose · 18 Architecture (MVVM, Hilt, Navigation) · 19 Room, DataStore, Retrofit, WorkManager · 20 Testing, debugging & publishing |
 | 🏁 Final project | 21 **TaskFlow** — a complete task-manager app built in 9 milestones |
-| 📋 Reference | A · Cheat sheet & mastery checklist · B · Coding conventions, rules & best practices |
+| 📋 Reference | A · Cheat sheet & mastery checklist · B · Coding conventions, rules & best practices · C · Unit tests: setup & run |
 
 Every lesson has runnable examples (▶ **Run** opens them in the official Kotlin Playground), exercises with solutions, a quiz, and progress tracking saved in your browser. The coroutine, Flow and DSL lessons also include step-by-step simulations (`assets/js/sim.js`) that animate what the code does: suspension vs blocking, structured cancellation, dispatchers, cold vs hot flows, operator marbles and more.
 
@@ -27,6 +27,7 @@ kotlin-academy/          The static website (plain HTML/CSS/JS, no build step)
   assets/js/refs.js      Official Kotlin/Android documentation links shown on every lesson
   assets/js/sim.js       Step-by-step simulations for coroutines, Flow and DSLs
 final-project/TaskFlow/  The complete Android app built in lesson 21
+samples/unit-testing/    Kotlin/JVM unit-testing sample used by Reference C (JUnit 5, runTest, Turbine, MockK, Kover)
 tools/
   check_snippets.py      Compiles and runs every runnable lesson example and checks its output
   embed_sources.py       Copies TaskFlow's real source files into final-project.html
@@ -34,6 +35,7 @@ tools/
   pages.yml              Deploys kotlin-academy/ to GitHub Pages on push to main
   check-snippets.yml     Verifies lesson examples + embedded sources on every push
   android.yml            Builds TaskFlow, runs unit tests, uploads the debug APK
+  unit-tests-sample.yml  Runs the unit-testing sample's tests, coverage report and coverage gate
 ```
 
 ## Run the site locally
@@ -61,7 +63,14 @@ Open `final-project/TaskFlow` in Android Studio, or:
 
 ```bash
 cd final-project/TaskFlow
-./gradlew assembleDebug testDebugUnitTest
+./gradlew assembleDebug testDebugUnitTest koverHtmlReportDebug
+```
+
+## Run the unit-testing sample
+
+```bash
+cd samples/unit-testing
+./gradlew test koverHtmlReport   # reports: build/reports/tests/test/ and build/reports/kover/html/
 ```
 
 ## Deploying

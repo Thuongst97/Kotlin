@@ -78,6 +78,9 @@
     { id: "conventions", file: "conventions.html", num: "B", group: "Reference", level: "All", minutes: 60,
       title: "Coding Conventions, Rules & Best Practices", short: "Conventions & Best Practices", icon: "📏", accent: "#9a98a8",
       desc: "Official Kotlin & Android conventions, a numbered rule set (vs. MISRA/AUTOSAR C++), best practices, ktlint and detekt." },
+    { id: "unit-tests", file: "unit-tests.html", num: "C", group: "Reference", level: "All", minutes: 50,
+      title: "Unit Tests (UTs): Setup & Run", short: "Unit Tests: Setup & Run", icon: "🧪", accent: "#9a98a8",
+      desc: "Set up and run unit tests: Gradle & Android setup, IDE and CLI, runTest, Turbine, fakes vs mocks, Kover and CI." },
   ];
   const LESSONS = SITE.filter((p) => p.group !== "Reference");
 
@@ -125,6 +128,7 @@
           ${nav("compose", "Compose", "compose.html")}
           ${nav("final-project", "Final Project", "final-project.html")}
           ${nav("conventions", "Conventions", "conventions.html")}
+          ${nav("unit-tests", "Unit Tests", "unit-tests.html")}
           ${nav("cheatsheet", "Cheat Sheet", "cheatsheet.html")}
         </nav>
         <div class="header-spacer"></div>
@@ -371,6 +375,7 @@
           <a href="https://developer.android.com/develop/ui/compose" target="_blank" rel="noopener">Jetpack Compose ↗</a>
           <a href="https://play.kotlinlang.org/" target="_blank" rel="noopener">Kotlin Playground ↗</a>
           <a href="conventions.html">Conventions</a>
+          <a href="unit-tests.html">Unit tests</a>
           <a href="cheatsheet.html">Cheat sheet</a>
         </div>
       </div></footer>
@@ -778,7 +783,7 @@
      so narrow columns and phones wrap at word boundaries instead of
      splitting a word in the middle.
      --------------------------------------------------------------------- */
-  const BREAK_AT = /(?<=[a-z0-9])(?=[A-Z])|(?<=[./_,:=])(?=[^./_,:=\s])|(?<=\w)(?=[(<[{])/g;
+  const BREAK_AT = /(?<=[a-z0-9])(?=[A-Z])|(?<=[./,:=])(?=[^./_,:=\s\d])|(?<=_)(?=[A-Za-z])|(?<=\w)(?=[(<[{])/g;
   function addBreaks(root = document) {
     $$("code, .code-head .fname", root).forEach((el) => {
       if (el.dataset.wb || el.closest("pre, .sim-code")) return;

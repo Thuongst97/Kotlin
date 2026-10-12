@@ -3,9 +3,12 @@ package academy.shop
 import app.cash.turbine.test
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runTest
 
+// currentTime is marked experimental in kotlinx-coroutines-test, so opt in explicitly.
+@OptIn(ExperimentalCoroutinesApi::class)
 class CountdownTest {
     @Test
     fun `emits from n down to zero, then completes`() = runTest {

@@ -3,6 +3,7 @@ package academy.shop
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runTest
@@ -19,6 +20,8 @@ class FakePriceApi(private val prices: Map<String, Int>, private val latencyMill
     }
 }
 
+// currentTime is marked experimental in kotlinx-coroutines-test, so opt in explicitly.
+@OptIn(ExperimentalCoroutinesApi::class)
 class CheckoutTest {
     @Test
     fun `quote sums every price`() = runTest {

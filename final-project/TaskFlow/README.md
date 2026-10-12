@@ -15,6 +15,7 @@ Turbine, Compose UI tests.
 ./gradlew assembleDebug              # build
 ./gradlew installDebug               # install on a connected device/emulator
 ./gradlew testDebugUnitTest          # JVM unit tests
+./gradlew koverHtmlReportDebug       # unit-test coverage → app/build/reports/kover/htmlDebug/
 ./gradlew connectedDebugAndroidTest  # Room + Compose UI tests on a device
 ./gradlew ktlintCheck detekt         # coding conventions & static analysis
 ```

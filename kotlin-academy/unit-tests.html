@@ -1,0 +1,1195 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Unit Tests: Setup &amp; Run — Kotlin Academy</title>
+  <meta name="description" content="Set up and run Kotlin unit tests (UTs) step by step: Gradle and Android project setup, kotlin.test and JUnit, running from Android Studio and the command line, coroutines with runTest, Flows with Turbine, fakes and mocks, Kover coverage and CI.">
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <meta name="color-scheme" content="dark light">
+  <link rel="stylesheet" href="assets/css/main.css?v=__BUILD__">
+  <script>try{var t=localStorage.getItem("ka-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body data-page="unit-tests">
+  <div id="site-header"></div>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="content">
+      <div class="content-inner">
+
+        <header class="page-hero">
+          <nav class="crumbs"><a href="index.html">Home</a><span>/</span><span>Reference</span><span>/</span><span>C</span></nav>
+          <div class="eyebrow">Reference C · Professional Kotlin</div>
+          <h1>Unit Tests (UTs): Setup &amp; Run</h1>
+          <p class="lead">A hands-on guide to unit testing Kotlin, from an empty folder to a green CI badge. You'll set up tests in a plain Kotlin/JVM project and in an Android app, run them from the IDE and the command line, test coroutines and Flows, use fakes and mocks, measure coverage and run everything in CI. Every file shown here is real: the <a href="https://github.com/Thuongst97/Kotlin/tree/main/samples/unit-testing" target="_blank" rel="noopener">sample project</a> and <a href="final-project.html">TaskFlow</a> run these exact tests on every push.</p>
+          <div class="page-meta"><span>⏱ 50 min · keep as reference</span><span>🎯 Beginner → Advanced</span><span>🧪 kotlin.test · JUnit · kotlinx-coroutines-test · Turbine · MockK · Kover</span></div>
+          <div class="objectives">
+            <h4>You will be able to</h4>
+            <ul>
+              <li>Add unit tests to a Kotlin/JVM or Android project</li>
+              <li>Run all tests, one class or one method, from the IDE and Gradle</li>
+              <li>Read test reports and debug a failing test</li>
+              <li>Test suspend functions and Flows with virtual time</li>
+              <li>Choose between fakes and mocks</li>
+              <li>Measure coverage with Kover and run tests in CI</li>
+            </ul>
+          </div>
+        </header>
+
+        <section class="doc-section" id="what" data-title="What a unit test is">
+          <div class="sec-head"><h2><span class="sec-num">C.1</span>What a unit test is (and where it lives)</h2></div>
+          <p>A <b>unit test</b> (UT) checks one small piece of behaviour, like a function, a class or a ViewModel, without its real dependencies. It runs on your computer's JVM in milliseconds, with no device, network or database. That speed is the point: you can run hundreds of them every time you save.</p>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>Kind</th><th>Folder</th><th>Runs on</th><th>Speed</th><th>Gradle task</th></tr></thead>
+              <tbody>
+                <tr><td><b>Unit test</b> (this page)</td><td><code>src/test</code></td><td>Your computer's JVM</td><td>ms per test</td><td><code>test</code> (JVM) · <code>testDebugUnitTest</code> (Android)</td></tr>
+                <tr><td>Instrumented test</td><td><code>src/androidTest</code></td><td>Emulator or device</td><td>seconds per test</td><td><code>connectedDebugAndroidTest</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Good unit tests are <b>F.I.R.S.T.</b>:</p>
+          <div class="grid grid-2">
+            <div class="glass card"><h4>Fast &amp; Isolated</h4><p class="small">Milliseconds each. No shared state between tests, so order never matters. Each test builds what it needs.</p></div>
+            <div class="glass card"><h4>Repeatable</h4><p class="small">Same result every run, on every machine. No real clocks, network, random numbers or <code>Thread.sleep</code>.</p></div>
+            <div class="glass card"><h4>Self-validating</h4><p class="small">Pass or fail on its own through assertions. Nobody reads printed output to decide.</p></div>
+            <div class="glass card"><h4>Timely</h4><p class="small">Written with the code (or before it, with TDD), not months later.</p></div>
+          </div>
+          <div class="callout tip">
+            <div class="ci">🧭</div>
+            <div><span class="ct">Where this fits in the course</span>
+              <p>Lesson 20 covers the <a href="release.html#pyramid">testing pyramid</a> and UI tests. Lesson 15 introduces <a href="advanced.html#testing">testing Kotlin code</a>. This page is the practical reference for <b>setting up and running</b> unit tests.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="anatomy" data-title="What a test framework does">
+          <div class="sec-head"><h2><span class="sec-num">C.2</span>What a test framework actually does</h2></div>
+          <p>Before adding JUnit, here's the whole idea in plain Kotlin. A test framework <b>finds test functions</b>, <b>runs each one in isolation</b>, treats a thrown <code>AssertionError</code> as a <b>failure</b>, and <b>reports</b> the results. Press <b>▶ Run</b> to see it work:</p>
+          <script type="text/plain" data-code="kotlin" data-file="MiniTestRunner.kt" data-run>
+            // The code under test
+            fun slugify(title: String): String =
+                title.trim().lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-')
+
+            // An assertion = "throw if the expectation is not met"
+            fun <T> assertEquals(expected: T, actual: T) {
+                if (expected != actual) throw AssertionError("expected <$expected> but was <$actual>")
+            }
+
+            // Each test: Arrange the input, Act (call the code), Assert the result
+            val tests: Map<String, () -> Unit> = mapOf(
+                "lowercases words" to { assertEquals("hello-world", slugify("Hello World")) },
+                "drops punctuation" to { assertEquals("kotlin-2-2-is-out", slugify("Kotlin 2.2 is out!")) },
+                "trims dashes" to { assertEquals("tips", slugify("  --Tips--  ")) },
+                "a deliberately wrong expectation" to { assertEquals("Hello", slugify("Hello")) },
+            )
+
+            // The runner: run every test, catch failures, report
+            fun main() {
+                var failed = 0
+                for ((name, test) in tests) {
+                    try {
+                        test()
+                        println("✔ $name")
+                    } catch (e: AssertionError) {
+                        failed++
+                        println("✘ $name — ${e.message}")
+                    }
+                }
+                println("${tests.size} tests, ${tests.size - failed} passed, $failed failed")
+            }
+          </script>
+          <script type="text/plain" data-output>
+            ✔ lowercases words
+            ✔ drops punctuation
+            ✔ trims dashes
+            ✘ a deliberately wrong expectation — expected <Hello> but was <hello>
+            4 tests, 3 passed, 1 failed
+          </script>
+          <p>JUnit does the same job with more features: it finds tests through <code>@Test</code> annotations, creates a <b>new instance of the test class for every test</b> (that's the isolation), runs setup and teardown hooks, and writes HTML and XML reports that IDEs and CI servers understand.</p>
+        </section>
+
+        <section class="doc-section" id="setup-jvm" data-title="Setup: Kotlin/JVM project">
+          <div class="sec-head"><h2><span class="sec-num">C.3</span>Setup: a Kotlin/JVM project with Gradle</h2></div>
+          <p>Use this for libraries, back-end code, command-line tools, or to practise testing without Android. You need a <a href="setup.html#jdk">JDK 17 or 21</a> and IntelliJ IDEA or Android Studio.</p>
+          <ol class="steps">
+            <li><b>Create the project.</b> In IntelliJ IDEA choose <b>File → New → Project → Kotlin</b>, set <b>Build system: Gradle</b> and <b>DSL: Kotlin</b>. From a terminal you can run <code>gradle init</code> and pick <i>Application → Kotlin</i>. Or clone the ready-made sample: <code>samples/unit-testing</code> in this repository.</li>
+            <li><b>Check the folder layout.</b> Production code lives in <code>src/main/kotlin</code> and tests in <code>src/test/kotlin</code>. Use the <b>same package</b> in both, so tests can reach <code>internal</code> declarations.</li>
+            <li><b>Add the test dependencies and enable JUnit 5</b> in <code>build.gradle.kts</code> (below).</li>
+            <li><b>Sync Gradle</b> (the 🐘 icon, or <b>Ctrl+Shift+O</b> / <b>⇧⌘I</b>), then write your first test (C.5).</li>
+          </ol>
+          <script type="text/plain" data-code="text" data-file="Project layout">
+            unit-testing/
+            ├── settings.gradle.kts
+            ├── build.gradle.kts            ← plugins, dependencies, test configuration
+            ├── gradlew  gradlew.bat        ← the Gradle wrapper: always run tests through it
+            ├── gradle/wrapper/             ← pins the Gradle version for everyone
+            └── src/
+                ├── main/kotlin/academy/shop/   Cart.kt  Checkout.kt  Countdown.kt  Receipt.kt
+                └── test/kotlin/academy/shop/   CartTest.kt  CheckoutTest.kt  CountdownTest.kt
+                                                FormatCentsTest.kt  ReceiptServiceTest.kt
+          </script>
+          <script type="text/plain" data-code="kts" data-file="samples/unit-testing/settings.gradle.kts" data-src="samples/unit-testing/settings.gradle.kts">
+              pluginManagement {
+                  repositories {
+                      gradlePluginPortal()
+                      mavenCentral()
+                  }
+              }
+
+              rootProject.name = "unit-testing"
+            </script>
+          <script type="text/plain" data-code="kts" data-file="samples/unit-testing/build.gradle.kts" data-src="samples/unit-testing/build.gradle.kts">
+              import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+
+              plugins {
+                  kotlin("jvm") version "2.2.21"
+                  id("org.jetbrains.kotlinx.kover") version "0.9.9" // code coverage
+              }
+
+              repositories {
+                  mavenCentral()
+              }
+
+              dependencies {
+                  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
+
+                  testImplementation(kotlin("test")) // kotlin.test assertions, runs on JUnit 5
+                  testImplementation(platform("org.junit:junit-bom:5.14.4"))
+                  testImplementation("org.junit.jupiter:junit-jupiter-params") // @ParameterizedTest
+                  // runTest and virtual time for coroutines
+                  testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
+                  testImplementation("app.cash.turbine:turbine:1.2.1") // testing Flows
+                  testImplementation("io.mockk:mockk:1.14.11") // mocks, when a fake is not enough
+                  testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+              }
+
+              tasks.test {
+                  useJUnitPlatform()
+                  testLogging {
+                      events("passed", "skipped", "failed")
+                      exceptionFormat = TestExceptionFormat.FULL
+                  }
+              }
+
+              kover {
+                  reports {
+                      verify {
+                          rule {
+                              minBound(80) // ./gradlew koverVerify fails below 80 % line coverage
+                          }
+                      }
+                  }
+              }
+            </script>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>Dependency</th><th>What it gives you</th></tr></thead>
+              <tbody>
+                <tr><td><code>kotlin("test")</code></td><td>The <code>kotlin.test</code> API (<code>@Test</code>, <code>assertEquals</code>, <code>assertFailsWith</code>…). Because <code>useJUnitPlatform()</code> is set, Gradle picks the JUnit 5 implementation for you.</td></tr>
+                <tr><td><code>junit-bom</code> + <code>junit-jupiter-params</code></td><td>Parameterized tests (<code>@ParameterizedTest</code>, <code>@CsvSource</code>). The BOM keeps all JUnit modules on one version.</td></tr>
+                <tr><td><code>kotlinx-coroutines-test</code></td><td><code>runTest</code>, virtual time and test dispatchers for suspend code (C.8)</td></tr>
+                <tr><td><code>turbine</code></td><td>Step-by-step assertions on Flows (C.9)</td></tr>
+                <tr><td><code>mockk</code></td><td>Kotlin-friendly mocks, for the cases where a fake isn't enough (C.10)</td></tr>
+                <tr><td><code>junit-platform-launcher</code></td><td>Lets Gradle start the JUnit Platform. Recent Gradle versions require you to declare it.</td></tr>
+                <tr><td>Kover plugin</td><td>Code coverage reports and a minimum-coverage gate (C.12)</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout note">
+            <div class="ci">ℹ️</div>
+            <div><span class="ct">JUnit 4 or JUnit 5?</span>
+              <p>On the JVM, use <b>JUnit 5</b> (the "Jupiter" API) as shown. Android local tests run on <b>JUnit 4</b> by default, and that's what the Android templates and TaskFlow use. With <code>kotlin.test</code> your test code looks the same either way: only the imports for advanced features (rules, parameterized tests) differ.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="setup-android" data-title="Setup: Android project">
+          <div class="sec-head"><h2><span class="sec-num">C.4</span>Setup: an Android project</h2></div>
+          <p>A new Android Studio project already includes JUnit 4 and an <code>ExampleUnitTest</code> in <code>app/src/test</code>. For real projects, add coroutine and Flow testing and declare everything in the <a href="android-basics.html">version catalog</a>. These are TaskFlow's actual entries:</p>
+          <script type="text/plain" data-code="toml" data-file="gradle/libs.versions.toml (excerpt)">
+            [versions]
+            coroutines = "1.10.2"
+            junit = "4.13.2"
+            turbine = "1.2.1"
+            kover = "0.9.9"
+
+            [libraries]
+            kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
+            junit = { group = "junit", name = "junit", version.ref = "junit" }
+            turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
+
+            [plugins]
+            kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
+          </script>
+          <script type="text/plain" data-code="kts" data-file="app/build.gradle.kts (excerpt)">
+            plugins {
+                // …
+                alias(libs.plugins.kover)
+            }
+
+            android {
+                defaultConfig {
+                    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+                }
+                testOptions {
+                    // android.jar methods return 0/null/false in local tests instead of throwing
+                    // "Method ... not mocked". Handy for Log.d and friends.
+                    unitTests.isReturnDefaultValues = true
+                }
+            }
+
+            dependencies {
+                // Local unit tests (src/test): run on the JVM with ./gradlew testDebugUnitTest
+                testImplementation(libs.junit)
+                testImplementation(libs.kotlinx.coroutines.test)
+                testImplementation(libs.turbine)
+
+                // Instrumented tests (src/androidTest): run on a device with ./gradlew connectedDebugAndroidTest
+                androidTestImplementation(libs.androidx.test.ext.junit)
+                androidTestImplementation(libs.kotlinx.coroutines.test)
+            }
+          </script>
+          <p>Android adds one test task per build variant: <code>testDebugUnitTest</code>, <code>testReleaseUnitTest</code>, and so on. <code>./gradlew test</code> runs <b>all</b> of them, which usually means running every test twice. Run the debug one while you work.</p>
+          <div class="callout warn">
+            <div class="ci">⚠️</div>
+            <div><span class="ct">Local tests can't use real Android classes</span>
+              <p>Local tests compile against a stub <code>android.jar</code> whose methods throw. Keep Android types out of the code you unit-test: ViewModels, repositories and domain logic should depend on your own interfaces. When you really need Android framework behaviour on the JVM, use <a href="https://developer.android.com/training/testing/local-tests/robolectric" target="_blank" rel="noopener">Robolectric</a>; otherwise write an instrumented test.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="first-test" data-title="Writing your first test">
+          <div class="sec-head"><h2><span class="sec-num">C.5</span>Writing your first test</h2></div>
+          <p>Here's the code under test: a shopping cart with prices in cents and two kinds of discount.</p>
+          <script type="text/plain" data-code="kotlin" data-file="src/main/kotlin/academy/shop/Cart.kt" data-src="samples/unit-testing/src/main/kotlin/academy/shop/Cart.kt">
+              package academy.shop
+
+              /** One line in the cart. Prices are in cents so there is no floating-point rounding. */
+              data class Item(val sku: String, val unitPriceCents: Int, val quantity: Int = 1) {
+                  init {
+                      require(sku.isNotBlank()) { "sku must not be blank" }
+                      require(unitPriceCents >= 0) { "price must be >= 0, was $unitPriceCents" }
+                      require(quantity > 0) { "quantity must be > 0, was $quantity" }
+                  }
+
+                  val totalCents: Int get() = unitPriceCents * quantity
+              }
+
+              sealed interface Discount {
+                  data class Percent(val percent: Int) : Discount {
+                      init {
+                          require(percent in 1..100) { "percent must be in 1..100, was $percent" }
+                      }
+                  }
+
+                  data class AmountOff(val cents: Int) : Discount {
+                      init {
+                          require(cents > 0) { "cents must be > 0, was $cents" }
+                      }
+                  }
+              }
+
+              class Cart {
+                  private val items = mutableListOf<Item>()
+
+                  val lines: List<Item> get() = items.toList()
+
+                  /** Adding a SKU that is already in the cart increases its quantity. */
+                  fun add(item: Item) {
+                      val index = items.indexOfFirst { it.sku == item.sku }
+                      if (index >= 0) {
+                          items[index] = items[index].copy(quantity = items[index].quantity + item.quantity)
+                      } else {
+                          items += item
+                      }
+                  }
+
+                  fun remove(sku: String): Boolean = items.removeIf { it.sku == sku }
+
+                  fun subtotalCents(): Int = items.sumOf { it.totalCents }
+
+                  /** The amount to pay; a discount can never make it negative. */
+                  fun totalCents(discount: Discount? = null): Int {
+                      val subtotal = subtotalCents()
+                      val off =
+                          when (discount) {
+                              null -> 0
+                              is Discount.Percent -> subtotal * discount.percent / 100
+                              is Discount.AmountOff -> discount.cents
+                          }
+                      return (subtotal - off).coerceAtLeast(0)
+                  }
+              }
+
+              /** 199 → "1.99" */
+              fun formatCents(cents: Int): String {
+                  require(cents >= 0) { "cents must be >= 0, was $cents" }
+                  return "${cents / 100}.${(cents % 100).toString().padStart(2, '0')}"
+              }
+            </script>
+          <p>The test class sits in the <b>same package</b> under <code>src/test</code>, and is named after the class it tests with a <code>Test</code> suffix:</p>
+          <script type="text/plain" data-code="kotlin" data-file="src/test/kotlin/academy/shop/CartTest.kt" data-src="samples/unit-testing/src/test/kotlin/academy/shop/CartTest.kt">
+              package academy.shop
+
+              import kotlin.test.BeforeTest
+              import kotlin.test.Test
+              import kotlin.test.assertEquals
+              import kotlin.test.assertFailsWith
+              import kotlin.test.assertFalse
+              import kotlin.test.assertTrue
+
+              class CartTest {
+                  private lateinit var cart: Cart
+
+                  @BeforeTest
+                  fun setUp() {
+                      cart = Cart() // a fresh cart for every test: tests never share state
+                  }
+
+                  @Test
+                  fun `empty cart totals zero`() {
+                      assertEquals(0, cart.totalCents())
+                  }
+
+                  @Test
+                  fun `adding the same sku twice merges the quantities`() {
+                      // Arrange
+                      cart.add(Item("apple", unitPriceCents = 50))
+                      // Act
+                      cart.add(Item("apple", unitPriceCents = 50, quantity = 2))
+                      // Assert
+                      assertEquals(1, cart.lines.size)
+                      assertEquals(3, cart.lines.single().quantity)
+                      assertEquals(150, cart.subtotalCents())
+                  }
+
+                  @Test
+                  fun `percent discount is taken off the subtotal`() {
+                      cart.add(Item("book", unitPriceCents = 2_000))
+                      assertEquals(1_800, cart.totalCents(Discount.Percent(10)))
+                  }
+
+                  @Test
+                  fun `total never goes below zero`() {
+                      cart.add(Item("pen", unitPriceCents = 100))
+                      assertEquals(0, cart.totalCents(Discount.AmountOff(500)))
+                  }
+
+                  @Test
+                  fun `remove reports whether something was removed`() {
+                      cart.add(Item("pen", unitPriceCents = 100))
+                      assertTrue(cart.remove("pen"))
+                      assertFalse(cart.remove("pen"))
+                  }
+
+                  @Test
+                  fun `a negative price is rejected with a clear message`() {
+                      val error = assertFailsWith<IllegalArgumentException> { Item("bad", unitPriceCents = -1) }
+                      assertEquals("price must be >= 0, was -1", error.message)
+                  }
+              }
+            </script>
+          <div class="grid grid-2">
+            <div class="glass card"><h4>Name tests after behaviour</h4><p class="small">Backtick names read like a specification: <code>`total never goes below zero`</code>. They work in JVM and Android <b>local</b> tests. In <b>instrumented</b> tests, use <code>camelCase_withUnderscores</code> instead: spaces in method names are only supported from API 30.</p></div>
+            <div class="glass card"><h4>Arrange · Act · Assert</h4><p class="small">Build the inputs, call the code once, then check the outcome. One behaviour per test, so a failure tells you exactly what broke.</p></div>
+            <div class="glass card"><h4>Fresh state per test</h4><p class="small"><code>@BeforeTest</code> (JUnit's <code>@Before</code>/<code>@BeforeEach</code>) runs before every test. JUnit also creates a new instance of the class for each test, so fields are never shared.</p></div>
+            <div class="glass card"><h4>Assert the message too</h4><p class="small"><code>assertFailsWith</code> returns the exception, so you can check that the error message will actually help whoever sees it.</p></div>
+          </div>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>kotlin.test</th><th>Checks</th></tr></thead>
+              <tbody>
+                <tr><td><code>assertEquals(expected, actual)</code></td><td>Equality, with a readable "expected … but was …" message. Expected comes first.</td></tr>
+                <tr><td><code>assertTrue(x)</code> / <code>assertFalse(x)</code></td><td>Booleans. Pass a message for clarity: <code>assertTrue(ok, "cart should be empty")</code></td></tr>
+                <tr><td><code>assertNull(x)</code> / <code>assertNotNull(x)</code></td><td>Nullability. <code>assertNotNull</code> returns the value smart-cast to non-null.</td></tr>
+                <tr><td><code>assertIs&lt;T&gt;(x)</code></td><td>Type, returning <code>x</code> smart-cast to <code>T</code>. Great for sealed UI states.</td></tr>
+                <tr><td><code>assertContains(list, x)</code></td><td>Collections, strings and ranges</td></tr>
+                <tr><td><code>assertFailsWith&lt;E&gt; { … }</code></td><td>The block throws <code>E</code>; returns the exception</td></tr>
+                <tr><td><code>fail("message")</code></td><td>Unconditional failure, e.g. in a branch that must never run</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="doc-section" id="run-ide" data-title="Run in Android Studio / IntelliJ">
+          <div class="sec-head"><h2><span class="sec-num">C.6</span>Run tests in Android Studio or IntelliJ IDEA</h2></div>
+          <ol class="steps">
+            <li><b>One test or one class:</b> click the green ▶ <b>gutter icon</b> next to a test function or class and choose <b>Run</b>. Shortcut with the caret inside it: <b>Ctrl+Shift+F10</b> (Windows/Linux) or <b>⌃⇧R</b> (macOS).</li>
+            <li><b>A whole package or every test:</b> right-click the <code>test</code> (or <code>kotlin</code>/<code>java</code>) folder in the Project view and choose <b>Run 'Tests in …'</b>.</li>
+            <li><b>Read the results:</b> the <b>Run</b> window shows a tree of tests. ✔ passed, ✘ failed, with the assertion message, a stack trace you can click, and <b>&lt;Click to see difference&gt;</b> for side-by-side expected/actual.</li>
+            <li><b>Fix and re-run:</b> use <b>Rerun Failed Tests</b> in the Run window, or <b>Ctrl+F5</b> / <b>⌘R</b> to repeat the last run.</li>
+            <li><b>Debug:</b> set a breakpoint in the test or the code under test, then choose <b>Debug</b> from the gutter icon. Step through exactly as in the <a href="release.html#debugger">debugger lesson</a>.</li>
+            <li><b>Coverage:</b> choose <b>Run … with Coverage</b> from the gutter menu. Covered lines get a green bar in the editor and the Coverage window lists percentages per package.</li>
+          </ol>
+          <div class="callout tip">
+            <div class="ci">💡</div>
+            <div><span class="ct">Run the tests the way CI does</span>
+              <p>The IDE runs tests through Gradle by default (<b>Settings → Build, Execution, Deployment → Build Tools → Gradle → Run tests using: Gradle</b>). Keep it that way: then a test that passes in the IDE also passes on the command line and in CI.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="run-cli" data-title="Run from the command line">
+          <div class="sec-head"><h2><span class="sec-num">C.7</span>Run tests from the command line</h2></div>
+          <p>Always go through the <b>Gradle wrapper</b> (<code>./gradlew</code>), so everyone uses the project's pinned Gradle version. Run the commands from the project's root folder.</p>
+          <div class="tabs" data-group="os">
+            <div class="tab-list"><button data-tab="mac">🍎 macOS / 🐧 Linux</button><button data-tab="win">🪟 Windows</button></div>
+            <div class="tab-panel" data-panel="mac">
+              <script type="text/plain" data-code="bash" data-file="Terminal">
+                $ ./gradlew test                                     # every unit test (JVM project)
+                $ ./gradlew test --tests "academy.shop.CartTest"     # one class
+                $ ./gradlew test --tests "*CartTest.total*"          # methods matching a pattern
+                $ ./gradlew test --tests "*Checkout*" --tests "*Countdown*"   # several filters
+                $ ./gradlew test --rerun                             # run again even if nothing changed
+                $ ./gradlew test --continue                          # keep going after a failing module
+
+                # Android
+                $ ./gradlew testDebugUnitTest                        # local unit tests, debug variant
+                $ ./gradlew :app:testDebugUnitTest --tests "*TasksViewModelTest*"
+                $ ./gradlew connectedDebugAndroidTest                # instrumented tests (device needed)
+              </script>
+            </div>
+            <div class="tab-panel" data-panel="win">
+              <script type="text/plain" data-code="powershell" data-file="PowerShell / cmd">
+                PS> .\gradlew.bat test
+                PS> .\gradlew.bat test --tests "academy.shop.CartTest"
+                PS> .\gradlew.bat test --tests "*CartTest.total*"
+                PS> .\gradlew.bat test --rerun
+
+                # Android
+                PS> .\gradlew.bat testDebugUnitTest
+                PS> .\gradlew.bat :app:testDebugUnitTest --tests "*TasksViewModelTest*"
+              </script>
+            </div>
+          </div>
+          <p>With the <code>testLogging</code> block from C.3, the console shows every test as it runs:</p>
+          <script type="text/plain" data-code="text" data-file="Console (from this repository's CI run)">
+            > Task :test
+
+            CartTest > remove reports whether something was removed() PASSED
+            CartTest > adding the same sku twice merges the quantities() PASSED
+            CartTest > empty cart totals zero() PASSED
+            CheckoutTest > prices are fetched in parallel() PASSED
+            CountdownTest > emits from n down to zero, then completes() PASSED
+            FormatCentsTest > negative amounts are rejected(int) > [1] -1 PASSED
+            FormatCentsTest > formats cents as a decimal string(int, String) > 199 cents → "1.99" PASSED
+            ReceiptServiceTest > with a mock - verify the interaction() PASSED
+            …
+
+            > Task :koverHtmlReport
+            Kover: HTML report for ':' file:///…/samples/unit-testing/build/reports/kover/html/index.html
+
+            BUILD SUCCESSFUL in 37s
+          </script>
+          <p>A failure prints the assertion and the line it came from, and the build fails, which is what makes CI go red:</p>
+          <script type="text/plain" data-code="text" data-file="Console (a failing test)">
+            CartTest > percent discount is taken off the subtotal() FAILED
+                org.opentest4j.AssertionFailedError: expected: <1800> but was: <1600>
+                    at academy.shop.CartTest.percent discount is taken off the subtotal(CartTest.kt:38)
+
+            19 tests completed, 1 failed
+
+            FAILURE: Build failed with an exception.
+            * What went wrong:
+            Execution failed for task ':test'.
+            > There were failing tests. See the report at: file:///…/build/reports/tests/test/index.html
+          </script>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>Output</th><th>JVM project</th><th>Android app module</th></tr></thead>
+              <tbody>
+                <tr><td>HTML report (open in a browser)</td><td><code>build/reports/tests/test/index.html</code></td><td><code>app/build/reports/tests/testDebugUnitTest/index.html</code></td></tr>
+                <tr><td>JUnit XML (for CI tools)</td><td><code>build/test-results/test/</code></td><td><code>app/build/test-results/testDebugUnitTest/</code></td></tr>
+                <tr><td>Coverage (Kover, C.12)</td><td><code>build/reports/kover/html/index.html</code></td><td><code>app/build/reports/kover/htmlDebug/index.html</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout note">
+            <div class="ci">ℹ️</div>
+            <div><span class="ct">Why didn't my tests run?</span>
+              <p>Gradle skips a test task whose inputs haven't changed (<code>UP-TO-DATE</code>). That's a feature: nothing changed, so the results can't have either. Add <code>--rerun</code> to force a run, for example while checking a test for flakiness.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="coroutines" data-title="Testing coroutines">
+          <div class="sec-head"><h2><span class="sec-num">C.8</span>Testing suspend functions with <code>runTest</code></h2></div>
+          <p>A test function can't call suspend code directly. Wrap the body in <b><code>runTest { }</code></b> from <code>kotlinx-coroutines-test</code>. It runs coroutines on a test scheduler with <b>virtual time</b>: <code>delay(1_000)</code> completes instantly, but <code>currentTime</code> still advances by 1 000 ms. A test of a 10-second timeout finishes in milliseconds and gives the same result every time.</p>
+          <script type="text/plain" data-code="kotlin" data-file="src/main/kotlin/academy/shop/Checkout.kt" data-src="samples/unit-testing/src/main/kotlin/academy/shop/Checkout.kt">
+              package academy.shop
+
+              import kotlinx.coroutines.async
+              import kotlinx.coroutines.awaitAll
+              import kotlinx.coroutines.coroutineScope
+
+              /** A remote price service. Tests replace it with a fake. */
+              interface PriceApi {
+                  suspend fun priceOf(sku: String): Int
+              }
+
+              class Checkout(private val api: PriceApi) {
+                  /** Looks up every price in parallel and returns the sum. */
+                  suspend fun quote(skus: List<String>): Int = coroutineScope {
+                      skus.map { sku -> async { api.priceOf(sku) } }.awaitAll().sum()
+                  }
+              }
+            </script>
+          <script type="text/plain" data-code="kotlin" data-file="src/test/kotlin/academy/shop/CheckoutTest.kt" data-src="samples/unit-testing/src/test/kotlin/academy/shop/CheckoutTest.kt">
+              package academy.shop
+
+              import kotlin.test.Test
+              import kotlin.test.assertEquals
+              import kotlin.test.assertFailsWith
+              import kotlinx.coroutines.ExperimentalCoroutinesApi
+              import kotlinx.coroutines.delay
+              import kotlinx.coroutines.test.currentTime
+              import kotlinx.coroutines.test.runTest
+
+              /** A fake: a small, real implementation for tests. No network, fully controllable. */
+              class FakePriceApi(private val prices: Map<String, Int>, private val latencyMillis: Long = 100) :
+                  PriceApi {
+                  val requested = mutableListOf<String>()
+
+                  override suspend fun priceOf(sku: String): Int {
+                      requested += sku
+                      delay(latencyMillis) // virtual time inside runTest: costs nothing
+                      return prices[sku] ?: error("unknown sku $sku")
+                  }
+              }
+
+              // currentTime is marked experimental in kotlinx-coroutines-test, so opt in explicitly.
+              @OptIn(ExperimentalCoroutinesApi::class)
+              class CheckoutTest {
+                  @Test
+                  fun `quote sums every price`() = runTest {
+                      val api = FakePriceApi(mapOf("a" to 100, "b" to 250, "c" to 50))
+
+                      val total = Checkout(api).quote(listOf("a", "b", "c"))
+
+                      assertEquals(400, total)
+                      assertEquals(listOf("a", "b", "c"), api.requested)
+                  }
+
+                  @Test
+                  fun `prices are fetched in parallel`() = runTest {
+                      val api = FakePriceApi(mapOf("a" to 1, "b" to 2, "c" to 3), latencyMillis = 1_000)
+
+                      Checkout(api).quote(listOf("a", "b", "c"))
+
+                      // Three 1-second calls in parallel take 1 s of *virtual* time (sequential would be 3 s).
+                      // The test itself finishes in milliseconds.
+                      assertEquals(1_000, currentTime)
+                  }
+
+                  @Test
+                  fun `an unknown sku fails the whole quote`() = runTest {
+                      val api = FakePriceApi(mapOf("a" to 1))
+
+                      val error =
+                          assertFailsWith<IllegalStateException> { Checkout(api).quote(listOf("a", "zzz")) }
+
+                      assertEquals("unknown sku zzz", error.message)
+                  }
+              }
+            </script>
+          <p><code>currentTime</code> is marked <b>experimental</b> in kotlinx-coroutines-test, so the class opts in with <code>@OptIn(ExperimentalCoroutinesApi::class)</code>; without it, the compiler prints a warning. The second test proves the prices are fetched <b>in parallel</b>, something that's hard to check with real time. If someone "simplifies" <code>quote</code> to a sequential <code>map { api.priceOf(it) }</code>, <code>currentTime</code> becomes 3 000 and the test fails.</p>
+          <h3>On Android: replace <code>Dispatchers.Main</code></h3>
+          <p>ViewModels launch in <code>viewModelScope</code>, which uses <code>Dispatchers.Main</code>, and that dispatcher doesn't exist on the JVM. Without a replacement, tests fail with <i>"Module with the Main dispatcher is missing"</i>. A JUnit 4 rule swaps in a test dispatcher for each test. This is TaskFlow's:</p>
+          <script type="text/plain" data-code="kotlin" data-file="app/src/test/…/testing/MainDispatcherRule.kt" data-src="final-project/TaskFlow/app/src/test/java/com/kotlinacademy/taskflow/testing/MainDispatcherRule.kt">
+              package com.kotlinacademy.taskflow.testing
+
+              import kotlinx.coroutines.Dispatchers
+              import kotlinx.coroutines.ExperimentalCoroutinesApi
+              import kotlinx.coroutines.test.TestDispatcher
+              import kotlinx.coroutines.test.UnconfinedTestDispatcher
+              import kotlinx.coroutines.test.resetMain
+              import kotlinx.coroutines.test.setMain
+              import org.junit.rules.TestWatcher
+              import org.junit.runner.Description
+
+              /**
+               * viewModelScope uses Dispatchers.Main, which doesn't exist on the JVM,
+               * so tests swap in a test dispatcher.
+               */
+              @OptIn(ExperimentalCoroutinesApi::class)
+              class MainDispatcherRule(val testDispatcher: TestDispatcher = UnconfinedTestDispatcher()) :
+                  TestWatcher() {
+                  override fun starting(description: Description) = Dispatchers.setMain(testDispatcher)
+                  override fun finished(description: Description) = Dispatchers.resetMain()
+              }
+            </script>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>Tool</th><th>Use it to</th></tr></thead>
+              <tbody>
+                <tr><td><code>runTest { }</code></td><td>Run a test body as a coroutine with virtual time. Fails if coroutines are still running at the end.</td></tr>
+                <tr><td><code>currentTime</code></td><td>Read the virtual clock (ms)</td></tr>
+                <tr><td><code>advanceTimeBy(ms)</code> / <code>advanceUntilIdle()</code></td><td>Move virtual time forward, or run everything that's scheduled</td></tr>
+                <tr><td><code>runCurrent()</code></td><td>Run tasks scheduled for the current moment</td></tr>
+                <tr><td><code>StandardTestDispatcher()</code></td><td>New coroutines queue until the test advances time. Gives precise control.</td></tr>
+                <tr><td><code>UnconfinedTestDispatcher()</code></td><td>New coroutines start eagerly. Simplest for collecting StateFlows in ViewModel tests.</td></tr>
+                <tr><td><code>backgroundScope</code></td><td>Launch never-ending collectors that are cancelled automatically when the test ends</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="doc-section" id="flows" data-title="Testing Flows with Turbine">
+          <div class="sec-head"><h2><span class="sec-num">C.9</span>Testing Flows with Turbine</h2></div>
+          <p><a href="https://github.com/cashapp/turbine" target="_blank" rel="noopener">Turbine</a> turns a Flow into a queue you can assert on one event at a time. If an unexpected item, error or completion arrives, the test fails with a clear message.</p>
+          <script type="text/plain" data-code="kotlin" data-file="src/main/kotlin/academy/shop/Countdown.kt" data-src="samples/unit-testing/src/main/kotlin/academy/shop/Countdown.kt">
+              package academy.shop
+
+              import kotlinx.coroutines.delay
+              import kotlinx.coroutines.flow.Flow
+              import kotlinx.coroutines.flow.flow
+
+              /** Emits from, from - 1, …, 0 — one value per tick. */
+              fun countdown(from: Int, tickMillis: Long = 1_000): Flow<Int> = flow {
+                  require(from >= 0) { "from must be >= 0, was $from" }
+                  for (i in from downTo 0) {
+                      emit(i)
+                      if (i > 0) delay(tickMillis)
+                  }
+              }
+            </script>
+          <script type="text/plain" data-code="kotlin" data-file="src/test/kotlin/academy/shop/CountdownTest.kt" data-src="samples/unit-testing/src/test/kotlin/academy/shop/CountdownTest.kt">
+              package academy.shop
+
+              import app.cash.turbine.test
+              import kotlin.test.Test
+              import kotlin.test.assertEquals
+              import kotlinx.coroutines.ExperimentalCoroutinesApi
+              import kotlinx.coroutines.test.currentTime
+              import kotlinx.coroutines.test.runTest
+
+              // currentTime is marked experimental in kotlinx-coroutines-test, so opt in explicitly.
+              @OptIn(ExperimentalCoroutinesApi::class)
+              class CountdownTest {
+                  @Test
+                  fun `emits from n down to zero, then completes`() = runTest {
+                      countdown(3).test {
+                          assertEquals(3, awaitItem())
+                          assertEquals(2, awaitItem())
+                          assertEquals(1, awaitItem())
+                          assertEquals(0, awaitItem())
+                          awaitComplete()
+                      }
+                  }
+
+                  @Test
+                  fun `ticks once per second of virtual time`() = runTest {
+                      countdown(5).test {
+                          awaitItem()
+                          assertEquals(0, currentTime)
+                          awaitItem()
+                          assertEquals(1_000, currentTime)
+                          cancelAndIgnoreRemainingEvents() // we've seen enough
+                      }
+                  }
+              }
+            </script>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>Turbine</th><th>Meaning</th></tr></thead>
+              <tbody>
+                <tr><td><code>flow.test { … }</code></td><td>Collect the flow inside the block</td></tr>
+                <tr><td><code>awaitItem()</code></td><td>Suspend until the next value and return it</td></tr>
+                <tr><td><code>awaitComplete()</code> / <code>awaitError()</code></td><td>The flow must finish normally / with an exception</td></tr>
+                <tr><td><code>expectNoEvents()</code></td><td>Nothing must have been emitted (yet)</td></tr>
+                <tr><td><code>cancelAndIgnoreRemainingEvents()</code></td><td>Stop collecting; required for infinite flows such as <code>StateFlow</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>A complete Android example: TaskFlow's ViewModel test combines a fake repository, <code>MainDispatcherRule</code>, <code>runTest</code> and <code>StateFlow</code> assertions:</p>
+          <script type="text/plain" data-code="kotlin" data-file="app/src/test/…/ui/tasks/TasksViewModelTest.kt" data-src="final-project/TaskFlow/app/src/test/java/com/kotlinacademy/taskflow/ui/tasks/TasksViewModelTest.kt">
+              package com.kotlinacademy.taskflow.ui.tasks
+
+              import app.cash.turbine.test
+              import com.kotlinacademy.taskflow.data.TaskRepository
+              import com.kotlinacademy.taskflow.domain.Priority
+              import com.kotlinacademy.taskflow.domain.SortOrder
+              import com.kotlinacademy.taskflow.domain.Task
+              import com.kotlinacademy.taskflow.domain.TaskFilter
+              import com.kotlinacademy.taskflow.domain.UserSettings
+              import com.kotlinacademy.taskflow.testing.FakeSettingsRepository
+              import com.kotlinacademy.taskflow.testing.FakeTaskRepository
+              import com.kotlinacademy.taskflow.testing.MainDispatcherRule
+              import kotlinx.coroutines.CompletableDeferred
+              import kotlinx.coroutines.ExperimentalCoroutinesApi
+              import kotlinx.coroutines.flow.collect
+              import kotlinx.coroutines.launch
+              import kotlinx.coroutines.test.UnconfinedTestDispatcher
+              import kotlinx.coroutines.test.advanceUntilIdle
+              import kotlinx.coroutines.test.runTest
+              import org.junit.Assert.assertEquals
+              import org.junit.Assert.assertFalse
+              import org.junit.Assert.assertTrue
+              import org.junit.Rule
+              import org.junit.Test
+
+              @OptIn(ExperimentalCoroutinesApi::class)
+              class TasksViewModelTest {
+
+                  @get:Rule
+                  val mainDispatcherRule = MainDispatcherRule()
+
+                  private val sampleTasks = listOf(
+                      Task(id = 1, title = "Buy milk", isDone = true, createdAt = 1),
+                      Task(id = 2, title = "Learn Flow", priority = Priority.HIGH, createdAt = 2),
+                      Task(
+                          id = 3,
+                          title = "Write tests",
+                          notes = "for the ViewModel",
+                          priority = Priority.LOW,
+                          createdAt = 3,
+                      ),
+                  )
+
+                  private fun createViewModel(
+                      repository: FakeTaskRepository = FakeTaskRepository(sampleTasks),
+                      settings: FakeSettingsRepository =
+                          FakeSettingsRepository(UserSettings(sortOrder = SortOrder.PRIORITY)),
+                  ) = TasksViewModel(repository, settings)
+
+                  @Test
+                  fun `state contains counts and tasks sorted by priority, done last`() = runTest {
+                      val viewModel = createViewModel()
+                      // stateIn(WhileSubscribed) only runs while someone collects; start a collector eagerly.
+                      backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                          viewModel.uiState.collect()
+                      }
+
+                      val state = viewModel.uiState.value
+                      assertFalse(state.isLoading)
+                      assertEquals(listOf("Learn Flow", "Write tests", "Buy milk"), state.tasks.map { it.title })
+                      assertEquals(3, state.totalCount)
+                      assertEquals(2, state.activeCount)
+                      assertEquals(1, state.doneCount)
+                  }
+
+                  @Test
+                  fun `filters by status and searches title and notes`() = runTest {
+                      val viewModel = createViewModel()
+                      backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                          viewModel.uiState.collect()
+                      }
+
+                      viewModel.setFilter(TaskFilter.DONE)
+                      assertEquals(listOf("Buy milk"), viewModel.uiState.value.tasks.map { it.title })
+
+                      viewModel.setFilter(TaskFilter.ALL)
+                      viewModel.setQuery("viewmodel") // matches notes, case-insensitive
+                      assertEquals(listOf("Write tests"), viewModel.uiState.value.tasks.map { it.title })
+                  }
+
+                  @Test
+                  fun `toggleDone updates the repository and the state`() = runTest {
+                      val repository = FakeTaskRepository(sampleTasks)
+                      val viewModel = createViewModel(repository)
+                      backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                          viewModel.uiState.collect()
+                      }
+
+                      viewModel.toggleDone(sampleTasks[1])
+
+                      assertTrue(repository.current.first { it.id == 2L }.isDone)
+                      assertEquals(2, viewModel.uiState.value.doneCount)
+                  }
+
+                  @Test
+                  fun `delete emits an event and undo restores the task`() = runTest {
+                      val repository = FakeTaskRepository(sampleTasks)
+                      val viewModel = createViewModel(repository)
+
+                      viewModel.events.test {
+                          viewModel.delete(sampleTasks[0])
+                          val event = awaitItem() as TasksEvent.TaskDeleted
+                          assertEquals(2, repository.current.size)
+
+                          viewModel.undoDelete(event.task)
+                          assertEquals(3, repository.current.size)
+                          assertEquals("Buy milk", repository.current.first { it.id == 1L }.title)
+                      }
+                  }
+
+                  @Test
+                  fun `import reports success and failure as events`() = runTest {
+                      val repository = FakeTaskRepository(sampleTasks)
+                      val viewModel = createViewModel(repository)
+
+                      viewModel.events.test {
+                          viewModel.importSamples()
+                          assertEquals(TasksEvent.Imported(3), awaitItem())
+
+                          repository.failImports()
+                          viewModel.importSamples()
+                          assertEquals(TasksEvent.ImportFailed, awaitItem())
+                      }
+                      assertFalse(viewModel.uiState.value.isImporting)
+                  }
+
+                  @Test
+                  fun `isImporting is true while the import runs`() = runTest {
+                      val gate = CompletableDeferred<Result<Int>>()
+                      val repository = object : TaskRepository by FakeTaskRepository() {
+                          override suspend fun importSampleTasks() = gate.await()
+                      }
+                      val viewModel = TasksViewModel(repository, FakeSettingsRepository())
+                      backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                          viewModel.uiState.collect()
+                      }
+
+                      viewModel.importSamples()
+                      assertTrue(viewModel.uiState.value.isImporting)
+
+                      gate.complete(Result.success(1))
+                      advanceUntilIdle()
+                      assertFalse(viewModel.uiState.value.isImporting)
+                  }
+              }
+            </script>
+        </section>
+
+        <section class="doc-section" id="doubles" data-title="Fakes, stubs and mocks">
+          <div class="sec-head"><h2><span class="sec-num">C.10</span>Test doubles: fakes, stubs and mocks</h2></div>
+          <p>Unit tests replace real dependencies (network, database, clock) with <b>test doubles</b>:</p>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>Double</th><th>What it is</th><th>Example</th></tr></thead>
+              <tbody>
+                <tr><td><b>Fake</b></td><td>A small, <b>working</b> implementation, usually in-memory</td><td><code>FakePriceApi</code> above, or TaskFlow's <code>FakeTaskRepository</code></td></tr>
+                <tr><td><b>Stub</b></td><td>Returns canned answers, with no logic</td><td><code>PriceApi { 100 }</code></td></tr>
+                <tr><td><b>Mock</b></td><td>Generated by a library; records calls so you can <b>verify interactions</b></td><td><code>mockk&lt;ReceiptPrinter&gt;()</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>The same test written both ways:</p>
+          <script type="text/plain" data-code="kotlin" data-file="src/test/kotlin/academy/shop/ReceiptServiceTest.kt" data-src="samples/unit-testing/src/test/kotlin/academy/shop/ReceiptServiceTest.kt">
+              package academy.shop
+
+              import io.mockk.mockk
+              import io.mockk.verify
+              import kotlin.test.Test
+              import kotlin.test.assertEquals
+
+              class ReceiptServiceTest {
+                  private val cart =
+                      Cart().apply {
+                          add(Item("tea", unitPriceCents = 250, quantity = 2))
+                          add(Item("cake", unitPriceCents = 400))
+                      }
+                  private val expected = listOf("2 × tea  5.00", "1 × cake  4.00", "TOTAL  8.10")
+
+                  @Test
+                  fun `with a fake - record what was printed`() {
+                      val printed = mutableListOf<List<String>>()
+                      // ReceiptPrinter is a fun interface, so a lambda is a complete fake.
+                      val service = ReceiptService { lines -> printed += lines }
+
+                      service.print(cart, Discount.Percent(10))
+
+                      assertEquals(listOf(expected), printed)
+                  }
+
+                  @Test
+                  fun `with a mock - verify the interaction`() {
+                      val printer = mockk<ReceiptPrinter>(relaxed = true)
+
+                      ReceiptService(printer).print(cart, Discount.Percent(10))
+
+                      verify(exactly = 1) { printer.print(expected) }
+                  }
+              }
+            </script>
+          <div class="callout tip">
+            <div class="ci">✅</div>
+            <div><span class="ct">Prefer fakes</span>
+              <p>The Android testing guide recommends fakes over mocks. A fake tests <b>what happened</b> (state), so it survives refactoring; a mock tests <b>how</b> it happened (calls), so it breaks when you change the internals. Design for it: depend on <b>interfaces</b> (ideally <code>fun interface</code>s) and inject them through the constructor. Reach for MockK for classes you don't own, or when the interaction itself is the behaviour (e.g. "the analytics event is sent exactly once").</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="parameterized" data-title="Parameterized tests">
+          <div class="sec-head"><h2><span class="sec-num">C.11</span>Parameterized tests</h2></div>
+          <p>When the same check applies to many inputs, write it once and feed it a table. Each row shows up in the report as a separate test:</p>
+          <script type="text/plain" data-code="kotlin" data-file="src/test/kotlin/academy/shop/FormatCentsTest.kt" data-src="samples/unit-testing/src/test/kotlin/academy/shop/FormatCentsTest.kt">
+              package academy.shop
+
+              import kotlin.test.assertEquals
+              import kotlin.test.assertFailsWith
+              import org.junit.jupiter.params.ParameterizedTest
+              import org.junit.jupiter.params.provider.CsvSource
+              import org.junit.jupiter.params.provider.ValueSource
+
+              class FormatCentsTest {
+                  @ParameterizedTest(name = "{0} cents → \"{1}\"")
+                  @CsvSource("0, 0.00", "5, 0.05", "199, 1.99", "100000, 1000.00")
+                  fun `formats cents as a decimal string`(cents: Int, expected: String) {
+                      assertEquals(expected, formatCents(cents))
+                  }
+
+                  @ParameterizedTest
+                  @ValueSource(ints = [-1, -100])
+                  fun `negative amounts are rejected`(cents: Int) {
+                      assertFailsWith<IllegalArgumentException> { formatCents(cents) }
+                  }
+              }
+            </script>
+          <p>On Android's JUnit 4 there's no <code>@ParameterizedTest</code>. The simplest portable alternative is a table and a loop with descriptive messages:</p>
+          <script type="text/plain" data-code="kotlin" data-file="JUnit 4 alternative">
+            @Test
+            fun formatsCentsAsDecimalString() {
+                val cases = listOf(0 to "0.00", 5 to "0.05", 199 to "1.99", 100_000 to "1000.00")
+                for ((cents, expected) in cases) {
+                    assertEquals(expected, formatCents(cents), "formatCents($cents)")
+                }
+            }
+          </script>
+        </section>
+
+        <section class="doc-section" id="coverage" data-title="Coverage with Kover">
+          <div class="sec-head"><h2><span class="sec-num">C.12</span>Measure coverage with Kover</h2></div>
+          <p><b>Kover</b> is JetBrains' coverage tool for Kotlin. It understands inline functions, data classes and other Kotlin constructs. Once the plugin is applied (C.3, C.4):</p>
+          <script type="text/plain" data-code="bash" data-file="Terminal">
+            $ ./gradlew koverHtmlReport          # JVM: runs the tests, then build/reports/kover/html/index.html
+            $ ./gradlew koverVerify              # fails the build below the minimum set in kover { }
+            $ ./gradlew koverXmlReport           # XML for CI services (Codecov, SonarQube…)
+
+            $ ./gradlew koverHtmlReportDebug     # Android: coverage of the debug variant's unit tests
+          </script>
+          <p>Leave generated code out of the numbers. Android's <code>R</code> and <code>BuildConfig</code> classes and Hilt, Room and Compose output aren't yours to test. TaskFlow's filter:</p>
+          <script type="text/plain" data-code="kts" data-file="app/build.gradle.kts (excerpt)">
+            kover {
+                reports {
+                    filters {
+                        excludes {
+                            // Code generated by Android, Hilt, Room and Compose is not ours to test.
+                            androidGeneratedClasses()
+                            classes("*Hilt_*", "*_HiltModules*", "*_Factory", "*_Impl", "*ComposableSingletons*")
+                        }
+                    }
+                }
+            }
+          </script>
+          <div class="callout warn">
+            <div class="ci">🎯</div>
+            <div><span class="ct">Coverage is a flashlight, not a score</span>
+              <p>Coverage shows which code <b>no test executes</b>, and that's useful for finding gaps. High coverage doesn't prove the tests check anything: a test without assertions can still reach 100 %. Aim for well-tested domain logic, ViewModels and mappers, and set a <b>realistic</b> gate (60–80 %) so coverage doesn't silently drop.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section" id="ci" data-title="Run unit tests in CI">
+          <div class="sec-head"><h2><span class="sec-num">C.13</span>Run unit tests in CI</h2></div>
+          <p>Tests only protect you if they run on <b>every push</b>. This GitHub Actions workflow runs the sample's tests, builds the coverage report, enforces the coverage gate and uploads the reports. It's the actual file from this repository:</p>
+          <script type="text/plain" data-code="yaml" data-file=".github/workflows/unit-tests-sample.yml" data-src=".github/workflows/unit-tests-sample.yml">
+              name: Unit testing sample
+
+              on:
+                push:
+                  paths:
+                    - "samples/unit-testing/**"
+                    - ".github/workflows/unit-tests-sample.yml"
+                pull_request:
+                  paths:
+                    - "samples/unit-testing/**"
+                workflow_dispatch:
+
+              jobs:
+                test:
+                  runs-on: ubuntu-latest
+                  defaults:
+                    run:
+                      working-directory: samples/unit-testing
+                  steps:
+                    - uses: actions/checkout@v4
+                    - uses: actions/setup-java@v4
+                      with:
+                        distribution: temurin
+                        java-version: 17
+                    - uses: gradle/actions/setup-gradle@v4
+                    - name: Run unit tests, coverage report and coverage gate
+                      run: ./gradlew --stacktrace test koverHtmlReport koverVerify
+                    - name: Upload test and coverage reports
+                      if: always()
+                      uses: actions/upload-artifact@v4
+                      with:
+                        name: unit-testing-reports
+                        path: |
+                          samples/unit-testing/build/reports/tests/test/
+                          samples/unit-testing/build/reports/kover/html/
+            </script>
+          <p>TaskFlow's workflow does the same for Android with <code>./gradlew testDebugUnitTest koverHtmlReportDebug</code>, after <a href="conventions.html#tooling">ktlint and detekt</a>. When a test fails, open the run on GitHub, find the failing step, then download the <b>reports</b> artifact and open <code>index.html</code>.</p>
+        </section>
+
+        <section class="doc-section" id="troubleshooting" data-title="Troubleshooting">
+          <div class="sec-head"><h2><span class="sec-num">C.14</span>Troubleshooting</h2></div>
+          <div class="table-wrap">
+            <table class="t">
+              <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+              <tbody>
+                <tr><td><i>No tests found for given includes</i></td><td>The <code>--tests</code> filter matches nothing, or JUnit 5 tests run without <code>useJUnitPlatform()</code></td><td>Check the class/package name and wildcards (<code>"*CartTest*"</code>); add <code>useJUnitPlatform()</code></td></tr>
+                <tr><td>Tests are silently skipped (<code>UP-TO-DATE</code>)</td><td>Nothing changed since the last run</td><td>That's expected; add <code>--rerun</code> to force a run</td></tr>
+                <tr><td><i>Method … in android.util.Log not mocked</i></td><td>Local tests run against a stub <code>android.jar</code></td><td>Keep Android types out of the unit; or set <code>unitTests.isReturnDefaultValues = true</code>; or use Robolectric</td></tr>
+                <tr><td><i>Module with the Main dispatcher is missing</i></td><td>Code under test uses <code>Dispatchers.Main</code> / <code>viewModelScope</code></td><td>Add <code>MainDispatcherRule</code> (C.8)</td></tr>
+                <tr><td>A test passes alone but fails in the full run</td><td>Shared mutable state: a singleton, <code>object</code>, companion field or static</td><td>Create fresh objects per test and inject dependencies instead of using singletons</td></tr>
+                <tr><td>Test hangs or fails after a long wait</td><td>A <code>StateFlow</code> or infinite flow is collected in the test body</td><td>Collect with Turbine and <code>cancelAndIgnoreRemainingEvents()</code>, or in <code>backgroundScope</code></td></tr>
+                <tr><td>Flaky: sometimes red, sometimes green</td><td>Real time (<code>Thread.sleep</code>, <code>System.currentTimeMillis</code>), threads or randomness</td><td>Use <code>runTest</code> virtual time; inject a <code>Clock</code>/<code>Random</code>; never sleep</td></tr>
+                <tr><td>Backtick test names crash instrumented tests</td><td>Spaces in method names are unsupported before API 30</td><td>Use backticks only in <code>src/test</code>; <code>camelCase_names</code> in <code>src/androidTest</code></td></tr>
+                <tr><td>JUnit 5 annotations ignored on Android</td><td>Android local tests run on JUnit 4</td><td>Use JUnit 4 APIs (<code>@Test</code> from <code>org.junit</code>, rules) or the third-party android-junit5 plugin</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="doc-section" id="checklist" data-title="Checklist">
+          <div class="sec-head"><h2><span class="sec-num">C.15</span>A good unit test: checklist</h2></div>
+          <ul class="checklist">
+            <li>Tests live in <code>src/test</code>, in the same package, named <code>…Test</code></li>
+            <li>Each test checks <b>one behaviour</b> and its name says which</li>
+            <li>Arrange · Act · Assert is visible at a glance; no loops or <code>if</code>s deciding what to assert</li>
+            <li>No real network, disk, database, clock, randomness or <code>Thread.sleep</code></li>
+            <li>Suspend code uses <code>runTest</code>; ViewModels use <code>MainDispatcherRule</code></li>
+            <li>Dependencies are injected interfaces, replaced by fakes; mocks only when interactions matter</li>
+            <li>Error cases are tested too, including the error messages</li>
+            <li>The whole suite passes with <code>./gradlew test</code> (or <code>testDebugUnitTest</code>) and runs in CI on every push</li>
+            <li>A test that fails points straight at the problem, without a debugger</li>
+          </ul>
+        </section>
+
+        <section class="doc-section" id="exercises" data-title="Exercises">
+          <div class="sec-head"><h2><span class="sec-num">C.16</span>Exercises</h2></div>
+          <details class="exercise">
+            <summary>Exercise 1 — Run, filter and break <span class="badge green">Easy</span></summary>
+            <div class="ex-body">
+              <p>Clone the repository, open <code>samples/unit-testing</code> and: (1) run all tests from the terminal; (2) run only <code>CheckoutTest</code>; (3) change <code>Checkout.quote</code> to fetch prices sequentially, run the tests again and read the failure; (4) undo the change and open the HTML report.</p>
+              <script type="text/plain" data-code="bash" data-file="Solution">
+                $ git clone https://github.com/Thuongst97/Kotlin.git
+                $ cd Kotlin/samples/unit-testing
+                $ ./gradlew test                                   # 1. 19 tests, BUILD SUCCESSFUL
+                $ ./gradlew test --tests "academy.shop.CheckoutTest"   # 2.
+
+                # 3. In Checkout.kt replace the body of quote with:  skus.sumOf { api.priceOf(it) }
+                $ ./gradlew test --tests "*CheckoutTest*"
+                #   CheckoutTest > prices are fetched in parallel() FAILED
+                #       expected: <1000> but was: <3000>
+
+                $ git checkout -- src/main                         # 4. undo
+                $ open build/reports/tests/test/index.html         # (Windows: start, Linux: xdg-open)
+              </script>
+            </div>
+          </details>
+          <details class="exercise">
+            <summary>Exercise 2 — Test a new rule <span class="badge amber">Medium</span></summary>
+            <div class="ex-body">
+              <p>Product wants: <i>"Orders of 50.00 or more ship free; otherwise shipping costs 4.99."</i> Add <code>fun shippingCents(subtotalCents: Int): Int</code> and write tests first. Which inputs must be covered?</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution — ShippingTest.kt">
+                class ShippingTest {
+                    @ParameterizedTest(name = "subtotal {0} → shipping {1}")
+                    @CsvSource(
+                        "0, 499",      // empty cart still pays (or decide it shouldn't, and test that!)
+                        "4999, 499",   // just below the threshold
+                        "5000, 0",     // exactly on the threshold: boundaries are where bugs live
+                        "12000, 0",
+                    )
+                    fun `shipping depends on the subtotal`(subtotal: Int, expected: Int) {
+                        assertEquals(expected, shippingCents(subtotal))
+                    }
+
+                    @Test
+                    fun `a negative subtotal is rejected`() {
+                        assertFailsWith<IllegalArgumentException> { shippingCents(-1) }
+                    }
+                }
+
+                // Implementation (written after the tests failed):
+                const val FREE_SHIPPING_FROM_CENTS = 5_000
+                const val SHIPPING_CENTS = 499
+
+                fun shippingCents(subtotalCents: Int): Int {
+                    require(subtotalCents >= 0) { "subtotal must be >= 0, was $subtotalCents" }
+                    return if (subtotalCents >= FREE_SHIPPING_FROM_CENTS) 0 else SHIPPING_CENTS
+                }
+              </script>
+            </div>
+          </details>
+          <details class="exercise">
+            <summary>Exercise 3 — A ViewModel test with virtual time <span class="badge red">Hard</span></summary>
+            <div class="ex-body">
+              <p>A <code>SearchViewModel</code> exposes <code>results: StateFlow&lt;List&lt;String&gt;&gt;</code> and debounces the query by 300 ms before calling <code>SearchApi.search</code>. Write tests that prove (1) typing "k", "ko", "kot" quickly triggers <b>one</b> search, for "kot"; (2) the results appear in <code>results</code>.</p>
+              <script type="text/plain" data-code="kotlin" data-file="Solution — SearchViewModelTest.kt">
+                class FakeSearchApi : SearchApi {
+                    val queries = mutableListOf<String>()
+                    override suspend fun search(query: String): List<String> {
+                        queries += query
+                        return listOf("$query-1", "$query-2")
+                    }
+                }
+
+                class SearchViewModelTest {
+                    @get:Rule val mainDispatcherRule = MainDispatcherRule()
+
+                    @Test
+                    fun typingQuickly_searchesOnceForTheLastQuery() = runTest {
+                        val api = FakeSearchApi()
+                        val viewModel = SearchViewModel(api)
+
+                        viewModel.results.test {
+                            assertEquals(emptyList(), awaitItem())
+                            viewModel.onQueryChange("k")
+                            viewModel.onQueryChange("ko")
+                            viewModel.onQueryChange("kot")
+                            advanceTimeBy(301)                 // virtual time: instant
+
+                            assertEquals(listOf("kot-1", "kot-2"), awaitItem())
+                            assertEquals(listOf("kot"), api.queries)
+                            cancelAndIgnoreRemainingEvents()
+                        }
+                    }
+                }
+              </script>
+              <p class="small muted">The <a href="flow.html#combining">debounce simulation</a> in the Flow lesson shows the timeline this test pins down.</p>
+            </div>
+          </details>
+        </section>
+
+        <section class="doc-section" id="quiz" data-title="Quiz">
+          <div class="sec-head"><h2><span class="sec-num">C.17</span>Quiz</h2></div>
+          <script type="application/json" data-quiz>
+          [
+            {"q": "Where do local unit tests of an Android app live, and how do you run the debug ones?", "options": ["src/androidTest · connectedDebugAndroidTest", "src/test · testDebugUnitTest", "src/main/test · test", "app/tests · runTests"], "answer": 1, "explain": "src/test runs on your computer's JVM; testDebugUnitTest runs them for the debug variant."},
+            {"q": "How do you run only the CartTest class from the terminal?", "options": ["./gradlew CartTest", "./gradlew test -only CartTest", "./gradlew test --tests \"*CartTest\"", "./gradlew test CartTest.kt"], "answer": 2, "explain": "--tests takes a class or method name pattern; repeat it to add more filters."},
+            {"q": "Inside runTest, what happens to delay(1_000)?", "options": ["It sleeps for a real second", "It throws", "It completes instantly, but currentTime advances by 1000", "It is ignored and currentTime stays 0"], "answer": 2, "explain": "runTest uses virtual time, so time-based code is fast and deterministic."},
+            {"q": "A ViewModel test fails with \"Module with the Main dispatcher is missing\". What's the fix?", "options": ["Add Robolectric", "Use Thread.sleep", "Replace Dispatchers.Main with a test dispatcher (MainDispatcherRule)", "Run it as an instrumented test"], "answer": 2, "explain": "Dispatchers.Main needs Android's main looper; Dispatchers.setMain swaps in a test dispatcher."},
+            {"q": "Why does the Android testing guide prefer fakes over mocks?", "options": ["Fakes are faster to write than any mock", "Fakes test outcomes (state), so tests survive refactoring of internals", "Mocks can't be used in Kotlin", "Fakes give higher coverage numbers"], "answer": 1, "explain": "Mocks verify calls, so they couple tests to implementation details."},
+            {"q": "./gradlew test printed UP-TO-DATE and ran nothing. Why?", "options": ["The tests are broken", "Nothing changed since the last successful run; add --rerun to force it", "JUnit is not installed", "Tests only run in the IDE"], "answer": 1, "explain": "Gradle's incremental build skips tasks whose inputs and outputs are unchanged."}
+          ]
+          </script>
+        </section>
+
+        <section class="doc-section" id="references" data-title="Further reading">
+          <div class="sec-head"><h2><span class="sec-num">C.18</span>Further reading</h2></div>
+          <ul>
+            <li><a href="https://kotlinlang.org/docs/jvm-test-using-junit.html" target="_blank" rel="noopener">Kotlin docs — Test code using JUnit in JVM</a> · <a href="https://kotlinlang.org/api/core/kotlin-test/" target="_blank" rel="noopener">kotlin.test API</a></li>
+            <li><a href="https://developer.android.com/training/testing/local-tests" target="_blank" rel="noopener">Build local unit tests</a> · <a href="https://developer.android.com/studio/test/command-line" target="_blank" rel="noopener">Test from the command line</a> · <a href="https://developer.android.com/studio/test/test-in-android-studio" target="_blank" rel="noopener">Test in Android Studio</a></li>
+            <li><a href="https://developer.android.com/kotlin/coroutines/test" target="_blank" rel="noopener">Testing Kotlin coroutines on Android</a> · <a href="https://developer.android.com/kotlin/flow/test" target="_blank" rel="noopener">Testing Kotlin flows on Android</a></li>
+            <li><a href="https://developer.android.com/training/testing/fundamentals/test-doubles" target="_blank" rel="noopener">Use test doubles in Android</a></li>
+            <li><a href="https://docs.junit.org/current/user-guide/" target="_blank" rel="noopener">JUnit 5 user guide</a> · <a href="https://docs.gradle.org/current/userguide/java_testing.html" target="_blank" rel="noopener">Gradle — Testing in Java &amp; JVM projects</a></li>
+            <li><a href="https://kotlin.github.io/kotlinx-kover/gradle-plugin/" target="_blank" rel="noopener">Kover Gradle plugin</a> · <a href="https://github.com/cashapp/turbine" target="_blank" rel="noopener">Turbine</a> · <a href="https://mockk.io/" target="_blank" rel="noopener">MockK</a></li>
+          </ul>
+        </section>
+
+        <div id="pager"></div>
+      </div>
+    </main>
+  </div>
+  <div id="site-footer"></div>
+  <script src="assets/js/refs.js?v=__BUILD__"></script>
+  <script src="assets/js/core.js?v=__BUILD__"></script>
+</body>
+</html>
